@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // Replace with your actual MongoDB connection string from AIO DBH
-const uri = "mongodb://admin:FE5B19LLX1G0K5FH@193.149.164.141:2204/?retryWrites=true&w=majority";
+const uri = "URL";
 
 const client = new MongoClient(uri);
 
