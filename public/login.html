@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wyvern — Login</title>
+  <style>
+    :root {
+      --bg: #101016;
+      --accent: #7c3aed;
+      --accent-soft: #5b21b6;
+      --text: #f0f0f0;
+      --text-muted: #888;
+    }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .container {
+      background: #181820;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+      width: 320px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #2a2a3c;
+      border-radius: 8px;
+      background: #101016;
+      color: var(--text);
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: var(--accent-soft);
+    }
+    .link {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .error {
+      color: #ff6b6b;
+      margin-bottom: 16px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Wyvern Login</h1>
+    <div class="error" id="error"></div>
+    <input type="text" id="username" placeholder="Username" autocomplete="username" />
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+    <button id="loginBtn">Login</button>
+    <div class="link" id="toRegister">Don't have an account? Register</div>
+  </div>
+
+  <script>
+    const loginBtn = document.getElementById("loginBtn");
+    const errorDiv = document.getElementById("error");
+    const toRegister = document.getElementById("toRegister");
+
+    loginBtn.onclick = async () => {
+      errorDiv.textContent = "";
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if (!username || !password) {
+        errorDiv.textContent = "Please enter username and password.";
+        return;
+      }
+
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem("wyvernUsername", username);
+        if (data.token) {
+          localStorage.setItem("wyvernToken", data.token);
+        }
+        setTimeout(() => {
+          window.location.href = "/chat.html";
+        }, 100);
+      } else {
+        errorDiv.textContent = data.error || "Login failed.";
+      }
+    };
+
+    toRegister.onclick = () => {
+      window.location.href = "/register.html";
+    };
+
+    document.getElementById("username").focus();
+  </script>
+</body>
+</html>
