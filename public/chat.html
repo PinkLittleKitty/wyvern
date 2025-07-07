@@ -35,6 +35,24 @@
       </h4>
       <div id="voiceChannelsList"></div>
     </div>
+
+    <!-- User Panel at bottom -->
+    <div class="user-panel">
+      <div class="user-panel-info">
+        <div class="user-panel-avatar" id="userPanelAvatar">
+          <div class="user-panel-status" id="userPanelStatus"></div>
+        </div>
+        <div class="user-panel-details">
+          <div class="user-panel-name" id="userPanelName"></div>
+          <div class="user-panel-status-text" id="userPanelStatusText">Online</div>
+        </div>
+      </div>
+      <div class="user-panel-controls">
+        <button class="user-panel-btn" id="userPanelMute" title="Mute/Unmute">🎤</button>
+        <button class="user-panel-btn" id="userPanelDeafen" title="Deafen">🔊</button>
+        <button class="user-panel-btn" id="userPanelSettings" title="Settings">⚙️</button>
+      </div>
+    </div>
   </div>
 
   <div class="chat-area">
@@ -56,7 +74,10 @@
 
   <div class="voice-ui" id="voiceUI">
     <div class="voice-ui-header">
-      <h2 id="voiceUITitle">🔊 Voice Channel</h2>
+      <div class="voice-ui-channel-info">
+        <h2 id="voiceUITitle">🔊 Voice Channel</h2>
+        <div class="voice-ui-participant-count" id="voiceUIParticipantCount">0 participants</div>
+      </div>
       <div class="user-info">
         <span id="voiceUsername"></span>
         <span class="admin-badge" id="voiceAdminBadge" style="display: none;">ADMIN</span>
@@ -114,6 +135,117 @@
       <div class="voice-modal-controls">
         <button class="voice-btn unmute" id="modalMuteBtn" title="Mute/Unmute">🎤</button>
         <button class="voice-btn disconnect" id="modalDisconnectBtn" title="Disconnect">📞</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="settings-modal" id="settingsModal">
+    <div class="settings-modal-content">
+      <div class="settings-modal-header">
+        <h2>User Settings</h2>
+        <button class="settings-modal-close" id="settingsModalClose">×</button>
+      </div>
+      <div class="settings-modal-body">
+        <div class="settings-sidebar">
+          <div class="settings-category active" data-category="account">My Account</div>
+          <div class="settings-category" data-category="voice">Voice & Video</div>
+          <div class="settings-category" data-category="notifications">Notifications</div>
+          <div class="settings-category" data-category="appearance">Appearance</div>
+          <div class="settings-category logout-category" id="settingsLogout">Log Out</div>
+        </div>
+        <div class="settings-content">
+          <div class="settings-panel active" id="account-panel">
+            <h3>My Account</h3>
+            <div class="settings-section">
+              <div class="settings-user-card">
+                <div class="settings-user-avatar" id="settingsUserAvatar"></div>
+                <div class="settings-user-info">
+                  <div class="settings-username" id="settingsUsername"></div>
+                  <div class="settings-user-status">Online</div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <label>Username</label>
+              <input type="text" id="settingsUsernameInput" readonly />
+              <small>This is your unique username in Wyvern</small>
+            </div>
+          </div>
+          
+          <div class="settings-panel" id="voice-panel">
+            <h3>Voice & Video</h3>
+            <div class="settings-section">
+              <label>Input Device</label>
+              <select id="microphoneSelect">
+                <option>Default - System Default</option>
+              </select>
+            </div>
+            <div class="settings-section">
+              <label>Input Volume</label>
+              <input type="range" id="inputVolume" min="0" max="100" value="100" />
+              <span id="inputVolumeValue">100%</span>
+            </div>
+            <div class="settings-section">
+              <div class="settings-checkbox">
+                <input type="checkbox" id="echoCancellation" checked />
+                <label for="echoCancellation">Echo Cancellation</label>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-checkbox">
+                <input type="checkbox" id="noiseSuppression" checked />
+                <label for="noiseSuppression">Noise Suppression</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-panel" id="notifications-panel">
+            <h3>Notifications</h3>
+            <div class="settings-section">
+              <div class="settings-checkbox">
+                <input type="checkbox" id="enableNotifications" checked />
+                <label for="enableNotifications">Enable Desktop Notifications</label>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-checkbox">
+                <input type="checkbox" id="soundNotifications" checked />
+                <label for="soundNotifications">Enable Sound Notifications</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-panel" id="appearance-panel">
+            <h3>Appearance</h3>
+            <div class="settings-section">
+              <label>Theme</label>
+              <div class="theme-options">
+                <div class="theme-option active" data-theme="dark">
+                  <div class="theme-preview dark-theme"></div>
+                  <span>Dark</span>
+                </div>
+                <div class="theme-option" data-theme="light">
+                  <div class="theme-preview light-theme"></div>
+                  <span>Light</span>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <label>Message Display</label>
+              <div class="settings-radio-group">
+                <div class="settings-radio">
+                  <input type="radio" id="compactMode" name="messageDisplay" />
+                  <label for="compactMode">Compact</label>
+                </div>
+                <div class="settings-radio">
+                  <input type="radio" id="normalMode" name="messageDisplay" checked />
+                  <label for="normalMode">Normal</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -211,6 +343,18 @@
         auth: { token }
       });
 
+      // Add these variables at the top with other variables
+      let isDeafened = false;
+      let userSettings = {
+        theme: 'dark',
+        messageDisplay: 'normal',
+        notifications: true,
+        soundNotifications: true,
+        echoCancellation: true,
+        noiseSuppression: true,
+        inputVolume: 100
+      };
+
       const elements = {
         messages: document.getElementById("chat-messages"),
         input: document.getElementById("chat-input"),
@@ -243,7 +387,18 @@
         voiceAdminBadge: document.getElementById("voiceAdminBadge"),
         voiceLogoutBtn: document.getElementById("voiceLogoutBtn"),
         voiceUIMuteBtn: document.getElementById("voiceUIMuteBtn"),
-        voiceUIDisconnectBtn: document.getElementById("voiceUIDisconnectBtn")
+        voiceUIDisconnectBtn: document.getElementById("voiceUIDisconnectBtn"),
+        userPanelAvatar: document.getElementById("userPanelAvatar"),
+        userPanelName: document.getElementById("userPanelName"),
+        userPanelStatus: document.getElementById("userPanelStatus"),
+        userPanelMute: document.getElementById("userPanelMute"),
+        userPanelDeafen: document.getElementById("userPanelDeafen"),
+        userPanelSettings: document.getElementById("userPanelSettings"),
+        settingsModal: document.getElementById("settingsModal"),
+        settingsModalClose: document.getElementById("settingsModalClose"),
+        settingsUsername: document.getElementById("settingsUsername"),
+        settingsUserAvatar: document.getElementById("settingsUserAvatar"),
+        settingsUsernameInput: document.getElementById("settingsUsernameInput")
       };
 
       // WebRTC Configuration
@@ -738,6 +893,9 @@
         const channelEl = document.createElement('div');
         channelEl.className = `channel ${type === 'voice' ? 'voice-channel' : ''}`;
         
+        const channelHeader = document.createElement('div');
+        channelHeader.className = 'channel-header';
+        
         const nameEl = document.createElement('div');
         nameEl.className = `channel-name ${type}`;
         nameEl.textContent = channel.name;
@@ -745,6 +903,13 @@
         
         const actionsEl = document.createElement('div');
         actionsEl.className = 'channel-actions';
+        
+        if (type === 'voice') {
+          const participantCount = document.createElement('div');
+          participantCount.className = 'voice-participant-count';
+          participantCount.textContent = '0';
+          actionsEl.appendChild(participantCount);
+        }
         
         if (isAdmin && !(type === 'text' && channel.name === 'general')) {
           const deleteBtn = document.createElement('button');
@@ -758,8 +923,9 @@
           actionsEl.appendChild(deleteBtn);
         }
         
-        channelEl.appendChild(nameEl);
-        channelEl.appendChild(actionsEl);
+        channelHeader.appendChild(nameEl);
+        channelHeader.appendChild(actionsEl);
+        channelEl.appendChild(channelHeader);
         
         if (type === 'text') {
           if (channel.name === currentChannel && currentView === 'chat') {
@@ -1021,6 +1187,13 @@
         );
         
         if (channelEl) {
+          // Update participant count in header
+          const countEl = channelEl.querySelector('.voice-participant-count');
+          if (countEl) {
+            countEl.textContent = data.users.length.toString();
+          }
+          
+          // Update participants list
           updateVoiceChannelParticipants(channelEl, data.channel, data.users);
         }
         
