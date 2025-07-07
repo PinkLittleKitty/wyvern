@@ -620,6 +620,24 @@ io.on('connection', async (socket) => {
       }
     }
   });
+
+  socket.on('userSpeaking', (data) => {
+    if (socket.voiceChannel) {
+      socket.to(`voice-${socket.voiceChannel}`).emit('userSpeaking', {
+        username: username,
+        speaking: data.speaking
+      });
+    }
+  });
+
+  socket.on('userMuted', (data) => {
+    if (socket.voiceChannel) {
+      socket.to(`voice-${socket.voiceChannel}`).emit('userMuted', {
+        username: username,
+        muted: data.muted
+      });
+    }
+  });
 });
 
 const PORT = process.env.PORT || 4196;
