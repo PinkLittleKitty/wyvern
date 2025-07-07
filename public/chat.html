@@ -95,6 +95,12 @@
     </div>
   </div>
 
+  <div class="voice-controls" id="voiceControls">
+    <div class="voice-status" id="voiceStatus">Connected to voice</div>
+    <button class="voice-btn unmute" id="muteBtn" title="Mute/Unmute">🎤</button>
+    <button class="voice-btn disconnect" id="disconnectBtn" title="Disconnect">📞</button>
+  </div>
+
   <div class="modal" id="channelModal">
     <div class="modal-content">
       <h3>Create New Channel</h3>
@@ -139,114 +145,51 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
-  <div class="settings-modal" id="settingsModal">
-    <div class="settings-modal-content">
-      <div class="settings-modal-header">
-        <h2>User Settings</h2>
-        <button class="settings-modal-close" id="settingsModalClose">×</button>
-      </div>
-      <div class="settings-modal-body">
-        <div class="settings-sidebar">
-          <div class="settings-category active" data-category="account">My Account</div>
-          <div class="settings-category" data-category="voice">Voice & Video</div>
-          <div class="settings-category" data-category="notifications">Notifications</div>
-          <div class="settings-category" data-category="appearance">Appearance</div>
-          <div class="settings-category logout-category" id="settingsLogout">Log Out</div>
-        </div>
-        <div class="settings-content">
-          <div class="settings-panel active" id="account-panel">
-            <h3>My Account</h3>
-            <div class="settings-section">
-              <div class="settings-user-card">
-                <div class="settings-user-avatar" id="settingsUserAvatar"></div>
-                <div class="settings-user-info">
-                  <div class="settings-username" id="settingsUsername"></div>
-                  <div class="settings-user-status">Online</div>
-                </div>
-              </div>
-            </div>
-            <div class="settings-section">
-              <label>Username</label>
-              <input type="text" id="settingsUsernameInput" readonly />
-              <small>This is your unique username in Wyvern</small>
-            </div>
-          </div>
-          
-          <div class="settings-panel" id="voice-panel">
-            <h3>Voice & Video</h3>
-            <div class="settings-section">
-              <label>Input Device</label>
-              <select id="microphoneSelect">
-                <option>Default - System Default</option>
-              </select>
-            </div>
-            <div class="settings-section">
-              <label>Input Volume</label>
-              <input type="range" id="inputVolume" min="0" max="100" value="100" />
-              <span id="inputVolumeValue">100%</span>
-            </div>
-            <div class="settings-section">
-              <div class="settings-checkbox">
-                <input type="checkbox" id="echoCancellation" checked />
-                <label for="echoCancellation">Echo Cancellation</label>
-              </div>
-            </div>
-            <div class="settings-section">
-              <div class="settings-checkbox">
-                <input type="checkbox" id="noiseSuppression" checked />
-                <label for="noiseSuppression">Noise Suppression</label>
-              </div>
-            </div>
-          </div>
-          
-          <div class="settings-panel" id="notifications-panel">
-            <h3>Notifications</h3>
-            <div class="settings-section">
-              <div class="settings-checkbox">
-                <input type="checkbox" id="enableNotifications" checked />
-                <label for="enableNotifications">Enable Desktop Notifications</label>
-              </div>
-            </div>
-            <div class="settings-section">
-              <div class="settings-checkbox">
-                <input type="checkbox" id="soundNotifications" checked />
-                <label for="soundNotifications">Enable Sound Notifications</label>
-              </div>
-            </div>
-          </div>
-          
-          <div class="settings-panel" id="appearance-panel">
-            <h3>Appearance</h3>
-            <div class="settings-section">
-              <label>Theme</label>
-              <div class="theme-options">
-                <div class="theme-option active" data-theme="dark">
-                  <div class="theme-preview dark-theme"></div>
-                  <span>Dark</span>
-                </div>
-                <div class="theme-option" data-theme="light">
-                  <div class="theme-preview light-theme"></div>
-                  <span>Light</span>
-                </div>
-              </div>
-            </div>
-            <div class="settings-section">
-              <label>Message Display</label>
-              <div class="settings-radio-group">
-                <div class="settings-radio">
-                  <input type="radio" id="compactMode" name="messageDisplay" />
-                  <label for="compactMode">Compact</label>
-                </div>
-                <div class="settings-radio">
-                  <input type="radio" id="normalMode" name="messageDisplay" checked />
-                  <label for="normalMode">Normal</label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-header" id="contextMenuHeader">User Options</div>
+    
+    <div class="context-menu-item" id="contextProfile">
+      <span>👤</span>
+      <span>View Profile</span>
+    </div>
+    
+    <div class="context-menu-separator"></div>
+    
+    <div class="context-menu-item" id="contextLocalMute">
+      <span>🔇</span>
+      <span>Mute for Me</span>
+    </div>
+    
+    <div class="context-menu-volume">
+      <label>Volume for Me</label>
+      <input type="range" id="contextVolumeSlider" min="0" max="200" value="100">
+      <div class="volume-display" id="contextVolumeDisplay">100%</div>
+    </div>
+    
+    <div class="context-menu-separator"></div>
+    
+    <!-- Admin options (hidden by default) -->
+    <div class="context-menu-item danger" id="contextServerMute" style="display: none;">
+      <span>🔇</span>
+      <span>Server Mute</span>
+    </div>
+    
+    <div class="context-menu-item danger" id="contextServerDeafen" style="display: none;">
+      <span>🔊</span>
+      <span>Server Deafen</span>
+    </div>
+    
+    <div class="context-menu-item danger" id="contextKickVoice" style="display: none;">
+      <span>👢</span>
+      <span>Kick from Voice</span>
+    </div>
+    
+    <div class="context-menu-separator" id="contextAdminSeparator" style="display: none;"></div>
+    
+    <div class="context-menu-item danger" id="contextBanUser" style="display: none;">
+      <span>🔨</span>
+      <span>Ban User</span>
     </div>
   </div>
 
@@ -284,16 +227,24 @@
       let isAdmin = false;
       let channelToDelete = null;
       let channelTypeToDelete = null;
-      let currentView = 'chat'; // 'chat' or 'voice'
       
       // Voice chat variables
       let localStream = null;
       let peerConnections = new Map();
       let isMuted = false;
       let isConnectedToVoice = false;
+      let isDeafened = false;
+      
+      // Context menu and user control variables
+      let contextMenuTarget = null;
+      let contextMenuUser = null;
+      let userVolumes = new Map();
+      let locallyMutedUsers = new Set();
+      let currentView = 'chat';
       let voiceChannelUsers = new Map();
       let userVoiceStates = new Map();
       let speakingUsers = new Set();
+      let socketUserMap = new Map();
       
       if (!username) {
         window.location.href = "/login.html";
@@ -343,18 +294,6 @@
         auth: { token }
       });
 
-      // Add these variables at the top with other variables
-      let isDeafened = false;
-      let userSettings = {
-        theme: 'dark',
-        messageDisplay: 'normal',
-        notifications: true,
-        soundNotifications: true,
-        echoCancellation: true,
-        noiseSuppression: true,
-        inputVolume: 100
-      };
-
       const elements = {
         messages: document.getElementById("chat-messages"),
         input: document.getElementById("chat-input"),
@@ -379,10 +318,11 @@
         voiceModalClose: document.getElementById("voiceModalClose"),
         modalMuteBtn: document.getElementById("modalMuteBtn"),
         modalDisconnectBtn: document.getElementById("modalDisconnectBtn"),
-        chatArea: document.getElementById("chat-area") || document.querySelector(".chat-area"),
+        chatArea: document.querySelector(".chat-area"),
         voiceUI: document.getElementById("voiceUI"),
         voiceUITitle: document.getElementById("voiceUITitle"),
         voiceUIParticipants: document.getElementById("voiceUIParticipants"),
+        voiceUIParticipantCount: document.getElementById("voiceUIParticipantCount"),
         voiceUsername: document.getElementById("voiceUsername"),
         voiceAdminBadge: document.getElementById("voiceAdminBadge"),
         voiceLogoutBtn: document.getElementById("voiceLogoutBtn"),
@@ -393,12 +333,7 @@
         userPanelStatus: document.getElementById("userPanelStatus"),
         userPanelMute: document.getElementById("userPanelMute"),
         userPanelDeafen: document.getElementById("userPanelDeafen"),
-        userPanelSettings: document.getElementById("userPanelSettings"),
-        settingsModal: document.getElementById("settingsModal"),
-        settingsModalClose: document.getElementById("settingsModalClose"),
-        settingsUsername: document.getElementById("settingsUsername"),
-        settingsUserAvatar: document.getElementById("settingsUserAvatar"),
-        settingsUsernameInput: document.getElementById("settingsUsernameInput")
+        userPanelSettings: document.getElementById("userPanelSettings")
       };
 
       // WebRTC Configuration
@@ -409,401 +344,705 @@
         ]
       };
 
-      // DEFINE ALL FUNCTIONS BEFORE USING THEM
-
-      // Function to switch to text channel view
-      function switchToTextChannel(channelName) {
-        currentView = 'chat';
+      // Context menu functions
+      function showContextMenu(e, targetUsername, element) {
+        e.preventDefault();
+        e.stopPropagation();
         
-        // Update active states
+        const contextMenu = document.getElementById('contextMenu');
+        const contextMenuHeader = document.getElementById('contextMenuHeader');
+        
+        if (!contextMenu || !contextMenuHeader) return;
+        
+        contextMenuTarget = element;
+        contextMenuUser = targetUsername;
+        
+        // Highlight the target element
+        document.querySelectorAll('.context-target').forEach(el => {
+          el.classList.remove('context-target');
+        });
+        element.classList.add('context-target');
+        
+        // Update header
+        contextMenuHeader.textContent = `${targetUsername}${targetUsername === username ? ' (You)' : ''}`;
+        
+        // Update local mute button
+        const localMuteBtn = document.getElementById('contextLocalMute');
+        const isLocallyMuted = locallyMutedUsers.has(targetUsername);
+        if (localMuteBtn) {
+          localMuteBtn.innerHTML = `
+            <span>${isLocallyMuted ? '🔊' : '🔇'}</span>
+            <span>${isLocallyMuted ? 'Unmute for Me' : 'Mute for Me'}</span>
+          `;
+        }
+        
+        // Update volume slider
+        const volumeSlider = document.getElementById('contextVolumeSlider');
+        const volumeDisplay = document.getElementById('contextVolumeDisplay');
+        const userVolume = userVolumes.get(targetUsername) || 100;
+        if (volumeSlider && volumeDisplay) {
+          volumeSlider.value = userVolume;
+          volumeDisplay.textContent = `${userVolume}%`;
+        }
+        
+        // Show/hide admin options
+        const adminItems = [
+          'contextServerMute',
+          'contextServerDeafen', 
+          'contextKickVoice',
+          'contextBanUser',
+          'contextAdminSeparator'
+        ];
+        
+        adminItems.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.style.display = (isAdmin && targetUsername !== username) ? 'block' : 'none';
+          }
+        });
+        
+        // Disable self-targeting for certain actions
+        const selfDisabledItems = ['contextLocalMute'];
+        selfDisabledItems.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            if (targetUsername === username) {
+              element.classList.add('disabled');
+            } else {
+              element.classList.remove('disabled');
+            }
+          }
+        });
+        
+        // Position context menu
+        contextMenu.style.display = 'block';
+        const rect = contextMenu.getBoundingClientRect();
+        let x = e.clientX;
+        let y = e.clientY;
+        
+        // Adjust position if menu would go off screen
+        if (x + rect.width > window.innerWidth) {
+          x = window.innerWidth - rect.width - 10;
+        }
+        if (y + rect.height > window.innerHeight) {
+          y = window.innerHeight - rect.height - 10;
+        }
+        
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        
+        log(`Context menu opened for ${targetUsername}`);
+      }
+
+      function hideContextMenu() {
+        const contextMenu = document.getElementById('contextMenu');
+        if (contextMenu) {
+          contextMenu.style.display = 'none';
+        }
+        
+        // Remove highlight
+        document.querySelectorAll('.context-target').forEach(el => {
+          el.classList.remove('context-target');
+        });
+        
+        contextMenuTarget = null;
+        contextMenuUser = null;
+      }
+
+      function locallyMuteUser(targetUsername) {
+        if (targetUsername === username) return;
+        
+        const isCurrentlyMuted = locallyMutedUsers.has(targetUsername);
+        
+        if (isCurrentlyMuted) {
+          locallyMutedUsers.delete(targetUsername);
+          log(`Locally unmuted ${targetUsername}`);
+          showNotification(`Unmuted ${targetUsername} for you`, 'success');
+        } else {
+          locallyMutedUsers.add(targetUsername);
+          log(`Locally muted ${targetUsername}`);
+          showNotification(`Muted ${targetUsername} for you`, 'success');
+        }
+        
+        // Apply mute to all audio elements from this user
+        document.querySelectorAll('audio').forEach(audio => {
+          if (audio.dataset.username === targetUsername) {
+            audio.muted = !isCurrentlyMuted;
+          }
+        });
+        
+        updateAllVoiceDisplays();
+      }
+
+      function setUserVolume(targetUsername, volume) {
+        if (targetUsername === username) return;
+        
+        userVolumes.set(targetUsername, volume);
+        
+        // Apply volume to all audio elements from this user
+        document.querySelectorAll('audio').forEach(audio => {
+          if (audio.dataset.username === targetUsername) {
+            audio.volume = volume / 100;
+          }
+        });
+        
+        log(`Set ${targetUsername} volume to ${volume}%`);
+      }
+
+      function updateAllVoiceDisplays() {
+        if (currentVoiceChannel) {
+          const users = Array.from(voiceChannelUsers.get(currentVoiceChannel) || []);
+          updateVoiceUI(currentVoiceChannel, users);
+          updateVoiceModal(currentVoiceChannel, users);
+          
+          // Update sidebar participants
+          const channelEl = Array.from(elements.voiceChannelsList.children).find(el => 
+            el.querySelector('.channel-name').textContent === currentVoiceChannel
+          );
+          if (channelEl) {
+            updateVoiceChannelParticipants(channelEl, currentVoiceChannel, users);
+          }
+        }
+      }
+
+      // Setup context menu listeners
+      function setupContextMenuListeners() {
+        // Context menu event listeners
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.context-menu')) {
+            hideContextMenu();
+          }
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+          if (!e.target.closest('.voice-participant, .voice-ui-participant, .voice-modal-participant')) {
+            hideContextMenu();
+          }
+        });
+
+        // Context menu item handlers
+        const contextProfile = document.getElementById('contextProfile');
+        if (contextProfile) {
+          contextProfile.addEventListener('click', () => {
+            if (contextMenuUser) {
+              showNotification(`Profile for ${contextMenuUser} (Not implemented yet)`, 'info');
+              hideContextMenu();
+            }
+          });
+        }
+
+        const contextLocalMute = document.getElementById('contextLocalMute');
+        if (contextLocalMute) {
+          contextLocalMute.addEventListener('click', (e) => {
+            if (contextMenuUser && !e.target.closest('.disabled')) {
+              locallyMuteUser(contextMenuUser);
+              hideContextMenu();
+            }
+          });
+        }
+
+        const contextVolumeSlider = document.getElementById('contextVolumeSlider');
+        if (contextVolumeSlider) {
+          contextVolumeSlider.addEventListener('input', (e) => {
+            if (contextMenuUser) {
+              const volume = parseInt(e.target.value);
+              const volumeDisplay = document.getElementById('contextVolumeDisplay');
+              if (volumeDisplay) {
+                volumeDisplay.textContent = `${volume}%`;
+                setUserVolume(contextMenuUser, volume);
+              }
+            }
+          });
+        }
+
+        // Admin context menu handlers
+        const contextServerMute = document.getElementById('contextServerMute');
+        if (contextServerMute) {
+          contextServerMute.addEventListener('click', () => {
+            if (contextMenuUser && isAdmin) {
+              socket.emit('adminAction', {
+                action: 'serverMute',
+                targetUser: contextMenuUser
+              });
+              showNotification(`Server muted ${contextMenuUser}`, 'success');
+              hideContextMenu();
+            }
+          });
+        }
+
+        const contextServerDeafen = document.getElementById('contextServerDeafen');
+        if (contextServerDeafen) {
+          contextServerDeafen.addEventListener('click', () => {
+            if (contextMenuUser && isAdmin) {
+              socket.emit('adminAction', {
+                action: 'serverDeafen', 
+                targetUser: contextMenuUser
+              });
+              showNotification(`Server deafened ${contextMenuUser}`, 'success');
+              hideContextMenu();
+            }
+          });
+        }
+
+        const contextKickVoice = document.getElementById('contextKickVoice');
+        if (contextKickVoice) {
+          contextKickVoice.addEventListener('click', () => {
+            if (contextMenuUser && isAdmin) {
+              socket.emit('adminAction', {
+                action: 'kickFromVoice',
+                targetUser: contextMenuUser
+              });
+              showNotification(`Kicked ${contextMenuUser} from voice`, 'success');
+              hideContextMenu();
+            }
+          });
+        }
+
+        const contextBanUser = document.getElementById('contextBanUser');
+        if (contextBanUser) {
+          contextBanUser.addEventListener('click', () => {
+            if (contextMenuUser && isAdmin) {
+              const confirmed = confirm(`Are you sure you want to ban ${contextMenuUser}?`);
+              if (confirmed) {
+                socket.emit('adminAction', {
+                  action: 'banUser',
+                  targetUser: contextMenuUser
+                });
+                showNotification(`Banned ${contextMenuUser}`, 'success');
+                hideContextMenu();
+              }
+            }
+          });
+        }
+
+        // Add keyboard shortcuts for context menu
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            hideContextMenu();
+          }
+        });
+      }
+
+      socket.on("connect", () => {
+        log("Connected to server");
+        socket.emit('joinChannel', currentChannel);
+      });
+
+      socket.on("connect_error", (error) => {
+        log(`Connection error: ${error.message}`);
+      });
+
+      socket.on("userInfo", (data) => {
+        username = data.username;
+        isAdmin = data.isAdmin;
+        elements.usernameDisplay.textContent = username;
+        
+        // Update user panel
+        if (elements.userPanelName) {
+          elements.userPanelName.textContent = username;
+        }
+        if (elements.userPanelAvatar) {
+          elements.userPanelAvatar.textContent = username.charAt(0).toUpperCase();
+        }
+        
+        // Update voice UI
+        if (elements.voiceUsername) {
+          elements.voiceUsername.textContent = username;
+        }
+        
+        if (isAdmin) {
+          elements.adminBadge.style.display = 'inline';
+          elements.addTextChannelBtn.style.display = 'block';
+          elements.addVoiceChannelBtn.style.display = 'block';
+          if (elements.voiceAdminBadge) {
+            elements.voiceAdminBadge.style.display = 'inline';
+          }
+        }
+      });
+
+      socket.on("channelUpdate", (channels) => {
+        elements.textChannelsList.innerHTML = '';
+        channels.forEach(channel => {
+          const channelEl = createChannelElement(channel, 'text');
+          elements.textChannelsList.appendChild(channelEl);
+        });
+      });
+
+      socket.on("voiceChannelUpdate", (channels) => {
+        elements.voiceChannelsList.innerHTML = '';
+        channels.forEach(channel => {
+          const channelEl = createChannelElement(channel, 'voice');
+          elements.voiceChannelsList.appendChild(channelEl);
+          
+          // Add participants list if channel has users
+          const users = voiceChannelUsers.get(channel.name);
+          if (users && users.size > 0) {
+            updateVoiceChannelParticipants(channelEl, channel.name, Array.from(users));
+          }
+        });
+      });
+
+      socket.on("voiceChannelUsers", (data) => {
+        voiceChannelUsers.set(data.channel, new Set(data.users));
+        
+        const channelEl = Array.from(elements.voiceChannelsList.children).find(el => 
+          el.querySelector('.channel-name').textContent === data.channel
+        );
+        
+        if (channelEl) {
+          updateVoiceChannelParticipants(channelEl, data.channel, data.users);
+        }
+        
+        // Update voice UI if we're in this channel
+        if (data.channel === currentVoiceChannel) {
+          updateVoiceUI(data.channel, data.users);
+        }
+        
+        // Update modal if it's open for this channel
+        if (elements.voiceModal.style.display === 'flex' && 
+            elements.voiceModalTitle.textContent.includes(data.channel)) {
+          updateVoiceModal(data.channel, data.users);
+        }
+      });
+
+      function createChannelElement(channel, type) {
+        const channelEl = document.createElement('div');
+        channelEl.className = `channel ${type === 'voice' ? 'voice-channel' : ''}`;
+        
+        const nameEl = document.createElement('div');
+        nameEl.className = `channel-name ${type}`;
+        nameEl.textContent = channel.name;
+        nameEl.title = channel.description;
+        
+        const actionsEl = document.createElement('div');
+        actionsEl.className = 'channel-actions';
+        
+        if (type === 'voice') {
+          const expandBtn = document.createElement('button');
+          expandBtn.className = 'voice-expand-btn';
+          expandBtn.textContent = '👥';
+          expandBtn.title = 'View participants';
+          expandBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openVoiceModal(channel.name);
+          });
+          actionsEl.appendChild(expandBtn);
+        }
+        
+        if (isAdmin && !(type === 'text' && channel.name === 'general')) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-channel-btn';
+          deleteBtn.textContent = '×';
+          deleteBtn.title = 'Delete channel';
+          deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showDeleteModal(channel.name, type);
+          });
+          actionsEl.appendChild(deleteBtn);
+        }
+        
+        channelEl.appendChild(nameEl);
+        channelEl.appendChild(actionsEl);
+        
+        if (type === 'text') {
+          if (channel.name === currentChannel) {
+            channelEl.classList.add('active');
+          }
+          channelEl.addEventListener('click', () => {
+            switchChannel(channel.name);
+          });
+        } else {
+          if (channel.name === currentVoiceChannel) {
+            channelEl.classList.add('connected');
+          }
+          channelEl.addEventListener('click', () => {
+            joinVoiceChannel(channel.name);
+          });
+        }
+        
+        return channelEl;
+      }
+
+      function openVoiceModal(channelName) {
+        elements.voiceModalTitle.textContent = `🔊 ${channelName}`;
+                const users = Array.from(voiceChannelUsers.get(channelName) || []);
+        updateVoiceModal(channelName, users);
+        elements.voiceModal.style.display = 'flex';
+      }
+
+      function updateVoiceModal(channelName, users) {
+        if (!elements.voiceModalParticipants) return;
+        
+        elements.voiceModalParticipants.innerHTML = '';
+        
+        if (users.length === 0) {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'voice-modal-empty';
+          emptyDiv.textContent = 'No participants in this channel';
+          elements.voiceModalParticipants.appendChild(emptyDiv);
+          return;
+        }
+        
+        // Sort users to put self first
+        const sortedUsers = users.sort((a, b) => {
+          if (a === username) return -1;
+          if (b === username) return 1;
+          return a.localeCompare(b);
+        });
+        
+        sortedUsers.forEach(user => {
+          const participantEl = document.createElement('div');
+          participantEl.className = 'voice-modal-participant';
+          
+          if (user === username) {
+            participantEl.classList.add('self');
+          }
+          
+          const userState = userVoiceStates.get(user) || {};
+          if (userState.speaking) {
+            participantEl.classList.add('speaking');
+          }
+          if (userState.muted) {
+            participantEl.classList.add('muted');
+          }
+          if (locallyMutedUsers.has(user)) {
+            participantEl.classList.add('locally-muted');
+          }
+          
+          const avatarEl = document.createElement('div');
+          avatarEl.className = 'voice-modal-avatar';
+          avatarEl.textContent = user.charAt(0).toUpperCase();
+          
+          const statusIndicator = document.createElement('div');
+          statusIndicator.className = 'voice-status-indicator connected';
+          if (userState.speaking) {
+            statusIndicator.classList.add('speaking');
+          }
+          if (userState.muted) {
+            statusIndicator.classList.add('muted');
+          }
+          avatarEl.appendChild(statusIndicator);
+          
+          const infoEl = document.createElement('div');
+          infoEl.className = 'voice-modal-participant-info';
+          
+          const nameEl = document.createElement('div');
+          nameEl.className = 'voice-modal-participant-name';
+          nameEl.textContent = user === username ? `${user} (You)` : user;
+          
+          const statusEl = document.createElement('div');
+          statusEl.className = 'voice-modal-participant-status';
+          if (userState.speaking) {
+            statusEl.textContent = 'Speaking';
+          } else if (userState.muted) {
+            statusEl.textContent = 'Muted';
+          } else {
+            statusEl.textContent = 'Connected';
+          }
+          
+          if (locallyMutedUsers.has(user)) {
+            statusEl.textContent += ' (Muted for you)';
+          }
+          
+          infoEl.appendChild(nameEl);
+          infoEl.appendChild(statusEl);
+          
+          participantEl.appendChild(avatarEl);
+          participantEl.appendChild(infoEl);
+          
+          // Add local mute indicator
+          if (locallyMutedUsers.has(user)) {
+            const muteIndicator = document.createElement('div');
+            muteIndicator.className = 'local-mute-indicator';
+            muteIndicator.textContent = '🚫';
+            muteIndicator.title = 'Muted for you';
+            participantEl.appendChild(muteIndicator);
+          }
+          
+          // Add context menu
+          participantEl.addEventListener('contextmenu', (e) => {
+            showContextMenu(e, user, participantEl);
+          });
+          
+          participantEl.addEventListener('selectstart', (e) => {
+            e.preventDefault();
+          });
+          
+          elements.voiceModalParticipants.appendChild(participantEl);
+        });
+      }
+
+      function updateVoiceChannelParticipants(channelEl, channelName, users) {
+        let usersEl = channelEl.querySelector('.voice-users');
+        if (!usersEl) {
+          usersEl = document.createElement('div');
+          usersEl.className = 'voice-users';
+          channelEl.appendChild(usersEl);
+        }
+        
+        if (users.length > 0) {
+          usersEl.textContent = `👥 ${users.join(', ')}`;
+        } else {
+          usersEl.textContent = '';
+        }
+      }
+
+      function updateVoiceUI(channelName, users) {
+        if (elements.voiceUITitle) {
+          elements.voiceUITitle.textContent = `🔊 ${channelName}`;
+        }
+        
+        if (elements.voiceUIParticipantCount) {
+          elements.voiceUIParticipantCount.textContent = `${users.length} participant${users.length !== 1 ? 's' : ''}`;
+        }
+        
+        if (elements.voiceUIParticipants) {
+          elements.voiceUIParticipants.innerHTML = '';
+          
+          if (users.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'voice-ui-empty';
+            emptyDiv.textContent = 'No one else is here';
+            elements.voiceUIParticipants.appendChild(emptyDiv);
+            return;
+          }
+          
+          // Sort users to put self first
+          const sortedUsers = users.sort((a, b) => {
+            if (a === username) return -1;
+            if (b === username) return 1;
+            return a.localeCompare(b);
+          });
+          
+          sortedUsers.forEach(user => {
+            const participantEl = document.createElement('div');
+            participantEl.className = 'voice-ui-participant';
+            
+            if (user === username) {
+              participantEl.classList.add('self');
+            }
+            
+            const userState = userVoiceStates.get(user) || {};
+            if (userState.speaking) {
+              participantEl.classList.add('speaking');
+            }
+            if (userState.muted) {
+              participantEl.classList.add('muted');
+            }
+            if (locallyMutedUsers.has(user)) {
+              participantEl.classList.add('locally-muted');
+            }
+            
+            const avatarEl = document.createElement('div');
+            avatarEl.className = 'voice-ui-avatar';
+            avatarEl.textContent = user.charAt(0).toUpperCase();
+            
+            const statusIndicator = document.createElement('div');
+            statusIndicator.className = 'voice-status-indicator connected';
+            if (userState.speaking) {
+              statusIndicator.classList.add('speaking');
+            }
+            if (userState.muted) {
+              statusIndicator.classList.add('muted');
+            }
+            avatarEl.appendChild(statusIndicator);
+            
+            const nameEl = document.createElement('div');
+            nameEl.className = 'voice-ui-participant-name';
+            nameEl.textContent = user === username ? `${user} (You)` : user;
+            
+            const statusEl = document.createElement('div');
+            statusEl.className = 'voice-ui-participant-status';
+            if (userState.speaking) {
+              statusEl.textContent = 'Speaking';
+            } else if (userState.muted) {
+              statusEl.textContent = 'Muted';
+            } else {
+              statusEl.textContent = 'Connected';
+            }
+            
+            if (locallyMutedUsers.has(user)) {
+              statusEl.textContent += ' (Muted for you)';
+            }
+            
+            participantEl.appendChild(avatarEl);
+            participantEl.appendChild(nameEl);
+            participantEl.appendChild(statusEl);
+            
+            // Add local mute indicator
+            if (locallyMutedUsers.has(user)) {
+              const muteIndicator = document.createElement('div');
+              muteIndicator.className = 'local-mute-indicator';
+              muteIndicator.textContent = '🚫';
+              muteIndicator.title = 'Muted for you';
+              participantEl.appendChild(muteIndicator);
+            }
+            
+            // Add context menu
+            participantEl.addEventListener('contextmenu', (e) => {
+              showContextMenu(e, user, participantEl);
+            });
+            
+            participantEl.addEventListener('selectstart', (e) => {
+              e.preventDefault();
+            });
+            
+            elements.voiceUIParticipants.appendChild(participantEl);
+          });
+        }
+      }
+
+      function showDeleteModal(channelName, type) {
+        channelToDelete = channelName;
+        channelTypeToDelete = type;
+        document.getElementById('deleteChannelName').textContent = `${type === 'voice' ? '🔊' : '#'}${channelName}`;
+        elements.deleteModal.style.display = 'flex';
+      }
+
+      function switchChannel(channelName) {
+        if (channelName === currentChannel) return;
+        
         document.querySelectorAll('.channel:not(.voice-channel)').forEach(el => el.classList.remove('active'));
         const channelEl = Array.from(elements.textChannelsList.children).find(el => 
           el.querySelector('.channel-name').textContent === channelName
         );
         if (channelEl) channelEl.classList.add('active');
         
-        // Show chat, hide voice UI
-        if (elements.chatArea) elements.chatArea.classList.remove('hidden');
-        if (elements.voiceUI) elements.voiceUI.classList.remove('active');
+        currentChannel = channelName;
+        elements.currentChannelHeader.textContent = `# ${channelName}`;
+        elements.input.placeholder = `Message #${channelName}`;
+        elements.messages.innerHTML = '';
         
-        // Switch channel if different
-        if (channelName !== currentChannel) {
-          currentChannel = channelName;
-          if (elements.currentChannelHeader) elements.currentChannelHeader.textContent = `# ${channelName}`;
-          if (elements.input) elements.input.placeholder = `Message #${channelName}`;
-          if (elements.messages) elements.messages.innerHTML = '';
-          socket.emit('joinChannel', channelName);
-        }
-        
-        log(`Switched to text channel #${channelName}`);
+        socket.emit('joinChannel', channelName);
+        log(`Switched to #${channelName}`);
       }
 
-      // Function to switch to voice UI
-      function switchToVoiceUI(channelName) {
+      function switchToVoiceView() {
         currentView = 'voice';
-        
-        // Update active states
-        document.querySelectorAll('.channel').forEach(el => el.classList.remove('active'));
-        
-        // Hide chat, show voice UI
-        if (elements.chatArea) elements.chatArea.classList.add('hidden');
-        if (elements.voiceUI) elements.voiceUI.classList.add('active');
-        
-        // Update voice UI
-        if (elements.voiceUITitle) elements.voiceUITitle.textContent = `🔊 ${channelName}`;
-        if (elements.voiceUsername) elements.voiceUsername.textContent = username;
-        if (isAdmin && elements.voiceAdminBadge) {
-          elements.voiceAdminBadge.style.display = 'inline';
-        }
-        
-        // Update participants
-        const users = voiceChannelUsers.get(channelName) || new Set();
-        updateVoiceUI(channelName, Array.from(users));
-        
-        log(`Switched to voice UI for ${channelName}`);
+        elements.chatArea.style.display = 'none';
+        elements.voiceUI.style.display = 'flex';
+        log('Switched to voice view');
       }
 
-      // Function to create voice UI participant cards
-      function createVoiceUIParticipant(participantUsername) {
-        const participantEl = document.createElement('div');
-        participantEl.className = 'voice-ui-participant';
-        
-        if (participantUsername === username) {
-          participantEl.classList.add('self');
-        }
-        
-        const avatarEl = document.createElement('div');
-        avatarEl.className = 'voice-ui-avatar';
-        avatarEl.textContent = participantUsername.charAt(0).toUpperCase();
-        
-        const statusIndicator = document.createElement('div');
-        statusIndicator.className = 'voice-status-indicator connected';
-        avatarEl.appendChild(statusIndicator);
-        
-        const nameEl = document.createElement('div');
-        nameEl.className = 'voice-ui-participant-name';
-        nameEl.textContent = participantUsername === username ? `${participantUsername} (You)` : participantUsername;
-        
-        const statusEl = document.createElement('div');
-        statusEl.className = 'voice-ui-participant-status';
-        statusEl.textContent = 'Connected';
-        
-        participantEl.appendChild(avatarEl);
-        participantEl.appendChild(nameEl);
-        participantEl.appendChild(statusEl);
-        
-        // Apply current voice state
-        const voiceState = userVoiceStates.get(participantUsername);
-        if (voiceState) {
-          if (voiceState.speaking) {
-            participantEl.classList.add('speaking');
-            statusIndicator.classList.add('speaking');
-            statusEl.textContent = 'Speaking';
-          }
-          if (voiceState.muted) {
-            participantEl.classList.add('muted');
-            statusIndicator.classList.add('muted');
-            statusEl.textContent = 'Muted';
-          }
-        }
-        
-        return participantEl;
-      }
-
-      // Function to update voice UI participants
-      function updateVoiceUI(channelName, users) {
-        if (!elements.voiceUIParticipants) return;
-        
-        elements.voiceUIParticipants.innerHTML = '';
-        
-        if (users.length === 0) {
-          const emptyEl = document.createElement('div');
-          emptyEl.className = 'voice-ui-empty';
-          emptyEl.textContent = 'No one is in this voice channel';
-          elements.voiceUIParticipants.appendChild(emptyEl);
-          return;
-        }
-        
-        // Sort users to put self first
-        const sortedUsers = users.sort((a, b) => {
-          if (a === username) return -1;
-          if (b === username) return 1;
-          return a.localeCompare(b);
-        });
-        
-        sortedUsers.forEach(user => {
-          const participantEl = createVoiceUIParticipant(user);
-          elements.voiceUIParticipants.appendChild(participantEl);
-        });
-      }
-
-      // Function to create voice participant element for sidebar
-      function createVoiceParticipantElement(participantUsername) {
-        const participantEl = document.createElement('div');
-        participantEl.className = 'voice-participant';
-        
-        if (participantUsername === username) {
-          participantEl.classList.add('self');
-        }
-        
-        const avatarEl = document.createElement('div');
-        avatarEl.className = 'voice-participant-avatar';
-        avatarEl.textContent = participantUsername.charAt(0).toUpperCase();
-        
-        const statusIndicator = document.createElement('div');
-        statusIndicator.className = 'voice-status-indicator connected';
-        avatarEl.appendChild(statusIndicator);
-        
-        const nameEl = document.createElement('div');
-        nameEl.className = 'voice-participant-name';
-        nameEl.textContent = participantUsername === username ? `${participantUsername} (You)` : participantUsername;
-        
-        const statusEl = document.createElement('div');
-        statusEl.className = 'voice-participant-status';
-        statusEl.textContent = '🔗';
-        
-        participantEl.appendChild(avatarEl);
-        participantEl.appendChild(nameEl);
-        participantEl.appendChild(statusEl);
-        
-        // Apply current voice state
-        const voiceState = userVoiceStates.get(participantUsername);
-        if (voiceState) {
-          if (voiceState.speaking) {
-            participantEl.classList.add('speaking');
-            statusIndicator.classList.add('speaking');
-            statusEl.textContent = '🎤';
-          }
-          if (voiceState.muted) {
-            participantEl.classList.add('muted');
-            statusIndicator.classList.add('muted');
-            statusEl.textContent = '🔇';
-          }
-        }
-        
-        return participantEl;
-      }
-
-      // Update voice channel participants in sidebar
-      function updateVoiceChannelParticipants(channelEl, channelName, users) {
-        // Remove existing participants
-        const existingParticipants = channelEl.querySelector('.voice-participants');
-        if (existingParticipants) {
-          existingParticipants.remove();
-        }
-        
-        if (users.length === 0) {
-          channelEl.classList.remove('voice-channel-expanded');
-          return;
-        }
-        
-        channelEl.classList.add('voice-channel-expanded');
-        
-        const participantsEl = document.createElement('div');
-        participantsEl.className = 'voice-participants';
-        
-        // Sort users to put self first
-        const sortedUsers = users.sort((a, b) => {
-          if (a === username) return -1;
-          if (b === username) return 1;
-          return a.localeCompare(b);
-        });
-        
-        sortedUsers.forEach(user => {
-          const participantEl = createVoiceParticipantElement(user);
-          participantsEl.appendChild(participantEl);
-        });
-        
-        channelEl.appendChild(participantsEl);
-      }
-
-      // Update all voice displays
-      function updateAllVoiceDisplays() {
-        // Update sidebar participants
-        voiceChannelUsers.forEach((users, channelName) => {
-          const channelEl = Array.from(elements.voiceChannelsList.children).find(el => 
-            el.querySelector('.channel-name').textContent === channelName
-          );
-          if (channelEl) {
-            updateVoiceChannelParticipants(channelEl, channelName, Array.from(users));
-          }
-        });
-        
-        // Update voice UI if active
-        if (currentView === 'voice' && currentVoiceChannel) {
-          const users = voiceChannelUsers.get(currentVoiceChannel) || new Set();
-          updateVoiceUI(currentVoiceChannel, Array.from(users));
-        }
-        
-        // Update modal if open
-        if (elements.voiceModal && elements.voiceModal.style.display === 'flex') {
-          const channelName = elements.voiceModalTitle.textContent.replace('🔊 ', '');
-          const users = voiceChannelUsers.get(channelName) || new Set();
-          updateVoiceModal(channelName, Array.from(users));
-        }
-      }
-
-      function setupVoiceActivityDetection() {
-        if (!localStream) return;
-        
-        try {
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          const analyser = audioContext.createAnalyser();
-          const microphone = audioContext.createMediaStreamSource(localStream);
-          
-          analyser.fftSize = 512;
-          analyser.minDecibels = -127;
-          analyser.maxDecibels = 0;
-          analyser.smoothingTimeConstant = 0.4;
-          
-          microphone.connect(analyser);
-          
-          const volumes = new Uint8Array(analyser.frequencyBinCount);
-          let speaking = false;
-          let speakingTimeout;
-          let consecutiveSpeakingFrames = 0;
-          let consecutiveSilentFrames = 0;
-          
-          // Thresholds for better detection
-          const SPEAKING_THRESHOLD = 30; // Increased threshold
-          const FRAMES_TO_START_SPEAKING = 3; // Need 3 consecutive frames above threshold
-          const FRAMES_TO_STOP_SPEAKING = 10; // Need 10 consecutive frames below threshold
-          
-          function detectSpeaking() {
-            if (!isConnectedToVoice || isMuted) {
-              if (speaking) {
-                speaking = false;
-                consecutiveSpeakingFrames = 0;
-                consecutiveSilentFrames = 0;
-                
-                userVoiceStates.set(username, {
-                  ...userVoiceStates.get(username),
-                  speaking: false
-                });
-                
-                socket.emit('userSpeaking', { speaking: false });
-                updateAllVoiceDisplays();
-              }
-              
-              if (isConnectedToVoice) {
-                requestAnimationFrame(detectSpeaking);
-              }
-              return;
-            }
-            
-            analyser.getByteFrequencyData(volumes);
-            let volumeSum = 0;
-            for (let i = 0; i < volumes.length; i++) {
-              volumeSum += volumes[i];
-            }
-            const averageVolume = volumeSum / volumes.length;
-            
-            const isCurrentlySpeaking = averageVolume > SPEAKING_THRESHOLD;
-            
-            if (isCurrentlySpeaking) {
-              consecutiveSpeakingFrames++;
-              consecutiveSilentFrames = 0;
-              
-              // Start speaking only after consecutive frames above threshold
-              if (!speaking && consecutiveSpeakingFrames >= FRAMES_TO_START_SPEAKING) {
-                speaking = true;
-                
-                userVoiceStates.set(username, {
-                  ...userVoiceStates.get(username),
-                  speaking: true
-                });
-                
-                socket.emit('userSpeaking', { speaking: true });
-                updateAllVoiceDisplays();
-                
-                clearTimeout(speakingTimeout);
-              }
-            } else {
-              consecutiveSilentFrames++;
-              consecutiveSpeakingFrames = 0;
-              
-              // Stop speaking only after consecutive frames below threshold
-              if (speaking && consecutiveSilentFrames >= FRAMES_TO_STOP_SPEAKING) {
-                speaking = false;
-                
-                userVoiceStates.set(username, {
-                  ...userVoiceStates.get(username),
-                  speaking: false
-                });
-                
-                socket.emit('userSpeaking', { speaking: false });
-                updateAllVoiceDisplays();
-                
-                clearTimeout(speakingTimeout);
-              }
-            }
-            
-            if (isConnectedToVoice) {
-              requestAnimationFrame(detectSpeaking);
-            }
-          }
-          
-          detectSpeaking();
-        } catch (error) {
-          log(`Voice activity detection error: ${error.message}`);
-        }
-      }
-
-      function toggleMute() {
-        if (!localStream) return;
-        
-        isMuted = !isMuted;
-        localStream.getAudioTracks().forEach(track => {
-          track.enabled = !isMuted;
-        });
-        
-        // Update self state locally
-        userVoiceStates.set(username, {
-          ...userVoiceStates.get(username),
-          muted: isMuted
-        });
-        
-        updateMuteButton();
-        updateAllVoiceDisplays();
-        
-        // Emit mute state to server
-        socket.emit('userMuted', { muted: isMuted });
-        
-        log(isMuted ? 'Microphone muted' : 'Microphone unmuted');
-      }
-
-      function updateMuteButton() {
-        const updateButton = (btn) => {
-          if (!btn) return;
-          if (isMuted) {
-            btn.className = 'voice-btn mute';
-            btn.textContent = '🔇';
-            btn.title = 'Unmute';
-          } else {
-            btn.className = 'voice-btn unmute';
-            btn.textContent = '🎤';
-            btn.title = 'Mute';
-          }
-        };
-        
-        updateButton(elements.muteBtn);
-        updateButton(elements.modalMuteBtn);
-        updateButton(elements.voiceUIMuteBtn);
+      function switchToChatView() {
+        currentView = 'chat';
+        elements.chatArea.style.display = 'flex';
+        elements.voiceUI.style.display = 'none';
+        log('Switched to chat view');
       }
 
       async function joinVoiceChannel(channelName) {
         if (channelName === currentVoiceChannel) {
-          // If already connected, just switch to voice UI
-          switchToVoiceUI(channelName);
+          leaveVoiceChannel();
           return;
         }
 
         try {
           const isSecureContext = window.isSecureContext || 
-                               location.protocol === 'https:' || 
-                               location.hostname === 'localhost' || 
-                               location.hostname === '127.0.0.1';
-        
+                                 location.protocol === 'https:' || 
+                                 location.hostname === 'localhost' || 
+                                 location.hostname === '127.0.0.1';
+          
           if (!isSecureContext) {
             showNotification('Voice chat requires HTTPS or localhost', 'error');
             return;
@@ -820,37 +1059,34 @@
             });
             log('Microphone access granted');
           }
-        
+          
           if (currentVoiceChannel) {
-            // Leave current voice channel but don't stop stream
-            socket.emit('leaveVoiceChannel');
-            peerConnections.forEach(pc => pc.close());
-            peerConnections.clear();
+            leaveVoiceChannel();
           }
-        
+          
           currentVoiceChannel = channelName;
           isConnectedToVoice = true;
-        
+          
           // Update UI
           document.querySelectorAll('.voice-channel').forEach(el => el.classList.remove('connected'));
           const channelEl = Array.from(elements.voiceChannelsList.children).find(el => 
             el.querySelector('.channel-name').textContent === channelName
           );
           if (channelEl) channelEl.classList.add('connected');
-        
-          // Switch to voice UI
-          switchToVoiceUI(channelName);
-        
-          if (elements.voiceControls) elements.voiceControls.classList.add('active');
-          if (elements.voiceStatus) elements.voiceStatus.textContent = `Connected to 🔊${channelName}`;
-        
+          
+          elements.voiceControls.classList.add('active');
+          elements.voiceStatus.textContent = `Connected to 🔊${channelName}`;
+          
+          // Switch to voice view
+          switchToVoiceView();
+          
           // Setup voice activity detection
           setupVoiceActivityDetection();
-        
+          
           socket.emit('joinVoiceChannel', channelName);
           log(`Joined voice channel: ${channelName}`);
           showNotification(`Joined voice channel: ${channelName}`);
-        
+          
         } catch (error) {
           log(`Microphone error: ${error.message}`);
           showNotification('Could not access microphone', 'error');
@@ -870,182 +1106,172 @@
           localStream = null;
         }
         
+        // Clean up audio elements
+        document.querySelectorAll('audio[data-username]').forEach(audio => {
+          audio.remove();
+        });
+        
         document.querySelectorAll('.voice-channel').forEach(el => el.classList.remove('connected'));
-        if (elements.voiceControls) elements.voiceControls.classList.remove('active');
+        elements.voiceControls.classList.remove('active');
+        
+        // Switch back to chat view
+        switchToChatView();
         
         socket.emit('leaveVoiceChannel');
         log(`Left voice channel: ${currentVoiceChannel}`);
         showNotification(`Left voice channel: ${currentVoiceChannel}`);
         
-        const oldChannel = currentVoiceChannel;
         currentVoiceChannel = null;
         isConnectedToVoice = false;
         isMuted = false;
+        isDeafened = false;
+        updateMuteButton();
+        updateDeafenButton();
+      }
+
+      function toggleMute() {
+        if (!localStream) return;
+        
+        isMuted = !isMuted;
+        localStream.getAudioTracks().forEach(track => {
+          track.enabled = !isMuted;
+        });
+        
         updateMuteButton();
         
-        // If currently viewing voice UI, switch back to text chat
-        if (currentView === 'voice') {
-          switchToTextChannel('general');
-        }
+        // Update voice state
+        const currentState = userVoiceStates.get(username) || {};
+        currentState.muted = isMuted;
+        userVoiceStates.set(username, currentState);
+        
+        // Emit mute state to server
+        socket.emit('userMuted', { muted: isMuted });
+        
+        updateAllVoiceDisplays();
+        
+        log(isMuted ? 'Microphone muted' : 'Microphone unmuted');
       }
 
-      function createChannelElement(channel, type) {
-        const channelEl = document.createElement('div');
-        channelEl.className = `channel ${type === 'voice' ? 'voice-channel' : ''}`;
+      function toggleDeafen() {
+        isDeafened = !isDeafened;
         
-        const channelHeader = document.createElement('div');
-        channelHeader.className = 'channel-header';
+        // Mute/unmute all remote audio
+        document.querySelectorAll('audio[data-username]').forEach(audio => {
+          audio.muted = isDeafened;
+        });
         
-        const nameEl = document.createElement('div');
-        nameEl.className = `channel-name ${type}`;
-        nameEl.textContent = channel.name;
-        nameEl.title = channel.description;
-        
-        const actionsEl = document.createElement('div');
-        actionsEl.className = 'channel-actions';
-        
-        if (type === 'voice') {
-          const participantCount = document.createElement('div');
-          participantCount.className = 'voice-participant-count';
-          participantCount.textContent = '0';
-          actionsEl.appendChild(participantCount);
+        // If deafening, also mute microphone
+        if (isDeafened && !isMuted) {
+          toggleMute();
         }
         
-        if (isAdmin && !(type === 'text' && channel.name === 'general')) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'delete-channel-btn';
-          deleteBtn.textContent = '×';
-          deleteBtn.title = 'Delete channel';
-          deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showDeleteModal(channel.name, type);
-          });
-          actionsEl.appendChild(deleteBtn);
-        }
+        updateDeafenButton();
         
-        channelHeader.appendChild(nameEl);
-        channelHeader.appendChild(actionsEl);
-        channelEl.appendChild(channelHeader);
+        log(isDeafened ? 'Deafened' : 'Undeafened');
+        showNotification(isDeafened ? 'Deafened' : 'Undeafened', 'info');
+      }
+
+      function updateMuteButton() {
+        const updateButton = (btn) => {
+          if (!btn) return;
+          if (isMuted) {
+            btn.className = 'voice-btn mute';
+            btn.textContent = '🔇';
+                        btn.title = 'Unmute';
+          } else {
+            btn.className = 'voice-btn unmute';
+            btn.textContent = '🎤';
+            btn.title = 'Mute';
+          }
+        };
         
-        if (type === 'text') {
-          if (channel.name === currentChannel && currentView === 'chat') {
-            channelEl.classList.add('active');
+        updateButton(elements.muteBtn);
+        updateButton(elements.modalMuteBtn);
+        updateButton(elements.voiceUIMuteBtn);
+        updateButton(elements.userPanelMute);
+      }
+
+      function updateDeafenButton() {
+        const updateButton = (btn) => {
+          if (!btn) return;
+          if (isDeafened) {
+            btn.className = 'user-panel-btn deafen';
+            btn.textContent = '🔇';
+            btn.title = 'Undeafen';
+          } else {
+            btn.className = 'user-panel-btn';
+            btn.textContent = '🔊';
+            btn.title = 'Deafen';
           }
-          channelEl.addEventListener('click', () => {
-            switchToTextChannel(channel.name);
-          });
-        } else {
-          if (channel.name === currentVoiceChannel) {
-            channelEl.classList.add('connected');
-          }
-          channelEl.addEventListener('click', () => {
-            if (channel.name === currentVoiceChannel) {
-              // If already connected, switch to voice UI
-              switchToVoiceUI(channel.name);
-            } else {
-              // Join the voice channel
-              joinVoiceChannel(channel.name);
+        };
+        
+        updateButton(elements.userPanelDeafen);
+      }
+
+      function setupVoiceActivityDetection() {
+        if (!localStream) return;
+        
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const analyser = audioContext.createAnalyser();
+          const microphone = audioContext.createMediaStreamSource(localStream);
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          
+          microphone.connect(analyser);
+          analyser.fftSize = 256;
+          
+          let speakingThreshold = 50;
+          let isSpeaking = false;
+          let speakingTimeout;
+          
+          function detectSpeaking() {
+            analyser.getByteFrequencyData(dataArray);
+            
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
             }
-          });
-        }
-        
-        return channelEl;
-      }
-
-      function showDeleteModal(channelName, type) {
-        channelToDelete = channelName;
-        channelTypeToDelete = type;
-        document.getElementById('deleteChannelName').textContent = `${type === 'voice' ? '🔊' : '#'}${channelName}`;
-        if (elements.deleteModal) elements.deleteModal.style.display = 'flex';
-      }
-
-      function openVoiceModal(channelName) {
-        if (elements.voiceModalTitle) elements.voiceModalTitle.textContent = `🔊 ${channelName}`;
-        const users = voiceChannelUsers.get(channelName) || new Set();
-        updateVoiceModal(channelName, Array.from(users));
-        if (elements.voiceModal) elements.voiceModal.style.display = 'flex';
-      }
-
-      function updateVoiceModal(channelName, users) {
-        if (!elements.voiceModalParticipants) return;
-        
-        elements.voiceModalParticipants.innerHTML = '';
-        
-        if (users.length === 0) {
-          const emptyEl = document.createElement('div');
-          emptyEl.style.textAlign = 'center';
-          emptyEl.style.color = 'var(--text-muted)';
-          emptyEl.style.padding = '40px';
-          emptyEl.textContent = 'No one is in this voice channel';
-          elements.voiceModalParticipants.appendChild(emptyEl);
-          return;
-        }
-        
-        // Sort users to put self first
-        const sortedUsers = users.sort((a, b) => {
-          if (a === username) return -1;
-          if (b === username) return 1;
-          return a.localeCompare(b);
-        });
-        
-        sortedUsers.forEach(user => {
-          const participantEl = createVoiceModalParticipant(user);
-          elements.voiceModalParticipants.appendChild(participantEl);
-        });
-      }
-
-      function createVoiceModalParticipant(participantUsername) {
-        const participantEl = document.createElement('div');
-        participantEl.className = 'voice-modal-participant';
-        
-        if (participantUsername === username) {
-          participantEl.classList.add('self');
-        }
-        
-        const avatarEl = document.createElement('div');
-        avatarEl.className = 'voice-modal-avatar';
-        avatarEl.textContent = participantUsername.charAt(0).toUpperCase();
-        
-        const statusIndicator = document.createElement('div');
-        statusIndicator.className = 'voice-status-indicator connected';
-        avatarEl.appendChild(statusIndicator);
-        
-        const infoEl = document.createElement('div');
-        infoEl.className = 'voice-modal-participant-info';
-        
-        const nameEl = document.createElement('div');
-        nameEl.className = 'voice-modal-participant-name';
-        nameEl.textContent = participantUsername === username ? `${participantUsername} (You)` : participantUsername;
-        
-        const statusEl = document.createElement('div');
-        statusEl.className = 'voice-modal-participant-status';
-        statusEl.textContent = 'Connected';
-        
-        infoEl.appendChild(nameEl);
-        infoEl.appendChild(statusEl);
-        
-        participantEl.appendChild(avatarEl);
-        participantEl.appendChild(infoEl);
-        
-        // Apply current voice state
-        const voiceState = userVoiceStates.get(participantUsername);
-        if (voiceState) {
-          if (voiceState.speaking) {
-            participantEl.classList.add('speaking');
-            statusIndicator.classList.add('speaking');
-            statusEl.textContent = 'Speaking';
+            const average = sum / dataArray.length;
+            
+            if (average > speakingThreshold && !isMuted) {
+              if (!isSpeaking) {
+                isSpeaking = true;
+                const currentState = userVoiceStates.get(username) || {};
+                currentState.speaking = true;
+                userVoiceStates.set(username, currentState);
+                
+                socket.emit('userSpeaking', { speaking: true });
+                updateAllVoiceDisplays();
+                log('Started speaking');
+              }
+              
+              clearTimeout(speakingTimeout);
+              speakingTimeout = setTimeout(() => {
+                if (isSpeaking) {
+                  isSpeaking = false;
+                  const currentState = userVoiceStates.get(username) || {};
+                  currentState.speaking = false;
+                  userVoiceStates.set(username, currentState);
+                  
+                  socket.emit('userSpeaking', { speaking: false });
+                  updateAllVoiceDisplays();
+                  log('Stopped speaking');
+                }
+              }, 500);
+            }
+            
+            if (isConnectedToVoice) {
+              requestAnimationFrame(detectSpeaking);
+            }
           }
-          if (voiceState.muted) {
-            participantEl.classList.add('muted');
-            statusIndicator.classList.add('muted');
-            statusEl.textContent = 'Muted';
-          }
+          
+          detectSpeaking();
+        } catch (error) {
+          log(`Voice activity detection error: ${error.message}`);
         }
-        
-        return participantEl;
       }
 
-      // WebRTC functions
+      // WebRTC Peer Connection Management
       async function createPeerConnection(socketId, isInitiator = false) {
         log(`Creating peer connection with ${socketId}, initiator: ${isInitiator}`);
         
@@ -1063,24 +1289,8 @@
         // Handle remote stream
         pc.ontrack = (event) => {
           log(`Receiving ${event.track.kind} from peer: ${socketId}`);
-          const remoteAudio = new Audio();
-          remoteAudio.srcObject = event.streams[0];
-          remoteAudio.autoplay = true;
-          remoteAudio.volume = 1.0;
-          
-          // Add to DOM to ensure it plays
-          remoteAudio.style.display = 'none';
-          document.body.appendChild(remoteAudio);
-          
-          remoteAudio.play().then(() => {
-            log(`Playing audio from ${socketId}`);
-          }).catch(e => {
-            log(`Audio play error: ${e.message}`);
-            // Try to play with user interaction
-            document.addEventListener('click', () => {
-              remoteAudio.play().catch(console.error);
-            }, { once: true });
-          });
+          const remoteUsername = socketUserMap.get(socketId) || socketId;
+          handleRemoteStream(event.streams[0], socketId, remoteUsername);
         };
         
         // Handle ICE candidates
@@ -1131,88 +1341,40 @@
         return pc;
       }
 
-      // Socket event handlers
-      socket.on("connect", () => {
-        log("Connected to server");
-        socket.emit('joinChannel', currentChannel);
-      });
-
-      socket.on("connect_error", (error) => {
-        log(`Connection error: ${error.message}`);
-      });
-
-      socket.on("userInfo", (data) => {
-        username = data.username;
-        isAdmin = data.isAdmin;
-        if (elements.usernameDisplay) elements.usernameDisplay.textContent = username;
+      function handleRemoteStream(stream, socketId, username) {
+        const remoteAudio = new Audio();
+        remoteAudio.srcObject = stream;
+        remoteAudio.autoplay = true;
+        remoteAudio.dataset.username = username;
+        remoteAudio.dataset.socketId = socketId;
         
-        if (isAdmin) {
-          if (elements.adminBadge) elements.adminBadge.style.display = 'inline';
-          if (elements.addTextChannelBtn) elements.addTextChannelBtn.style.display = 'block';
-          if (elements.addVoiceChannelBtn) elements.addVoiceChannelBtn.style.display = 'block';
-        }
-      });
-
-      socket.on("channelUpdate", (channels) => {
-        if (elements.textChannelsList) {
-          elements.textChannelsList.innerHTML = '';
-          channels.forEach(channel => {
-            const channelEl = createChannelElement(channel, 'text');
-            elements.textChannelsList.appendChild(channelEl);
-          });
-        }
-      });
-
-      socket.on("voiceChannelUpdate", (channels) => {
-        if (elements.voiceChannelsList) {
-          elements.voiceChannelsList.innerHTML = '';
-          channels.forEach(channel => {
-            const channelEl = createChannelElement(channel, 'voice');
-            elements.voiceChannelsList.appendChild(channelEl);
-            
-            // Add participants list if channel has users
-            const users = voiceChannelUsers.get(channel.name);
-            if (users && users.size > 0) {
-              updateVoiceChannelParticipants(channelEl, channel.name, Array.from(users));
-            }
-          });
-        }
-      });
-
-      socket.on("voiceChannelUsers", (data) => {
-        voiceChannelUsers.set(data.channel, new Set(data.users));
+        // Apply user-specific settings
+        const userVolume = userVolumes.get(username) || 100;
+        remoteAudio.volume = userVolume / 100;
+        remoteAudio.muted = locallyMutedUsers.has(username) || isDeafened;
         
-        const channelEl = Array.from(elements.voiceChannelsList.children).find(el => 
-          el.querySelector('.channel-name').textContent === data.channel
-        );
+        // Add to DOM to ensure it plays
+        remoteAudio.style.display = 'none';
+        document.body.appendChild(remoteAudio);
         
-        if (channelEl) {
-          // Update participant count in header
-          const countEl = channelEl.querySelector('.voice-participant-count');
-          if (countEl) {
-            countEl.textContent = data.users.length.toString();
-          }
-          
-          // Update participants list
-          updateVoiceChannelParticipants(channelEl, data.channel, data.users);
-        }
+        remoteAudio.play().then(() => {
+          log(`Playing audio from ${username} (Volume: ${userVolume}%, Muted: ${remoteAudio.muted})`);
+        }).catch(e => {
+          log(`Audio play error: ${e.message}`);
+          // Try to play with user interaction
+          document.addEventListener('click', () => {
+            remoteAudio.play().catch(console.error);
+          }, { once: true });
+        });
         
-        // Update voice UI if viewing this channel
-        if (currentView === 'voice' && data.channel === currentVoiceChannel) {
-          updateVoiceUI(data.channel, data.users);
-        }
-        
-        // Update modal if open for this channel
-        if (elements.voiceModal && elements.voiceModal.style.display === 'flex' && 
-            elements.voiceModalTitle && elements.voiceModalTitle.textContent.includes(data.channel)) {
-          updateVoiceModal(data.channel, data.users);
-        }
-      });
+        return remoteAudio;
+      }
 
       // WebRTC Socket Events
       socket.on('userJoinedVoice', async (data) => {
         if (data.channel === currentVoiceChannel && data.username !== username) {
           log(`${data.username} joined voice channel - initiating connection`);
+          socketUserMap.set(data.socketId, data.username);
           await createPeerConnection(data.socketId, true);
         }
       });
@@ -1220,12 +1382,20 @@
       socket.on('existingVoiceUsers', async (data) => {
         if (data.channel === currentVoiceChannel) {
           log(`Found ${data.users.length} existing users in voice channel`);
+          // Don't initiate connections here, wait for them to send offers
         }
       });
 
       socket.on('userLeftVoice', (data) => {
         if (data.channel === currentVoiceChannel) {
           log(`${data.username} left voice channel`);
+          // Remove from socket map
+          socketUserMap.delete(data.socketId);
+          // Remove audio element
+          const audio = document.querySelector(`audio[data-socket-id="${data.socketId}"]`);
+          if (audio) {
+            audio.remove();
+          }
         }
       });
 
@@ -1234,6 +1404,7 @@
         
         try {
           log(`Received offer from ${data.username}`);
+          socketUserMap.set(data.from, data.username);
           const pc = await createPeerConnection(data.from, false);
           await pc.setRemoteDescription(data.offer);
           
@@ -1257,6 +1428,7 @@
           try {
             await pc.setRemoteDescription(data.answer);
             log(`Received answer from ${data.username}`);
+            socketUserMap.set(data.from, data.username);
           } catch (error) {
             log(`Error handling answer: ${error.message}`);
           }
@@ -1269,9 +1441,30 @@
           try {
             await pc.addIceCandidate(data.candidate);
             log(`Added ICE candidate from ${data.username}`);
+            socketUserMap.set(data.from, data.username);
           } catch (error) {
             log(`Error adding ICE candidate: ${error.message}`);
           }
+        }
+      });
+
+      socket.on('userSpeaking', (data) => {
+        if (data.username !== username) {
+          const currentState = userVoiceStates.get(data.username) || {};
+          currentState.speaking = data.speaking;
+          userVoiceStates.set(data.username, currentState);
+          updateAllVoiceDisplays();
+          log(`${data.username} ${data.speaking ? 'started' : 'stopped'} speaking`);
+        }
+      });
+
+      socket.on('userMuted', (data) => {
+        if (data.username !== username) {
+          const currentState = userVoiceStates.get(data.username) || {};
+          currentState.muted = data.muted;
+          userVoiceStates.set(data.username, currentState);
+          updateAllVoiceDisplays();
+          log(`${data.username} ${data.muted ? 'muted' : 'unmuted'} their microphone`);
         }
       });
 
@@ -1282,38 +1475,28 @@
         showNotification(`Voice channel ${channelName} was deleted`, 'error');
       });
 
+      // Voice Controls Event Listeners
+      elements.muteBtn.addEventListener('click', toggleMute);
+      elements.disconnectBtn.addEventListener('click', leaveVoiceChannel);
+      elements.voiceUIMuteBtn.addEventListener('click', toggleMute);
+      elements.voiceUIDisconnectBtn.addEventListener('click', leaveVoiceChannel);
+      elements.modalMuteBtn.addEventListener('click', toggleMute);
+      elements.modalDisconnectBtn.addEventListener('click', leaveVoiceChannel);
+      elements.userPanelMute.addEventListener('click', toggleMute);
+      elements.userPanelDeafen.addEventListener('click', toggleDeafen);
+
+      // Voice Modal Event Listeners
+      elements.voiceModalClose.addEventListener('click', () => {
+        elements.voiceModal.style.display = 'none';
+      });
+
       socket.on("channelDeleted", (channelName) => {
         if (currentChannel === channelName) {
-          switchToTextChannel('general');
+          switchChannel('general');
         }
         showNotification(`Channel #${channelName} was deleted`, 'error');
       });
 
-      socket.on("userSpeaking", (data) => {
-        if (data.speaking) {
-          speakingUsers.add(data.username);
-        } else {
-          speakingUsers.delete(data.username);
-        }
-        
-        userVoiceStates.set(data.username, {
-          ...userVoiceStates.get(data.username),
-          speaking: data.speaking
-        });
-        
-        updateAllVoiceDisplays();
-      });
-
-      socket.on("userMuted", (data) => {
-        userVoiceStates.set(data.username, {
-          ...userVoiceStates.get(data.username),
-          muted: data.muted
-        });
-        
-        updateAllVoiceDisplays();
-      });
-
-      // Chat functions
       function asciiToEmoji(text) {
         const map = {
           ":)": "😊", ":(": "☹️", ":D": "😄", ";)": "😉",
@@ -1323,8 +1506,6 @@
       }
 
       function displayMessage(data) {
-        if (!elements.messages) return;
-        
         const messageContainer = document.createElement("div");
         messageContainer.classList.add("message-container");
         if (data.username === username) messageContainer.classList.add("mine");
@@ -1356,10 +1537,8 @@
 
       socket.on("chatHistory", (history) => {
         log(`Received ${history.length} messages for #${currentChannel}`);
-        if (elements.messages) {
-          elements.messages.innerHTML = "";
-          history.forEach(displayMessage);
-        }
+        elements.messages.innerHTML = "";
+        history.forEach(displayMessage);
       });
 
       socket.on("chatMessage", (data) => {
@@ -1367,23 +1546,19 @@
       });
 
       socket.on("typing", (name) => {
-        if (elements.typingStatus) {
-          if (name && name !== username) {
-            elements.typingStatus.textContent = `${name} is typing...`;
-          } else {
-            elements.typingStatus.textContent = "";
-          }
+        if (name && name !== username) {
+          elements.typingStatus.textContent = `${name} is typing...`;
+        } else {
+          elements.typingStatus.textContent = "";
         }
       });
 
       function sendMessage() {
-        if (!elements.input) return;
-        
         let text = elements.input.value.trim();
         if (!text) return;
 
         if (text.toLowerCase() === "/clear") {
-          if (elements.messages) elements.messages.innerHTML = "";
+          elements.messages.innerHTML = "";
           elements.input.value = "";
           return;
         }
@@ -1397,144 +1572,77 @@
         socket.emit("typing", null);
       }
 
-      // Event listeners
-      if (elements.button) {
-        elements.button.addEventListener("click", sendMessage);
-      }
+      elements.button.addEventListener("click", sendMessage);
 
-      if (elements.input) {
-        elements.input.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-          } else {
-            sendTyping();
-          }
-        });
-      }
+      elements.input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        } else {
+          sendTyping();
+        }
+      });
 
-      if (elements.addTextChannelBtn) {
-        elements.addTextChannelBtn.addEventListener("click", () => {
-          document.getElementById('channelType').value = 'text';
-          if (elements.channelModal) elements.channelModal.style.display = 'flex';
-          const channelNameInput = document.getElementById('channelName');
-          if (channelNameInput) channelNameInput.focus();
-        });
-      }
+      elements.addTextChannelBtn.addEventListener("click", () => {
+        document.getElementById('channelType').value = 'text';
+        elements.channelModal.style.display = 'flex';
+        document.getElementById('channelName').focus();
+      });
 
-      if (elements.addVoiceChannelBtn) {
-        elements.addVoiceChannelBtn.addEventListener("click", () => {
-          document.getElementById('channelType').value = 'voice';
-          if (elements.channelModal) elements.channelModal.style.display = 'flex';
-          const channelNameInput = document.getElementById('channelName');
-          if (channelNameInput) channelNameInput.focus();
-        });
-      }
+      elements.addVoiceChannelBtn.addEventListener("click", () => {
+              document.getElementById('channelType').value = 'voice';
+        elements.channelModal.style.display = 'flex';
+        document.getElementById('channelName').focus();
+      });
 
-      // Modal event listeners
-      const cancelChannelBtn = document.getElementById('cancelChannel');
-      if (cancelChannelBtn) {
-        cancelChannelBtn.addEventListener("click", () => {
-          if (elements.channelModal) elements.channelModal.style.display = 'none';
-          const channelNameInput = document.getElementById('channelName');
-          const channelDescInput = document.getElementById('channelDescription');
-          if (channelNameInput) channelNameInput.value = '';
-          if (channelDescInput) channelDescInput.value = '';
-        });
-      }
+      document.getElementById('cancelChannel').addEventListener("click", () => {
+        elements.channelModal.style.display = 'none';
+        document.getElementById('channelName').value = '';
+        document.getElementById('channelDescription').value = '';
+      });
 
-      const createChannelBtn = document.getElementById('createChannel');
-      if (createChannelBtn) {
-        createChannelBtn.addEventListener("click", () => {
-          const typeSelect = document.getElementById('channelType');
-          const nameInput = document.getElementById('channelName');
-          const descInput = document.getElementById('channelDescription');
-          
-          if (!typeSelect || !nameInput) return;
-          
-          const type = typeSelect.value;
-          const name = nameInput.value.trim();
-          const description = descInput ? descInput.value.trim() : '';
-          
-          if (!name) return;
-          
-          socket.emit('createChannel', { type, name, description });
-          if (elements.channelModal) elements.channelModal.style.display = 'none';
-          nameInput.value = '';
-          if (descInput) descInput.value = '';
-        });
-      }
+      document.getElementById('createChannel').addEventListener("click", () => {
+        const type = document.getElementById('channelType').value;
+        const name = document.getElementById('channelName').value.trim();
+        const description = document.getElementById('channelDescription').value.trim();
+        
+        if (!name) return;
+        
+        socket.emit('createChannel', { type, name, description });
+        elements.channelModal.style.display = 'none';
+        document.getElementById('channelName').value = '';
+        document.getElementById('channelDescription').value = '';
+      });
 
-      const cancelDeleteBtn = document.getElementById('cancelDelete');
-      if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener("click", () => {
-          if (elements.deleteModal) elements.deleteModal.style.display = 'none';
+      document.getElementById('cancelDelete').addEventListener("click", () => {
+        elements.deleteModal.style.display = 'none';
+        channelToDelete = null;
+        channelTypeToDelete = null;
+      });
+
+      document.getElementById('confirmDelete').addEventListener("click", () => {
+        if (channelToDelete && channelTypeToDelete) {
+          socket.emit('deleteChannel', { name: channelToDelete, type: channelTypeToDelete });
+          elements.deleteModal.style.display = 'none';
           channelToDelete = null;
           channelTypeToDelete = null;
-        });
-      }
+        }
+      });
 
-      const confirmDeleteBtn = document.getElementById('confirmDelete');
-      if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener("click", () => {
-          if (channelToDelete && channelTypeToDelete) {
-            socket.emit('deleteChannel', { name: channelToDelete, type: channelTypeToDelete });
-            if (elements.deleteModal) elements.deleteModal.style.display = 'none';
-            channelToDelete = null;
-            channelTypeToDelete = null;
-          }
-        });
-      }
+      // Logout handlers
+      const logoutHandler = async () => {
+        if (isConnectedToVoice) {
+          leaveVoiceChannel();
+        }
+        await fetch("/auth/logout", { method: "POST" });
+        sessionStorage.removeItem("wyvernUsername");
+        localStorage.removeItem("wyvernToken");
+        window.location.href = "/login.html";
+      };
 
-      // Voice UI event listeners
+      document.getElementById("logoutBtn").addEventListener("click", logoutHandler);
       if (elements.voiceLogoutBtn) {
-        elements.voiceLogoutBtn.addEventListener("click", async () => {
-          if (isConnectedToVoice) {
-            leaveVoiceChannel();
-          }
-          await fetch("/auth/logout", { method: "POST" });
-          sessionStorage.removeItem("wyvernUsername");
-          localStorage.removeItem("wyvernToken");
-          window.location.href = "/login.html";
-        });
-      }
-
-      if (elements.voiceUIMuteBtn) {
-        elements.voiceUIMuteBtn.addEventListener('click', toggleMute);
-      }
-
-      if (elements.voiceUIDisconnectBtn) {
-        elements.voiceUIDisconnectBtn.addEventListener('click', leaveVoiceChannel);
-      }
-
-      // Voice controls event listeners
-      if (elements.muteBtn) {
-        elements.muteBtn.addEventListener('click', toggleMute);
-      }
-
-      if (elements.disconnectBtn) {
-        elements.disconnectBtn.addEventListener('click', leaveVoiceChannel);
-      }
-
-      // Logout button
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
-          if (isConnectedToVoice) {
-            leaveVoiceChannel();
-          }
-          await fetch("/auth/logout", { method: "POST" });
-          sessionStorage.removeItem("wyvernUsername");
-          localStorage.removeItem("wyvernToken");
-          window.location.href = "/login.html";
-        });
-      }
-
-      // Modal close handlers
-      if (elements.voiceModalClose) {
-        elements.voiceModalClose.addEventListener('click', () => {
-          if (elements.voiceModal) elements.voiceModal.style.display = 'none';
-        });
+        elements.voiceLogoutBtn.addEventListener("click", logoutHandler);
       }
 
       socket.on('error', (message) => {
@@ -1546,33 +1654,110 @@
       });
 
       // Close modals when clicking outside
-      if (elements.channelModal) {
-        elements.channelModal.addEventListener('click', (e) => {
-          if (e.target === elements.channelModal) {
+      elements.channelModal.addEventListener('click', (e) => {
+        if (e.target === elements.channelModal) {
+          elements.channelModal.style.display = 'none';
+          document.getElementById('channelName').value = '';
+          document.getElementById('channelDescription').value = '';
+        }
+      });
+
+      elements.deleteModal.addEventListener('click', (e) => {
+        if (e.target === elements.deleteModal) {
+          elements.deleteModal.style.display = 'none';
+          channelToDelete = null;
+          channelTypeToDelete = null;
+        }
+      });
+
+      elements.voiceModal.addEventListener('click', (e) => {
+        if (e.target === elements.voiceModal) {
+          elements.voiceModal.style.display = 'none';
+        }
+      });
+
+      // User panel settings handler
+      if (elements.userPanelSettings) {
+        elements.userPanelSettings.addEventListener('click', () => {
+          showNotification('Settings panel not implemented yet', 'info');
+        });
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + M to toggle mute
+        if ((e.ctrlKey || e.metaKey) && e.key === 'm' && isConnectedToVoice) {
+          e.preventDefault();
+          toggleMute();
+        }
+        
+        // Ctrl/Cmd + D to toggle deafen
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd' && isConnectedToVoice) {
+          e.preventDefault();
+          toggleDeafen();
+        }
+        
+        // Ctrl/Cmd + Shift + D to disconnect from voice
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D' && isConnectedToVoice) {
+          e.preventDefault();
+          leaveVoiceChannel();
+        }
+        
+        // Escape to close modals and context menus
+        if (e.key === 'Escape') {
+          hideContextMenu();
+          if (elements.channelModal.style.display === 'flex') {
             elements.channelModal.style.display = 'none';
-            document.getElementById('channelName').value = '';
-            document.getElementById('channelDescription').value = '';
           }
-        });
-      }
-
-      if (elements.deleteModal) {
-        elements.deleteModal.addEventListener('click', (e) => {
-          if (e.target === elements.deleteModal) {
+          if (elements.deleteModal.style.display === 'flex') {
             elements.deleteModal.style.display = 'none';
-            channelToDelete = null;
-            channelTypeToDelete = null;
           }
-        });
-      }
-
-      if (elements.voiceModal) {
-        elements.voiceModal.addEventListener('click', (e) => {
-          if (e.target === elements.voiceModal) {
+          if (elements.voiceModal.style.display === 'flex') {
             elements.voiceModal.style.display = 'none';
           }
+        }
+      });
+
+      // Handle admin actions responses
+      socket.on('adminActionResult', (data) => {
+        if (data.success) {
+          showNotification(data.message, 'success');
+        } else {
+          showNotification(data.message, 'error');
+        }
+      });
+
+      // Handle being kicked/banned
+      socket.on('kicked', (data) => {
+        showNotification(`You were kicked: ${data.reason}`, 'error');
+        if (data.fromVoice && isConnectedToVoice) {
+          leaveVoiceChannel();
+        }
+      });
+
+      socket.on('banned', (data) => {
+        showNotification(`You were banned: ${data.reason}`, 'error');
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 3000);
+      });
+
+      // Handle server mute/deafen
+      socket.on('serverMuted', () => {
+        if (localStream) {
+          localStream.getAudioTracks().forEach(track => {
+            track.enabled = false;
+          });
+        }
+        showNotification('You have been server muted', 'error');
+      });
+
+      socket.on('serverDeafened', () => {
+        document.querySelectorAll('audio[data-username]').forEach(audio => {
+          audio.muted = true;
         });
-      }
+        showNotification('You have been server deafened', 'error');
+      });
 
       // Cleanup on page unload
       window.addEventListener('beforeunload', () => {
@@ -1581,6 +1766,7 @@
         }
       });
 
+      // Handle server events
       socket.on('serverRestart', (message) => {
         showNotification(message, 'error');
         setTimeout(() => {
@@ -1598,13 +1784,91 @@
         if (reason === 'io server disconnect') {
           showNotification('Server disconnected. Attempting to reconnect...', 'error');
         }
+        
+        // Clean up voice connection on disconnect
+        if (isConnectedToVoice) {
+          peerConnections.forEach(pc => pc.close());
+          peerConnections.clear();
+          if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+          }
+          document.querySelectorAll('audio[data-username]').forEach(audio => {
+            audio.remove();
+          });
+        }
       });
 
       socket.on("reconnect", () => {
         log("Reconnected to server");
         showNotification('Reconnected to server!', 'success');
         socket.emit('joinChannel', currentChannel);
+        
+        // Rejoin voice channel if we were in one
+        if (currentVoiceChannel) {
+          const tempChannel = currentVoiceChannel;
+          currentVoiceChannel = null;
+          joinVoiceChannel(tempChannel);
+        }
       });
+
+      // Initialize context menu system
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupContextMenuListeners);
+      } else {
+        setupContextMenuListeners();
+      }
+
+      // Initialize user panel
+      function initializeUserPanel() {
+        if (elements.userPanelName) {
+          elements.userPanelName.textContent = username;
+        }
+        if (elements.userPanelAvatar) {
+          elements.userPanelAvatar.textContent = username.charAt(0).toUpperCase();
+        }
+        updateMuteButton();
+        updateDeafenButton();
+      }
+
+      // Initialize the app
+      function initialize() {
+        log('Initializing Wyvern Chat...');
+        initializeUserPanel();
+        
+        // Set initial view
+        switchToChatView();
+        
+        // Focus on chat input
+        if (elements.input) {
+          elements.input.focus();
+        }
+        
+        log('Wyvern Chat initialized successfully');
+      }
+
+      // Start the application
+      initialize();
+
+      // Expose some functions globally for debugging
+      window.wyvernDebug = {
+        log,
+        showNotification,
+        userVoiceStates,
+        locallyMutedUsers,
+        userVolumes,
+        peerConnections,
+        socketUserMap,
+        currentVoiceChannel,
+        isConnectedToVoice,
+        toggleMute,
+        toggleDeafen,
+        leaveVoiceChannel,
+        switchToVoiceView,
+        switchToChatView
+      };
+
+      log('Context menu system and voice features initialized');
     })();
   </script>
 </body>

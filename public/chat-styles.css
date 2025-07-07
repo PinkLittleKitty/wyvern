@@ -1380,3 +1380,179 @@
     padding: 8px 16px;
   }
 }
+
+/* Context Menu Styles */
+.context-menu {
+  position: fixed;
+  background: var(--sidebar);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 5000;
+  display: none;
+  font-size: 14px;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+.context-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu-item:hover {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.context-menu-item.danger {
+  color: var(--voice-red);
+}
+
+.context-menu-item.danger:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+.context-menu-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+  background: transparent;
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: #333;
+  margin: 4px 0;
+}
+
+.context-menu-header {
+  padding: 8px 12px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 4px;
+}
+
+.context-menu-volume {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.context-menu-volume label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.context-menu-volume input[type="range"] {
+  width: 100%;
+  height: 4px;
+  background: #333;
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+  margin: 4px 0;
+}
+
+.context-menu-volume input[type="range"]:hover {
+  background: #444;
+}
+
+.context-menu-volume input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.context-menu-volume input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.volume-display {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* User selection prevention during context menu */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Highlight user being right-clicked */
+.context-target {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Add styles for locally muted users */
+.locally-muted {
+  opacity: 0.7;
+  position: relative;
+}
+
+.local-mute-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  background: var(--voice-red);
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.voice-ui-participant.locally-muted {
+  border: 1px solid var(--voice-red);
+}
+
+.voice-ui-participant .local-mute-indicator {
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}
+
+/* Improve context menu item icons */
+.context-menu-item span:first-child {
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Prevent text selection during context menu operations */
+.context-menu * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
