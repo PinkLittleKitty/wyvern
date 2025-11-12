@@ -626,6 +626,29 @@
       });
     }
 
+    // Voice connection bar controls
+    const voiceDisconnect = document.getElementById('voiceDisconnect');
+    const voiceScreenShare = document.getElementById('voiceScreenShare');
+    const voiceCamera = document.getElementById('voiceCamera');
+
+    if (voiceDisconnect) {
+      voiceDisconnect.addEventListener('click', () => {
+        leaveVoiceChannel();
+      });
+    }
+
+    if (voiceScreenShare) {
+      voiceScreenShare.addEventListener('click', () => {
+        showToast('Screen sharing coming soon!', 'info', 'Feature Preview');
+      });
+    }
+
+    if (voiceCamera) {
+      voiceCamera.addEventListener('click', () => {
+        showToast('Camera support coming soon!', 'info', 'Feature Preview');
+      });
+    }
+
     // User panel info click - show profile or settings
     const userPanelInfo = document.querySelector('.user-panel-info');
     if (userPanelInfo) {
@@ -1230,6 +1253,8 @@
     const voiceUITitle = document.getElementById('voiceUITitle');
     const voiceUsername = document.getElementById('voiceUsername');
     const userPanelStatusText = document.getElementById('userPanelStatusText');
+    const voiceConnectionBar = document.getElementById('voiceConnectionBar');
+    const voiceConnectionChannelName = document.getElementById('voiceConnectionChannelName');
 
     if (voiceUITitle) {
       voiceUITitle.innerHTML = `<i class="fas fa-volume-up"></i> ${channelName}`;
@@ -1243,6 +1268,14 @@
     if (userPanelStatusText) {
       userPanelStatusText.innerHTML = `<i class="fas fa-volume-up"></i> ${channelName}`;
       userPanelStatusText.style.color = 'var(--voice-green)';
+    }
+
+    // Show voice connection bar
+    if (voiceConnectionBar) {
+      voiceConnectionBar.style.display = 'flex';
+    }
+    if (voiceConnectionChannelName) {
+      voiceConnectionChannelName.textContent = channelName;
     }
 
     // Update channel list to show connection
@@ -1272,11 +1305,17 @@
     const userPanelStatusText = document.getElementById('userPanelStatusText');
     const userPanelMute = document.getElementById('userPanelMute');
     const userPanelDeafen = document.getElementById('userPanelDeafen');
+    const voiceConnectionBar = document.getElementById('voiceConnectionBar');
 
     // Reset user panel status
     if (userPanelStatusText) {
       userPanelStatusText.textContent = 'Online';
       userPanelStatusText.style.color = '';
+    }
+
+    // Hide voice connection bar
+    if (voiceConnectionBar) {
+      voiceConnectionBar.style.display = 'none';
     }
 
     // Reset user panel buttons

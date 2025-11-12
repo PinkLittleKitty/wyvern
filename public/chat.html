@@ -41,6 +41,31 @@
       </div>
     </div>
 
+    <!-- Voice Connection Bar (shows when in voice) -->
+    <div class="voice-connection-bar" id="voiceConnectionBar" style="display: none;">
+      <div class="voice-connection-info">
+        <div class="voice-connection-status">
+          <i class="fas fa-signal"></i>
+          <span class="voice-connection-label">Voice Connected</span>
+        </div>
+        <div class="voice-connection-channel" id="voiceConnectionChannel">
+          <i class="fas fa-volume-up"></i>
+          <span id="voiceConnectionChannelName">Channel</span>
+        </div>
+      </div>
+      <div class="voice-connection-controls">
+        <button class="voice-connection-btn" id="voiceScreenShare" title="Share Screen (Coming Soon)" disabled>
+          <i class="fas fa-desktop"></i>
+        </button>
+        <button class="voice-connection-btn" id="voiceCamera" title="Toggle Camera (Coming Soon)" disabled>
+          <i class="fas fa-video"></i>
+        </button>
+        <button class="voice-connection-btn disconnect-btn" id="voiceDisconnect" title="Disconnect">
+          <i class="fas fa-phone-slash"></i>
+        </button>
+      </div>
+    </div>
+
     <!-- User Panel spanning both sidebars -->
     <div class="user-panel">
       <div class="user-panel-info">
