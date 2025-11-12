@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wyvern Chat</title>
+  <title>Wyvern — Chat</title>
   <link rel="icon" href="/wyvernLogo.png" />
   <link rel="stylesheet" href="chat-styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -57,7 +57,7 @@
 
   <div class="chat-area">
     <div class="chat-header">
-      <h2 id="currentChannel"># general</h2>
+      <h2 id="currentChannel">general</h2>
       <div class="user-info">
         <span id="username"></span>
         <span class="admin-badge" id="adminBadge" style="display: none;">ADMIN</span>
@@ -68,8 +68,13 @@
     <div id="chat-messages" class="chat-messages"></div>
     <div class="typing-indicator" id="typingIndicator"></div>
     <div class="chat-input">
-      <input id="chat-input" placeholder="Message #general" />
-      <button id="send-button">Send</button>
+      <div class="chat-input-wrapper">
+        <input id="chat-input" placeholder="Message #general" />
+        <div class="chat-input-actions">
+          <button class="chat-input-action-btn" title="Add emoji">😊</button>
+        </div>
+      </div>
+      <button id="send-button" title="Send message">➤</button>
     </div>
   </div>
 

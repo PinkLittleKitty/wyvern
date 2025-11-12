@@ -411,6 +411,8 @@
     const messagesContainer = document.getElementById("chat-messages");
     const messageEl = document.createElement("div");
     messageEl.className = "message-container";
+    messageEl.dataset.username = data.username;
+    messageEl.dataset.timestamp = data.timestamp;
 
     if (data.username === username) {
       messageEl.classList.add("mine");
@@ -420,16 +422,53 @@
       ? new Date(data.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";
 
+    // Check if we should group this message with the previous one
+    const lastMessage = messagesContainer.lastElementChild;
+    const shouldGroup = lastMessage && 
+                       lastMessage.dataset.username === data.username &&
+                       data.timestamp && lastMessage.dataset.timestamp &&
+                       (new Date(data.timestamp) - new Date(lastMessage.dataset.timestamp)) < 300000; // 5 minutes
+
+    if (shouldGroup) {
+      messageEl.classList.add("grouped");
+    }
+
+    // Get first letter for avatar
+    const avatarLetter = data.username.charAt(0).toUpperCase();
+    
+    // Check if user is admin (you can enhance this with actual admin data)
+    const isAdmin = data.isAdmin || false;
+    const adminBadge = isAdmin ? '<span class="message-admin-badge">Admin</span>' : '';
+
+    // Escape HTML in message but preserve line breaks
+    const escapedMessage = escapeHtml(data.message);
+
     messageEl.innerHTML = `
-      <p>
-        <strong>${data.username}</strong> 
-        <span class="timestamp">${timeStr}</span><br>
-        ${data.message}
-      </p>
+      <div class="message-avatar">${avatarLetter}</div>
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-username">${escapeHtml(data.username)}</span>
+          ${adminBadge}
+          <span class="message-timestamp">${timeStr}</span>
+        </div>
+        <div class="message-text">${escapedMessage}</div>
+      </div>
+      <div class="message-actions">
+        <button class="message-action-btn" title="Add Reaction">😊</button>
+        <button class="message-action-btn" title="Reply">💬</button>
+        <button class="message-action-btn" title="More">⋯</button>
+      </div>
     `;
 
     messagesContainer.appendChild(messageEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Helper function to escape HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   // Online users list functionality
@@ -689,7 +728,13 @@
     }
 
     if (currentChannelEl) {
-      currentChannelEl.textContent = `# ${channelName}`;
+      currentChannelEl.textContent = channelName;
+    }
+
+    // Update input placeholder
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.placeholder = `Message #${channelName}`;
     }
 
     // Update channel list to show active text channel
