@@ -79,12 +79,17 @@
   let localStream = null;
   let peerConnections = new Map();
   let isMuted = false;
+  let isCameraOn = false;
+  let localVideoStream = null;
   
   // Store voice channel users for each channel
   const voiceChannelUsers = new Map();
   
   // Store user states (muted/deafened) for each user
-  const userVoiceStates = new Map(); // username -> { muted: bool, deafened: bool }
+  const userVoiceStates = new Map(); // username -> { muted: bool, deafened: bool, camera: bool }
+  
+  // Store remote video streams for restoration after re-renders
+  const remoteVideoStreams = new Map(); // username -> MediaStream
 
   // Get token
   function getCookie(name) {
@@ -401,6 +406,10 @@
         peerConnections.delete(data.socketId);
       }
 
+      // Clean up video and audio
+      removeRemoteAudio(data.username);
+      removeRemoteVideo(data.username);
+
       // Clear user voice state
       userVoiceStates.delete(data.username);
     });
@@ -441,8 +450,20 @@
       log(`${data.username} ${data.deafened ? 'deafened' : 'undeafened'}`);
       
       // Update stored state
-      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false };
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false, camera: false };
       state.deafened = data.deafened;
+      userVoiceStates.set(data.username, state);
+      
+      // Update UI
+      updateParticipantStatus(data.username);
+    });
+
+    socket.on("userCamera", (data) => {
+      log(`${data.username} camera ${data.camera ? 'enabled' : 'disabled'}`);
+      
+      // Update stored state
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false, camera: false };
+      state.camera = data.camera;
       userVoiceStates.set(data.username, state);
       
       // Update UI
@@ -458,20 +479,38 @@
         return;
       }
 
-      // If we already have a connection and we're the initiator, ignore this offer
-      if (peerConnections.has(data.from)) {
-        const existingPc = peerConnections.get(data.from);
-        if (existingPc.signalingState !== 'stable') {
-          log(`⚠️ Already have an active connection to ${data.username}, ignoring offer`);
+      // Check if we already have a connection
+      let pc = peerConnections.get(data.from);
+      
+      if (pc) {
+        // Handle renegotiation
+        if (pc.signalingState === 'stable') {
+          log(`🔄 Handling renegotiation from ${data.username}`);
+          try {
+            await pc.setRemoteDescription(data.offer);
+            log(`✅ Set remote description for renegotiation from ${data.username}`);
+
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            log(`✅ Created and set local answer for renegotiation`);
+
+            socket.emit("webrtc-answer", {
+              answer: answer,
+              to: data.from
+            });
+            log(`📤 Sent WebRTC answer to ${data.username}`);
+          } catch (err) {
+            log(`❌ Error handling renegotiation from ${data.username}: ${err.message}`);
+          }
+          return;
+        } else {
+          log(`⚠️ Connection not stable (${pc.signalingState}), ignoring offer`);
           return;
         }
-        // If connection is stable but we got an offer, close and recreate
-        log(`⚠️ Existing connection is stable, closing and handling new offer`);
-        existingPc.close();
-        peerConnections.delete(data.from);
       }
 
-      const pc = createPeerConnection(data.from, data.username, false);
+      // Create new peer connection for initial connection
+      pc = createPeerConnection(data.from, data.username, false);
 
       try {
         await pc.setRemoteDescription(data.offer);
@@ -613,11 +652,7 @@
       });
     }
 
-    if (voiceCamera) {
-      voiceCamera.addEventListener('click', () => {
-        showToast('Camera support coming soon!', 'info', 'Feature Preview');
-      });
-    }
+    // Camera button is handled in setupVoiceButtonHandlers (after voice functions are defined)
 
     // User panel info click - show profile or settings
     const userPanelInfo = document.querySelector('.user-panel-info');
@@ -997,9 +1032,9 @@
     const pc = new RTCPeerConnection(rtcConfig);
     peerConnections.set(socketId, pc);
 
-    // Add local stream to peer connection
+    // Add local audio stream to peer connection
     if (localStream) {
-      log(`🎤 Adding ${localStream.getTracks().length} tracks to peer connection for ${username}`);
+      log(`🎤 Adding ${localStream.getTracks().length} audio tracks to peer connection for ${username}`);
       localStream.getTracks().forEach(track => {
         pc.addTrack(track, localStream);
         log(`✅ Added ${track.kind} track to ${username}`);
@@ -1008,11 +1043,25 @@
       log(`❌ No local stream to add to peer connection for ${username}`);
     }
 
+    // Add local video stream if camera is on
+    if (localVideoStream && isCameraOn) {
+      log(`📹 Adding video track to peer connection for ${username}`);
+      localVideoStream.getTracks().forEach(track => {
+        pc.addTrack(track, localVideoStream);
+        log(`✅ Added video track to ${username}`);
+      });
+    }
+
     // Handle incoming remote stream
     pc.ontrack = (event) => {
-      log(`Received remote stream from ${username}`);
+      log(`📺 Received ${event.track.kind} track from ${username}`);
       const remoteStream = event.streams[0];
-      playRemoteAudio(remoteStream, username);
+      
+      if (event.track.kind === 'audio') {
+        playRemoteAudio(remoteStream, username);
+      } else if (event.track.kind === 'video') {
+        playRemoteVideo(remoteStream, username);
+      }
     };
 
     // Handle ICE candidates
@@ -1076,6 +1125,98 @@
       existingAudio.remove();
       log(`Removed audio element for ${username}`);
     }
+  }
+
+  function playRemoteVideo(stream, username) {
+    log(`📹 Playing video from ${username}`);
+    
+    // Store the stream for restoration after re-renders
+    remoteVideoStreams.set(username, stream);
+    
+    // Find all participant elements for this user
+    const participants = document.querySelectorAll(`.voice-participant[data-username="${username}"]`);
+    
+    participants.forEach(participant => {
+      let videoEl = participant.querySelector('video.remote-video');
+      
+      if (!videoEl) {
+        videoEl = document.createElement('video');
+        videoEl.className = 'remote-video';
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        
+        // Insert video before other content
+        participant.insertBefore(videoEl, participant.firstChild);
+      }
+      
+      videoEl.srcObject = stream;
+      participant.classList.add('has-video');
+    });
+
+    // Update voice channel list with expanded video
+    const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${username}"]`);
+    voiceUsers.forEach(userEl => {
+      // Create video container if it doesn't exist
+      let videoContainer = userEl.querySelector('.voice-user-video-container');
+      if (!videoContainer) {
+        videoContainer = document.createElement('div');
+        videoContainer.className = 'voice-user-video-container';
+        
+        const videoEl = document.createElement('video');
+        videoEl.className = 'voice-user-video';
+        videoEl.autoplay = true;
+        videoEl.playsInline = true;
+        
+        const nameOverlay = document.createElement('div');
+        nameOverlay.className = 'voice-user-video-name';
+        nameOverlay.textContent = username;
+        
+        videoContainer.appendChild(videoEl);
+        videoContainer.appendChild(nameOverlay);
+        
+        // Insert at the beginning of the user element
+        userEl.insertBefore(videoContainer, userEl.firstChild);
+      }
+      
+      const videoEl = videoContainer.querySelector('video');
+      if (videoEl) {
+        videoEl.srcObject = stream;
+      }
+      
+      userEl.classList.add('has-video-expanded');
+    });
+  }
+
+  function removeRemoteVideo(username) {
+    // Clear stored stream
+    remoteVideoStreams.delete(username);
+    
+    // Remove from participants
+    const participants = document.querySelectorAll(`.voice-participant[data-username="${username}"]`);
+    participants.forEach(participant => {
+      const videoEl = participant.querySelector('video.remote-video');
+      if (videoEl) {
+        videoEl.srcObject = null;
+        videoEl.remove();
+      }
+      participant.classList.remove('has-video');
+    });
+
+    // Remove from voice channel list
+    const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${username}"]`);
+    voiceUsers.forEach(userEl => {
+      const videoContainer = userEl.querySelector('.voice-user-video-container');
+      if (videoContainer) {
+        const videoEl = videoContainer.querySelector('video');
+        if (videoEl) {
+          videoEl.srcObject = null;
+        }
+        videoContainer.remove();
+      }
+      userEl.classList.remove('has-video-expanded');
+    });
+
+    log(`Removed video for ${username}`);
   }
 
   function switchToTextChannel(channelName) {
@@ -1157,7 +1298,15 @@
       localStream = null;
     }
 
-    // Clean up all peer connections and remote audio
+    // Stop and clean up camera
+    if (localVideoStream) {
+      localVideoStream.getTracks().forEach(track => track.stop());
+      localVideoStream = null;
+    }
+    isCameraOn = false;
+    hideLocalVideo();
+
+    // Clean up all peer connections and remote audio/video
     peerConnections.forEach((pc, socketId) => {
       pc.close();
     });
@@ -1166,6 +1315,12 @@
     // Remove all remote audio elements
     document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
       audio.remove();
+    });
+
+    // Remove all remote video elements
+    document.querySelectorAll('video.remote-video, video.remote-video-small').forEach(video => {
+      video.srcObject = null;
+      video.remove();
     });
 
     if (window.wyvernSocket) {
@@ -1234,6 +1389,285 @@
     }
 
     log(`${isMuted ? 'Muted' : 'Unmuted'} microphone`);
+  }
+
+  async function toggleCamera() {
+    if (!currentVoiceChannel) {
+      showNotification('Join a voice channel first', 'error');
+      return;
+    }
+
+    try {
+      if (!isCameraOn) {
+        // Turn camera ON
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }
+        });
+
+        localVideoStream = videoStream;
+        isCameraOn = true;
+
+        // Add video track to all existing peer connections
+        const videoTrack = videoStream.getVideoTracks()[0];
+        const renegotiationPromises = [];
+        
+        peerConnections.forEach((pc, socketId) => {
+          const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) {
+            // Replace existing video track
+            sender.replaceTrack(videoTrack);
+          } else {
+            // Add new video track and renegotiate
+            pc.addTrack(videoTrack, videoStream);
+            
+            // Create new offer to renegotiate
+            const renegotiate = async () => {
+              try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                if (window.wyvernSocket) {
+                  window.wyvernSocket.emit('webrtc-offer', {
+                    offer: offer,
+                    to: socketId
+                  });
+                  log(`📤 Sent renegotiation offer to ${socketId} for video track`);
+                }
+              } catch (error) {
+                console.error('Renegotiation error:', error);
+              }
+            };
+            
+            renegotiationPromises.push(renegotiate());
+          }
+        });
+
+        // Wait for all renegotiations to complete
+        await Promise.all(renegotiationPromises);
+
+        // Show local video
+        showLocalVideo();
+        showNotification('Camera enabled', 'success');
+      } else {
+        // Turn camera OFF
+        if (localVideoStream) {
+          localVideoStream.getTracks().forEach(track => track.stop());
+          localVideoStream = null;
+        }
+
+        isCameraOn = false;
+
+        // Remove video track from all peer connections and renegotiate
+        const renegotiationPromises = [];
+        
+        peerConnections.forEach((pc, socketId) => {
+          const senders = pc.getSenders();
+          senders.forEach(sender => {
+            if (sender.track && sender.track.kind === 'video') {
+              pc.removeTrack(sender);
+            }
+          });
+          
+          // Create new offer to renegotiate without video
+          const renegotiate = async () => {
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              
+              if (window.wyvernSocket) {
+                window.wyvernSocket.emit('webrtc-offer', {
+                  offer: offer,
+                  to: socketId
+                });
+                log(`📤 Sent renegotiation offer to ${socketId} to remove video track`);
+              }
+            } catch (error) {
+              console.error('Renegotiation error:', error);
+            }
+          };
+          
+          renegotiationPromises.push(renegotiate());
+        });
+
+        // Wait for all renegotiations to complete
+        await Promise.all(renegotiationPromises);
+
+        // Hide local video
+        hideLocalVideo();
+        showNotification('Camera disabled', 'success');
+      }
+
+      // Update button state
+      const voiceCamera = document.getElementById('voiceCamera');
+      if (voiceCamera) {
+        if (isCameraOn) {
+          voiceCamera.classList.add('active');
+        } else {
+          voiceCamera.classList.remove('active');
+        }
+      }
+
+      // Update local state
+      const state = userVoiceStates.get(username) || { muted: false, deafened: false, camera: false };
+      state.camera = isCameraOn;
+      userVoiceStates.set(username, state);
+
+      // Broadcast camera state
+      if (window.wyvernSocket) {
+        window.wyvernSocket.emit('userCamera', { camera: isCameraOn });
+      }
+
+      log(`Camera ${isCameraOn ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Camera error:', error);
+      showNotification('Failed to access camera: ' + error.message, 'error');
+    }
+  }
+
+  function showLocalVideo() {
+    // Show in user panel avatar
+    const userPanelAvatar = document.getElementById('userPanelAvatar');
+    if (userPanelAvatar) {
+      let videoEl = userPanelAvatar.querySelector('video.local-video');
+      if (!videoEl) {
+        videoEl = document.createElement('video');
+        videoEl.className = 'local-video';
+        videoEl.autoplay = true;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        userPanelAvatar.appendChild(videoEl);
+      }
+      videoEl.srcObject = localVideoStream;
+      userPanelAvatar.classList.add('has-video');
+    }
+
+    // Show in voice channel list for current user
+    const currentUserVoiceElements = document.querySelectorAll(`.voice-user.current-user[data-username="${username}"]`);
+    currentUserVoiceElements.forEach(userEl => {
+      // Create video container if it doesn't exist
+      let videoContainer = userEl.querySelector('.voice-user-video-container');
+      if (!videoContainer) {
+        videoContainer = document.createElement('div');
+        videoContainer.className = 'voice-user-video-container';
+        
+        const videoEl = document.createElement('video');
+        videoEl.className = 'voice-user-video';
+        videoEl.autoplay = true;
+        videoEl.muted = true;
+        videoEl.playsInline = true;
+        
+        const nameOverlay = document.createElement('div');
+        nameOverlay.className = 'voice-user-video-name';
+        nameOverlay.textContent = username + ' (You)';
+        
+        videoContainer.appendChild(videoEl);
+        videoContainer.appendChild(nameOverlay);
+        
+        // Insert at the beginning of the user element
+        userEl.insertBefore(videoContainer, userEl.firstChild);
+      }
+      
+      const videoEl = videoContainer.querySelector('video');
+      if (videoEl) {
+        videoEl.srcObject = localVideoStream;
+      }
+      
+      userEl.classList.add('has-video-expanded');
+    });
+  }
+
+  function hideLocalVideo() {
+    // Hide from user panel avatar
+    const userPanelAvatar = document.getElementById('userPanelAvatar');
+    if (userPanelAvatar) {
+      const videoEl = userPanelAvatar.querySelector('video.local-video');
+      if (videoEl) {
+        videoEl.srcObject = null;
+        videoEl.remove();
+      }
+      userPanelAvatar.classList.remove('has-video');
+    }
+
+    // Hide from voice channel list
+    const currentUserVoiceElements = document.querySelectorAll(`.voice-user.current-user[data-username="${username}"]`);
+    currentUserVoiceElements.forEach(userEl => {
+      const videoContainer = userEl.querySelector('.voice-user-video-container');
+      if (videoContainer) {
+        const videoEl = videoContainer.querySelector('video');
+        if (videoEl) {
+          videoEl.srcObject = null;
+        }
+        videoContainer.remove();
+      }
+      userEl.classList.remove('has-video-expanded');
+    });
+  }
+
+  function restoreVideosInChannelList() {
+    // Restore local video if camera is on
+    if (isCameraOn && localVideoStream) {
+      const currentUserVoiceElements = document.querySelectorAll(`.voice-user.current-user[data-username="${username}"]`);
+      currentUserVoiceElements.forEach(userEl => {
+        // Only restore if not already present
+        if (!userEl.querySelector('.voice-user-video-container')) {
+          const videoContainer = document.createElement('div');
+          videoContainer.className = 'voice-user-video-container';
+          
+          const videoEl = document.createElement('video');
+          videoEl.className = 'voice-user-video';
+          videoEl.autoplay = true;
+          videoEl.muted = true;
+          videoEl.playsInline = true;
+          videoEl.srcObject = localVideoStream;
+          
+          const nameOverlay = document.createElement('div');
+          nameOverlay.className = 'voice-user-video-name';
+          nameOverlay.textContent = username + ' (You)';
+          
+          videoContainer.appendChild(videoEl);
+          videoContainer.appendChild(nameOverlay);
+          userEl.insertBefore(videoContainer, userEl.firstChild);
+          userEl.classList.add('has-video-expanded');
+        }
+      });
+    }
+
+    // Restore remote videos for users with camera on
+    userVoiceStates.forEach((state, user) => {
+      if (state.camera && user !== username) {
+        // Check if we have a stored video stream for this user
+        const stream = remoteVideoStreams.get(user);
+        if (stream) {
+          // Restore video in channel list
+          const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${user}"]`);
+          voiceUsers.forEach(userEl => {
+            if (!userEl.querySelector('.voice-user-video-container')) {
+              const videoContainer = document.createElement('div');
+              videoContainer.className = 'voice-user-video-container';
+              
+              const videoEl = document.createElement('video');
+              videoEl.className = 'voice-user-video';
+              videoEl.autoplay = true;
+              videoEl.playsInline = true;
+              videoEl.srcObject = stream;
+              
+              const nameOverlay = document.createElement('div');
+              nameOverlay.className = 'voice-user-video-name';
+              nameOverlay.textContent = user;
+              
+              videoContainer.appendChild(videoEl);
+              videoContainer.appendChild(nameOverlay);
+              userEl.insertBefore(videoContainer, userEl.firstChild);
+              userEl.classList.add('has-video-expanded');
+            }
+          });
+        }
+      }
+    });
   }
 
   function showVoiceIndicators(channelName) {
@@ -1361,11 +1795,39 @@
       voiceModalParticipants.innerHTML = participantHTML;
     }
 
+    // Restore video elements after HTML update
+    users.forEach(user => {
+      const state = userVoiceStates.get(user) || { muted: false, deafened: false, camera: false };
+      if (state.camera) {
+        // Re-apply video for users with camera on
+        if (user === username && localVideoStream) {
+          // Restore own video in voice UI
+          const participants = document.querySelectorAll(`.voice-participant[data-username="${user}"]`);
+          participants.forEach(participant => {
+            let videoEl = participant.querySelector('video.remote-video');
+            if (!videoEl) {
+              videoEl = document.createElement('video');
+              videoEl.className = 'remote-video';
+              videoEl.autoplay = true;
+              videoEl.muted = true;
+              videoEl.playsInline = true;
+              participant.insertBefore(videoEl, participant.firstChild);
+            }
+            videoEl.srcObject = localVideoStream;
+            participant.classList.add('has-video');
+          });
+        }
+      }
+    });
+
     // Update the channel list to show user counts and refresh the display
     updateChannelActiveStates();
 
     // Force re-render of voice channels to show updated user counts
     forceUpdateVoiceChannelDisplay();
+    
+    // Restore videos in channel list after re-render
+    restoreVideosInChannelList();
   }
 
   function updateParticipantStatus(username) {
@@ -1637,6 +2099,7 @@
     const userPanelMute = document.getElementById("userPanelMute");
     const userPanelDeafen = document.getElementById("userPanelDeafen");
     const voiceDisconnect = document.getElementById('voiceDisconnect');
+    const voiceCamera = document.getElementById('voiceCamera');
 
     if (userPanelMute) {
       userPanelMute.addEventListener("click", () => {
@@ -1692,6 +2155,12 @@
     if (voiceDisconnect) {
       voiceDisconnect.addEventListener('click', () => {
         leaveVoiceChannel();
+      });
+    }
+
+    if (voiceCamera) {
+      voiceCamera.addEventListener('click', () => {
+        toggleCamera();
       });
     }
 

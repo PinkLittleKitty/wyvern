@@ -139,7 +139,7 @@ const defaultVoiceChannels = [
 ];
 
 const voiceRooms = new Map(); // channelName -> Set of socket IDs
-const userVoiceStates = new Map(); // socketId -> { username, muted, deafened, channel }
+const userVoiceStates = new Map(); // socketId -> { username, muted, deafened, camera, channel }
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -622,6 +622,7 @@ io.on('connection', async (socket) => {
   userVoiceStates.forEach((state, socketId) => {
     socket.emit('userMuted', { username: state.username, muted: state.muted });
     socket.emit('userDeafened', { username: state.username, deafened: state.deafened });
+    socket.emit('userCamera', { username: state.username, camera: state.camera });
   });
 
   // Send online users to the new connection and broadcast update
@@ -690,6 +691,7 @@ io.on('connection', async (socket) => {
       username,
       muted: false,
       deafened: false,
+      camera: false,
       channel: channelName
     });
     
@@ -706,6 +708,7 @@ io.on('connection', async (socket) => {
       if (existingState) {
         socket.emit('userMuted', { username: user.username, muted: existingState.muted });
         socket.emit('userDeafened', { username: user.username, deafened: existingState.deafened });
+        socket.emit('userCamera', { username: user.username, camera: existingState.camera });
       }
     });
     
@@ -1051,6 +1054,21 @@ io.on('connection', async (socket) => {
     io.emit('userDeafened', {
       username: username,
       deafened: data.deafened
+    });
+  });
+
+  socket.on('userCamera', (data) => {
+    // Update stored state
+    const state = userVoiceStates.get(socket.id);
+    if (state) {
+      state.camera = data.camera;
+      userVoiceStates.set(socket.id, state);
+    }
+    
+    // Broadcast to EVERYONE so camera state is visible
+    io.emit('userCamera', {
+      username: username,
+      camera: data.camera
     });
   });
 });

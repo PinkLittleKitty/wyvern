@@ -2900,3 +2900,195 @@ body.users-panel-hidden .users-panel {
 .voice-participant-status i.fa-headphones-slash {
   color: var(--voice-red);
 }
+
+
+/* Video Elements */
+.local-video,
+.remote-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.user-panel-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.user-panel-avatar.has-video {
+  border: 2px solid var(--voice-green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Voice Participant Video */
+.voice-participant {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.voice-participant.has-video {
+  min-height: 200px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.voice-participant.has-video .remote-video {
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  object-fit: cover;
+  position: relative;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.voice-participant.has-video .voice-participant-avatar {
+  display: none;
+}
+
+.voice-participant.has-video .voice-participant-name {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.voice-participant.has-video .voice-participant-status {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 1;
+}
+
+/* Voice User (in channel list) Video */
+.voice-user {
+  position: relative;
+}
+
+.voice-user-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.voice-user.has-video .voice-user-avatar {
+  border: 2px solid var(--voice-green);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+}
+
+.remote-video-small {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Camera button active state */
+.voice-connection-btn.active {
+  background: var(--voice-green) !important;
+  color: white !important;
+}
+
+/* Voice UI Participants Grid */
+.voice-ui-participants {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.voice-ui-participants .voice-participant.has-video {
+  grid-column: span 1;
+}
+
+/* Expand first video if only one person has camera on */
+.voice-ui-participants .voice-participant.has-video:first-child:last-child {
+  grid-column: 1 / -1;
+  min-height: 400px;
+}
+
+.voice-ui-participants .voice-participant.has-video:first-child:last-child .remote-video {
+  height: 380px;
+}
+
+
+/* Expanded video in voice channel list */
+.voice-user.has-video-expanded {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  min-height: 150px;
+}
+
+.voice-user-video-container {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+}
+
+.voice-user-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.voice-user-video-name {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  z-index: 1;
+}
+
+.voice-user.has-video-expanded .voice-user-avatar {
+  display: none;
+}
+
+.voice-user.has-video-expanded .voice-user-name {
+  font-size: 12px;
+  margin-left: 0;
+}
+
+.voice-user.has-video-expanded .voice-user-status {
+  margin-left: auto;
+}
+
+/* Current user with video gets green border */
+.voice-user.current-user.has-video-expanded {
+  border: 2px solid var(--voice-green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.voice-user.current-user.has-video-expanded .voice-user-video-name {
+  color: var(--voice-green);
+}
