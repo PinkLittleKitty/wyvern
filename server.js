@@ -668,15 +668,35 @@ io.on('connection', async (socket) => {
     if (!voiceRooms.has(channelName)) {
       voiceRooms.set(channelName, new Set());
     }
+    
+    // Get existing users before adding the new one
+    const existingUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
+      const s = io.sockets.sockets.get(socketId);
+      return s ? { socketId, username: s.user.username } : null;
+    }).filter(Boolean);
+    
+    // Add the new user
     voiceRooms.get(channelName).add(socket.id);
     
+    // Send existing users to the new joiner so they can establish connections
+    existingUsers.forEach(user => {
+      socket.emit('userJoinedVoice', {
+        username: user.username,
+        channel: channelName,
+        socketId: user.socketId
+      });
+    });
+    
+    // Get updated room users list
     const roomUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
       const s = io.sockets.sockets.get(socketId);
       return s ? s.user.username : null;
     }).filter(Boolean);
     
+    // Broadcast updated user list to everyone
     io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
     
+    // Notify other users in the channel about the new joiner
     socket.to(`voice-${channelName}`).emit('userJoinedVoice', { 
       username, 
       channel: channelName,

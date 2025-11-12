@@ -461,16 +461,257 @@
       background: #b91c1c;
     }
 
-    .voice-channel .channel-header {
+    /* Voice Channel Styles */
+    .voice-channel-item {
       padding: 0;
+      margin: 2px 0;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.1);
+      transition: all 0.2s ease;
+      overflow: hidden;
     }
 
-    .voice-channel .channel-name {
+    .voice-channel-item:hover {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+      transform: translateX(2px);
+    }
+
+    .voice-channel-item.connected {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      border-left: 3px solid var(--voice-green);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+    }
+
+    .voice-channel-item.connected::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 24px;
+      background: var(--voice-green);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    .voice-channel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .voice-channel-header:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .voice-channel-header::after {
+      content: 'Join';
+      position: absolute;
+      right: 10px;
+      background: var(--voice-green);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .voice-channel-item:not(.connected) .voice-channel-header:hover::after {
+      opacity: 1;
+    }
+
+    .voice-channel-item:not(.connected) .voice-channel-header:hover .voice-user-count {
+      opacity: 0;
+    }
+
+    .voice-channel-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .voice-channel-icon {
+      color: var(--voice-green);
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .voice-channel-item.connected .voice-channel-icon {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .voice-channel-name {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .voice-channel-item.connected .voice-channel-name {
+      color: var(--voice-green);
       font-weight: 600;
     }
 
-    .voice-channel.connected .channel-name {
+    .voice-user-count {
+      background: rgba(16, 185, 129, 0.2);
       color: var(--voice-green);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    .voice-channel-item.connected .voice-user-count {
+      background: var(--voice-green);
+      color: white;
+    }
+
+    .voice-channel-users {
+      padding: 4px 8px 8px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-top: 1px solid rgba(16, 185, 129, 0.1);
+      background: rgba(0, 0, 0, 0.2);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    }
+
+    .voice-channel-users[style*="display: block"] {
+      max-height: 500px;
+      opacity: 1;
+    }
+
+    .voice-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .voice-user:hover {
+      background: rgba(16, 185, 129, 0.15);
+      transform: translateX(4px);
+    }
+
+    .voice-user.current-user {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid var(--accent);
+    }
+
+    .voice-user.current-user:hover {
+      background: rgba(139, 92, 246, 0.25);
+    }
+
+    .voice-user-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--voice-green) 0%, #059669 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .voice-user.current-user .voice-user-avatar {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    }
+
+    .voice-user-name {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .voice-user-status {
+      font-size: 11px;
+      color: var(--voice-green);
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .voice-user.current-user .voice-user-status {
+      color: var(--accent);
+    }
+
+    .voice-user.speaking .voice-user-status {
+      color: var(--voice-green);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .voice-user.muted .voice-user-status {
+      color: var(--voice-red);
+      opacity: 0.7;
+    }
+
+    .voice-user-disconnect {
+      background: var(--voice-red);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .voice-user.current-user:hover .voice-user-disconnect {
+      opacity: 1;
+    }
+
+    .voice-user-disconnect:hover {
+      background: #dc2626;
+      transform: scale(1.05);
+    }
+
+    .voice-user-disconnect i {
+      font-size: 9px;
     }
 
     .voice-modal {
@@ -1595,6 +1836,7 @@
 .user-panel-btn.muted {
   background: var(--voice-red);
   color: white;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }
 
 .user-panel-btn.deafened {

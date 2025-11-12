@@ -300,8 +300,16 @@
 
       // Create peer connection for new user if we're in the same channel and have local stream
       if (data.socketId !== socket.id && currentVoiceChannel === data.channel && localStream) {
-        log(`Creating WebRTC connection to ${data.username} (${data.socketId})`);
-        createPeerConnection(data.socketId, data.username, true);
+        // Only initiate if our socket ID is "greater" to avoid duplicate connections
+        const shouldInitiate = socket.id > data.socketId;
+        
+        // Skip if we already have a connection to this user
+        if (!peerConnections.has(data.socketId)) {
+          log(`Creating WebRTC connection to ${data.username} (${data.socketId}) - shouldInitiate: ${shouldInitiate}`);
+          createPeerConnection(data.socketId, data.username, shouldInitiate);
+        } else {
+          log(`Already have peer connection to ${data.username}, skipping`);
+        }
       } else {
         log(`Skipping WebRTC connection: socketId=${data.socketId}, myId=${socket.id}, currentChannel=${currentVoiceChannel}, targetChannel=${data.channel}, hasStream=${!!localStream}`);
       }
@@ -357,6 +365,19 @@
       if (!localStream) {
         log(`❌ Cannot handle offer - no local stream`);
         return;
+      }
+
+      // If we already have a connection and we're the initiator, ignore this offer
+      if (peerConnections.has(data.from)) {
+        const existingPc = peerConnections.get(data.from);
+        if (existingPc.signalingState !== 'stable') {
+          log(`⚠️ Already have an active connection to ${data.username}, ignoring offer`);
+          return;
+        }
+        // If connection is stable but we got an offer, close and recreate
+        log(`⚠️ Existing connection is stable, closing and handling new offer`);
+        existingPc.close();
+        peerConnections.delete(data.from);
       }
 
       const pc = createPeerConnection(data.from, data.username, false);
@@ -491,7 +512,7 @@
       userPanelMute.addEventListener("click", () => {
         if (currentVoiceChannel) {
           toggleMute();
-          userPanelMute.classList.toggle('muted');
+          // toggleMute already handles the muted class
         } else {
           showNotification('Join a voice channel first', 'error');
         }
@@ -709,23 +730,41 @@
         const users = voiceChannelUsers.get(channel.name) || [];
         const isConnected = currentVoiceChannel === channel.name;
 
+        channelEl.classList.add('voice-channel-item');
+        if (isConnected) {
+          channelEl.classList.add('connected');
+        }
+
         channelEl.innerHTML = `
-          <div class="voice-channel ${isConnected ? 'connected' : ''}">
-            <div class="voice-channel-header">
-              <span class="voice-channel-name">🔊 ${channel.name}</span>
-              <span class="voice-user-count">${users.length}</span>
+          <div class="voice-channel-header">
+            <div class="voice-channel-info">
+              <i class="fas fa-volume-up voice-channel-icon"></i>
+              <span class="voice-channel-name">${channel.name}</span>
             </div>
-            <div class="voice-channel-users" style="display: ${users.length > 0 ? 'block' : 'none'}">
-              ${users.map(user => `
-                <div class="voice-user ${user === username ? 'current-user' : ''}">
-                  <span class="voice-user-avatar">${user.charAt(0).toUpperCase()}</span>
-                  <span class="voice-user-name">${user}</span>
-                  <span class="voice-user-status">🎤</span>
-                </div>
-              `).join('')}
-            </div>
+            <span class="voice-user-count">${users.length || ''}</span>
+          </div>
+          <div class="voice-channel-users" style="display: ${users.length > 0 ? 'block' : 'none'}">
+            ${users.map(user => `
+              <div class="voice-user ${user === username ? 'current-user' : ''}" data-username="${user}">
+                <span class="voice-user-avatar">${user.charAt(0).toUpperCase()}</span>
+                <span class="voice-user-name">${user}</span>
+                <i class="fas fa-microphone voice-user-status"></i>
+                ${user === username && isConnected ? '<button class="voice-user-disconnect" title="Disconnect"><i class="fas fa-phone-slash"></i></button>' : ''}
+              </div>
+            `).join('')}
           </div>
         `;
+
+        // Add disconnect button handler
+        if (isConnected) {
+          const disconnectBtn = channelEl.querySelector('.voice-user-disconnect');
+          if (disconnectBtn) {
+            disconnectBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              leaveVoiceChannel();
+            });
+          }
+        }
 
         const headerEl = channelEl.querySelector('.voice-channel-header');
         headerEl.addEventListener('click', () => {
@@ -768,8 +807,17 @@
     log(`🔗 Creating peer connection for ${username} (${socketId}) - initiator: ${isInitiator}`);
 
     if (peerConnections.has(socketId)) {
-      log(`⚠️ Peer connection already exists for ${username}, closing old one`);
-      peerConnections.get(socketId).close();
+      const existingPc = peerConnections.get(socketId);
+      log(`⚠️ Peer connection already exists for ${username} in state: ${existingPc.signalingState}`);
+      
+      // Only close if it's in a failed state or we're explicitly told to recreate
+      if (existingPc.connectionState === 'failed' || existingPc.connectionState === 'closed') {
+        log(`Closing failed connection`);
+        existingPc.close();
+      } else {
+        log(`Reusing existing connection`);
+        return existingPc;
+      }
     }
 
     const pc = new RTCPeerConnection(rtcConfig);
@@ -1132,21 +1180,21 @@
     if (!voiceChannelsContainer) return;
 
     // Get all voice channel elements
-    const voiceChannelElements = voiceChannelsContainer.querySelectorAll('.voice-channel');
+    const voiceChannelElements = voiceChannelsContainer.querySelectorAll('.voice-channel-item');
 
     voiceChannelElements.forEach(channelEl => {
-      const headerEl = channelEl.querySelector('.voice-channel-header');
-      const nameEl = headerEl?.querySelector('.voice-channel-name');
-      const countEl = headerEl?.querySelector('.voice-user-count');
+      const nameEl = channelEl.querySelector('.voice-channel-name');
+      const countEl = channelEl.querySelector('.voice-user-count');
       const usersEl = channelEl.querySelector('.voice-channel-users');
 
       if (nameEl) {
-        const channelName = nameEl.textContent.replace('🔊', '').trim();
+        const channelName = nameEl.textContent.trim();
         const users = voiceChannelUsers.get(channelName) || [];
+        const isConnected = channelName === currentVoiceChannel;
 
         // Update user count
         if (countEl) {
-          countEl.textContent = users.length.toString();
+          countEl.textContent = users.length || '';
         }
 
         // Update users list
@@ -1154,19 +1202,31 @@
           if (users.length > 0) {
             usersEl.style.display = 'block';
             usersEl.innerHTML = users.map(user => `
-              <div class="voice-user ${user === username ? 'current-user' : ''}">
+              <div class="voice-user ${user === username ? 'current-user' : ''}" data-username="${user}">
                 <span class="voice-user-avatar">${user.charAt(0).toUpperCase()}</span>
                 <span class="voice-user-name">${user}</span>
-                <span class="voice-user-status">🎤</span>
+                <i class="fas fa-microphone voice-user-status"></i>
+                ${user === username && isConnected ? '<button class="voice-user-disconnect" title="Disconnect"><i class="fas fa-phone-slash"></i></button>' : ''}
               </div>
             `).join('');
+
+            // Re-attach disconnect button handler
+            if (isConnected) {
+              const disconnectBtn = usersEl.querySelector('.voice-user-disconnect');
+              if (disconnectBtn) {
+                disconnectBtn.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  leaveVoiceChannel();
+                });
+              }
+            }
           } else {
             usersEl.style.display = 'none';
           }
         }
 
         // Update connection status
-        if (channelName === currentVoiceChannel) {
+        if (isConnected) {
           channelEl.classList.add('connected');
         } else {
           channelEl.classList.remove('connected');
@@ -1194,18 +1254,15 @@
     });
 
     // Force update voice channels
-    const voiceChannels = document.querySelectorAll('#voiceChannelsList .voice-channel');
+    const voiceChannels = document.querySelectorAll('#voiceChannelsList .voice-channel-item');
     voiceChannels.forEach(channelEl => {
-      const headerEl = channelEl.querySelector('.voice-channel-header');
-      if (headerEl) {
-        const nameEl = headerEl.querySelector('.voice-channel-name');
-        if (nameEl) {
-          const channelName = nameEl.textContent.replace('🔊', '').trim();
-          if (channelName === currentVoiceChannel) {
-            channelEl.classList.add('connected');
-          } else {
-            channelEl.classList.remove('connected');
-          }
+      const nameEl = channelEl.querySelector('.voice-channel-name');
+      if (nameEl) {
+        const channelName = nameEl.textContent.trim();
+        if (channelName === currentVoiceChannel) {
+          channelEl.classList.add('connected');
+        } else {
+          channelEl.classList.remove('connected');
         }
       }
     });
