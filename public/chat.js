@@ -1,28 +1,67 @@
 (() => {
-  const debug = document.getElementById('debug');
-  const notification = document.getElementById('notification');
-  let debugTimeout;
-  let notificationTimeout;
+  // Unified Toast Notification System
+  const toastContainer = document.getElementById('toastContainer');
+  let toastId = 0;
+
+  function showToast(message, type = 'info', title = null, duration = 4000) {
+    const id = toastId++;
+    
+    // Icon mapping
+    const icons = {
+      success: '<i class="fas fa-check-circle"></i>',
+      error: '<i class="fas fa-exclamation-circle"></i>',
+      warning: '<i class="fas fa-exclamation-triangle"></i>',
+      info: '<i class="fas fa-info-circle"></i>',
+      debug: '<i class="fas fa-bug"></i>'
+    };
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.dataset.id = id;
+    
+    toast.innerHTML = `
+      <div class="toast-icon">${icons[type] || icons.info}</div>
+      <div class="toast-content">
+        ${title ? `<div class="toast-title">${title}</div>` : ''}
+        <div class="toast-message">${message}</div>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.remove()">
+        <i class="fas fa-times"></i>
+      </button>
+      ${duration > 0 ? '<div class="toast-progress"></div>' : ''}
+    `;
+
+    toastContainer.appendChild(toast);
+
+    // Auto remove after duration
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(toast);
+      }, duration);
+    }
+
+    return id;
+  }
+
+  function removeToast(toast) {
+    if (!toast || !toast.parentElement) return;
+    
+    toast.classList.add('removing');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }
+
+  // Convenience functions
+  function showNotification(msg, type = 'success') {
+    showToast(msg, type);
+  }
 
   function log(msg) {
     console.log(msg);
-    debug.textContent = msg;
-    debug.classList.remove('hidden');
-
-    clearTimeout(debugTimeout);
-    debugTimeout = setTimeout(() => {
-      debug.classList.add('hidden');
-    }, 3000);
-  }
-
-  function showNotification(msg, type = 'success') {
-    notification.textContent = msg;
-    notification.className = `notification ${type}`;
-
-    clearTimeout(notificationTimeout);
-    notificationTimeout = setTimeout(() => {
-      notification.classList.add('hidden');
-    }, 4000);
+    // Only show debug toasts in development or when needed
+    // showToast(msg, 'debug', 'Debug', 3000);
   }
 
   // Check if user is logged in
@@ -1011,13 +1050,12 @@
       track.enabled = !isMuted;
     });
 
-    const muteBtn = document.getElementById('muteBtn');
     const voiceUIMuteBtn = document.getElementById('voiceUIMuteBtn');
     const modalMuteBtn = document.getElementById('modalMuteBtn');
     const userPanelMute = document.getElementById('userPanelMute');
 
     // Update button icons
-    [muteBtn, voiceUIMuteBtn, modalMuteBtn].forEach(btn => {
+    [voiceUIMuteBtn, modalMuteBtn].forEach(btn => {
       if (btn) {
         const icon = btn.querySelector('i');
         if (icon) {
@@ -1053,20 +1091,10 @@
   }
 
   function showVoiceIndicators(channelName) {
-    // Show voice controls and update UI elements without switching views
-    const voiceControls = document.getElementById('voiceControls');
-    const voiceStatus = document.getElementById('voiceStatus');
+    // Update UI elements when joining voice
     const voiceUITitle = document.getElementById('voiceUITitle');
     const voiceUsername = document.getElementById('voiceUsername');
     const userPanelStatusText = document.getElementById('userPanelStatusText');
-
-    if (voiceControls) {
-      voiceControls.style.display = 'flex';
-    }
-
-    if (voiceStatus) {
-      voiceStatus.textContent = `Connected to ${channelName}`;
-    }
 
     if (voiceUITitle) {
       voiceUITitle.innerHTML = `<i class="fas fa-volume-up"></i> ${channelName}`;
@@ -1105,15 +1133,10 @@
   }
 
   function hideVoiceIndicators() {
-    // Hide voice controls and update UI
-    const voiceControls = document.getElementById('voiceControls');
+    // Reset UI when leaving voice
     const userPanelStatusText = document.getElementById('userPanelStatusText');
     const userPanelMute = document.getElementById('userPanelMute');
     const userPanelDeafen = document.getElementById('userPanelDeafen');
-
-    if (voiceControls) {
-      voiceControls.style.display = 'none';
-    }
 
     // Reset user panel status
     if (userPanelStatusText) {
@@ -1285,16 +1308,10 @@
 
   // Set up voice control event listeners
   function setupVoiceControls() {
-    const muteBtn = document.getElementById('muteBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
     const voiceUIMuteBtn = document.getElementById('voiceUIMuteBtn');
     const voiceUIDisconnectBtn = document.getElementById('voiceUIDisconnectBtn');
     const modalMuteBtn = document.getElementById('modalMuteBtn');
     const modalDisconnectBtn = document.getElementById('modalDisconnectBtn');
-
-    // Main voice controls
-    muteBtn?.addEventListener('click', toggleMute);
-    disconnectBtn?.addEventListener('click', leaveVoiceChannel);
 
     // Voice UI controls
     voiceUIMuteBtn?.addEventListener('click', toggleMute);
@@ -1310,12 +1327,8 @@
 
   // Make sure voice UI is initially hidden
   const voiceUI = document.getElementById('voiceUI');
-  const voiceControls = document.getElementById('voiceControls');
   if (voiceUI) {
     voiceUI.style.display = 'none';
-  }
-  if (voiceControls) {
-    voiceControls.style.display = 'none';
   }
 
   // Add basic styling for voice channels

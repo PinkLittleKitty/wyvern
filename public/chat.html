@@ -11,8 +11,8 @@
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="debug" id="debug">Connecting...</div>
-  <div class="notification hidden" id="notification"></div>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
   
   <div class="sidebar-container">
     <div class="sidebar-top">
@@ -129,12 +129,6 @@
         <button class="voice-btn disconnect" id="voiceUIDisconnectBtn" title="Disconnect">📞</button>
       </div>
     </div>
-  </div>
-
-  <div class="voice-controls" id="voiceControls">
-    <div class="voice-status" id="voiceStatus">Connected to voice</div>
-    <button class="voice-btn unmute" id="muteBtn" title="Mute/Unmute">🎤</button>
-    <button class="voice-btn disconnect" id="disconnectBtn" title="Disconnect">📞</button>
   </div>
 
   <div class="modal" id="channelModal">
