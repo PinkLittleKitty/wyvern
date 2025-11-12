@@ -229,6 +229,36 @@
       history.forEach(displayMessage);
     });
 
+    // Typing indicator
+    const typingUsers = new Set();
+    socket.on("typing", (data) => {
+      const typingIndicator = document.getElementById("typingIndicator");
+      if (!typingIndicator) return;
+
+      if (data.isTyping && data.username !== username) {
+        typingUsers.add(data.username);
+      } else {
+        typingUsers.delete(data.username);
+      }
+
+      // Update typing indicator display
+      if (typingUsers.size === 0) {
+        typingIndicator.textContent = "";
+        typingIndicator.style.display = "none";
+      } else if (typingUsers.size === 1) {
+        const user = Array.from(typingUsers)[0];
+        typingIndicator.textContent = `${user} is typing...`;
+        typingIndicator.style.display = "flex";
+      } else if (typingUsers.size === 2) {
+        const users = Array.from(typingUsers);
+        typingIndicator.textContent = `${users[0]} and ${users[1]} are typing...`;
+        typingIndicator.style.display = "flex";
+      } else {
+        typingIndicator.textContent = `Several people are typing...`;
+        typingIndicator.style.display = "flex";
+      }
+    });
+
     // Track channel joins
     socket.on("joinedChannel", (channelName) => {
       currentTextChannel = channelName;
@@ -382,6 +412,8 @@
     // Basic message sending
     const input = document.getElementById("chat-input");
     const button = document.getElementById("send-button");
+    let typingTimeout;
+    let isTyping = false;
 
     function sendMessage() {
       const text = input.value.trim();
@@ -390,6 +422,32 @@
       log(`Sending message: ${text}`);
       socket.emit("chatMessage", { username, message: text });
       input.value = "";
+      
+      // Stop typing indicator when message is sent
+      stopTyping();
+    }
+
+    function startTyping() {
+      if (!isTyping) {
+        isTyping = true;
+        socket.emit("typing", { username, isTyping: true });
+      }
+      
+      // Clear existing timeout
+      clearTimeout(typingTimeout);
+      
+      // Set timeout to stop typing after 3 seconds of inactivity
+      typingTimeout = setTimeout(() => {
+        stopTyping();
+      }, 3000);
+    }
+
+    function stopTyping() {
+      if (isTyping) {
+        isTyping = false;
+        socket.emit("typing", { username, isTyping: false });
+      }
+      clearTimeout(typingTimeout);
     }
 
     if (button) {
@@ -401,7 +459,15 @@
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           sendMessage();
+        } else if (e.key.length === 1 || e.key === "Backspace") {
+          // User is typing
+          startTyping();
         }
+      });
+
+      // Stop typing when input loses focus
+      input.addEventListener("blur", () => {
+        stopTyping();
       });
     }
 

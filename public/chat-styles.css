@@ -1137,8 +1137,8 @@
       font-size: 13px;
       padding: 0 16px 8px 16px;
       font-style: normal;
-      height: 24px;
-      display: flex;
+      min-height: 24px;
+      display: none;
       align-items: center;
       animation: fadeIn 0.25s ease-in-out;
     }
@@ -1150,7 +1150,7 @@
       height: 8px;
       border-radius: 50%;
       background: var(--text-muted);
-      margin-right: 4px;
+      margin-right: 8px;
       animation: typingBounce 1.4s infinite;
     }
 

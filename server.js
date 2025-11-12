@@ -770,8 +770,12 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('typing', (typingUsername) => {
-    socket.to(socket.currentChannel || 'general').emit('typing', typingUsername);
+  socket.on('typing', (data) => {
+    // Broadcast typing status to other users in the same channel
+    socket.to(socket.currentChannel || 'general').emit('typing', {
+      username: data.username,
+      isTyping: data.isTyping
+    });
   });
 
   socket.on('createChannel', async (data) => {
