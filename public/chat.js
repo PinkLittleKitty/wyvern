@@ -629,20 +629,145 @@
     let typingTimeout;
     let isTyping = false;
 
-    function sendMessage() {
+    // File upload handling
+    let selectedFiles = [];
+    const uploadButton = document.getElementById('upload-button');
+    const fileInput = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-preview');
+
+    if (uploadButton && fileInput) {
+      uploadButton.addEventListener('click', () => {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        selectedFiles = [...selectedFiles, ...files];
+        updateFilePreview();
+        fileInput.value = ''; // Reset input
+      });
+    }
+
+    function updateFilePreview() {
+      if (selectedFiles.length === 0) {
+        filePreview.classList.remove('show');
+        filePreview.innerHTML = '';
+        return;
+      }
+
+      filePreview.classList.add('show');
+      filePreview.innerHTML = selectedFiles.map((file, index) => {
+        const isImage = file.type.startsWith('image/');
+        const fileSize = formatFileSize(file.size);
+        
+        if (isImage) {
+          const url = URL.createObjectURL(file);
+          return `
+            <div class="file-preview-item">
+              <img src="${url}" alt="${file.name}" />
+              <div class="file-preview-info">
+                <div class="file-preview-name">${file.name}</div>
+                <div class="file-preview-size">${fileSize}</div>
+              </div>
+              <button class="file-preview-remove" onclick="removeFile(${index})">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="file-preview-item">
+              <div class="file-icon">
+                <i class="fas fa-file"></i>
+              </div>
+              <div class="file-preview-info">
+                <div class="file-preview-name">${file.name}</div>
+                <div class="file-preview-size">${fileSize}</div>
+              </div>
+              <button class="file-preview-remove" onclick="removeFile(${index})">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    window.removeFile = function(index) {
+      selectedFiles.splice(index, 1);
+      updateFilePreview();
+    };
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    async function uploadFiles() {
+      if (selectedFiles.length === 0) return [];
+
+      const formData = new FormData();
+      selectedFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      try {
+        const token = sessionStorage.getItem('wyvernToken');
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+
+        const data = await response.json();
+        return data.files;
+      } catch (error) {
+        log(`Upload error: ${error.message}`);
+        showToast('Failed to upload files', 'error');
+        return [];
+      }
+    }
+
+    async function sendMessage() {
       const text = input.value.trim();
-      if (!text) return;
+      const hasFiles = selectedFiles.length > 0;
+      
+      if (!text && !hasFiles) return;
+
+      // Upload files first if any
+      let attachments = [];
+      if (hasFiles) {
+        attachments = await uploadFiles();
+        if (attachments.length === 0 && hasFiles) {
+          // Upload failed
+          return;
+        }
+      }
 
       // Extract mentions from the message
       const mentions = extractMentions(text);
 
-      log(`Sending message: ${text}${mentions.length > 0 ? ` (mentions: ${mentions.join(', ')})` : ''}`);
+      log(`Sending message: ${text}${mentions.length > 0 ? ` (mentions: ${mentions.join(', ')})` : ''}${attachments.length > 0 ? ` with ${attachments.length} file(s)` : ''}`);
+      
       socket.emit("chatMessage", { 
         username, 
-        message: text,
-        mentions: mentions 
+        message: text || '',
+        mentions: mentions,
+        attachments: attachments
       });
+      
       input.value = "";
+      selectedFiles = [];
+      updateFilePreview();
       
       // Stop typing indicator when message is sent
       stopTyping();
@@ -1287,13 +1412,56 @@
       }
     }
 
-    // Admin delete button (show if current user is admin and it's not their message)
-    const canDelete = isCurrentUserAdmin && data.username !== username;
+    // Admin delete button (show if current user is admin OR it's their own message)
+    const canDelete = isCurrentUserAdmin || data.username === username;
     const deleteButton = canDelete ? `
       <button class="message-action-btn message-delete-btn" title="Delete Message" data-message-id="${data._id || data.id || ''}">
         <i class="fas fa-trash"></i>
       </button>
     ` : '';
+
+    // Build attachments HTML
+    let attachmentsHTML = '';
+    if (data.attachments && data.attachments.length > 0) {
+      attachmentsHTML = '<div class="message-attachments">';
+      data.attachments.forEach(attachment => {
+        const isImage = attachment.mimetype.startsWith('image/');
+        const isVideo = attachment.mimetype.startsWith('video/');
+        
+        if (isImage) {
+          attachmentsHTML += `
+            <div class="message-attachment">
+              <img src="${attachment.url}" alt="${attachment.originalName}" onclick="openLightbox('${attachment.url}')" />
+            </div>
+          `;
+        } else if (isVideo) {
+          attachmentsHTML += `
+            <div class="message-attachment">
+              <video controls>
+                <source src="${attachment.url}" type="${attachment.mimetype}">
+              </video>
+            </div>
+          `;
+        } else {
+          const fileSize = formatFileSize(attachment.size);
+          attachmentsHTML += `
+            <a href="${attachment.url}" download="${attachment.originalName}" class="message-file">
+              <div class="message-file-icon">
+                <i class="fas fa-file"></i>
+              </div>
+              <div class="message-file-info">
+                <div class="message-file-name">${attachment.originalName}</div>
+                <div class="message-file-size">${fileSize}</div>
+              </div>
+              <div class="message-file-download">
+                <i class="fas fa-download"></i>
+              </div>
+            </a>
+          `;
+        }
+      });
+      attachmentsHTML += '</div>';
+    }
 
     messageEl.innerHTML = `
       <div class="message-avatar">${avatarLetter}</div>
@@ -1303,7 +1471,8 @@
           ${adminBadge}
           <span class="message-timestamp">${timeStr}</span>
         </div>
-        <div class="message-text">${escapedMessage}</div>
+        ${escapedMessage ? `<div class="message-text">${escapedMessage}</div>` : ''}
+        ${attachmentsHTML}
       </div>
       <div class="message-actions">
         <button class="message-action-btn" title="Add Reaction">
@@ -3114,3 +3283,31 @@
   log('Voice chat functionality initialized');
   log('💡 Use window.debugVoice in console to debug voice chat');
 })();
+
+  // Image lightbox
+  window.openLightbox = function(imageUrl) {
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxImage = document.getElementById('lightboxImage');
+    
+    if (lightbox && lightboxImage) {
+      lightboxImage.src = imageUrl;
+      lightbox.classList.add('show');
+    }
+  };
+
+  const lightboxClose = document.getElementById('lightboxClose');
+  const imageLightbox = document.getElementById('imageLightbox');
+  
+  if (lightboxClose) {
+    lightboxClose.addEventListener('click', () => {
+      imageLightbox.classList.remove('show');
+    });
+  }
+  
+  if (imageLightbox) {
+    imageLightbox.addEventListener('click', (e) => {
+      if (e.target === imageLightbox) {
+        imageLightbox.classList.remove('show');
+      }
+    });
+  }

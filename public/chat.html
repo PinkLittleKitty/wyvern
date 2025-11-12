@@ -110,8 +110,13 @@
     <div id="chat-messages" class="chat-messages"></div>
     <div class="typing-indicator" id="typingIndicator"></div>
     <div class="chat-input">
+      <button id="upload-button" class="chat-input-btn" title="Upload file or image">
+        <i class="fas fa-plus"></i>
+      </button>
+      <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" multiple />
       <div class="chat-input-wrapper">
         <input id="chat-input" placeholder="Message #general" />
+        <div id="file-preview" class="file-preview"></div>
       </div>
       <button id="send-button" title="Send message">
         <i class="fas fa-paper-plane"></i>
@@ -242,6 +247,12 @@
       <span>🔨</span>
       <span>Ban User</span>
     </div>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div class="image-lightbox" id="imageLightbox">
+    <button class="image-lightbox-close" id="lightboxClose">×</button>
+    <img id="lightboxImage" src="" alt="Full size image" />
   </div>
 
   <!-- Settings Modal -->

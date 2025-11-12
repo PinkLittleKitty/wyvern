@@ -8,6 +8,8 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const readline = require('readline');
+const multer = require('multer');
+const crypto = require('crypto');
 
 const { connect, getDb } = require('./database');
 const { router: authRouter, authMiddleware } = require('./auth');
@@ -89,6 +91,67 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow images, videos, and common file types
+    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|pdf|doc|docx|txt|zip|rar/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'));
+    }
+  }
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static(uploadsDir));
+
+// File upload endpoint
+app.post('/api/upload', authMiddleware, upload.array('files', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const files = req.files.map(file => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+      url: `/uploads/${file.filename}`
+    }));
+
+    res.json({ files });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
 
 app.use('/auth', authRouter);
 
@@ -813,6 +876,7 @@ io.on('connection', async (socket) => {
         username: username,
         message: msg.message,
         mentions: msg.mentions || [],
+        attachments: msg.attachments || [],
         channel: socket.currentChannel || 'general',
         timestamp: new Date(),
       };
@@ -822,6 +886,11 @@ io.on('connection', async (socket) => {
       // Log mentions for debugging
       if (msg.mentions && msg.mentions.length > 0) {
         console.log(`💬 ${username} mentioned: ${msg.mentions.join(', ')}`);
+      }
+      
+      // Log attachments
+      if (msg.attachments && msg.attachments.length > 0) {
+        console.log(`📎 ${username} sent ${msg.attachments.length} file(s)`);
       }
     } catch (err) {
       console.error("❌ Error saving message:", err);
