@@ -623,6 +623,7 @@ io.on('connection', async (socket) => {
     socket.emit('userMuted', { username: state.username, muted: state.muted });
     socket.emit('userDeafened', { username: state.username, deafened: state.deafened });
     socket.emit('userCamera', { username: state.username, camera: state.camera });
+    socket.emit('userScreenSharing', { username: state.username, screenSharing: state.screenSharing });
   });
 
   // Send online users to the new connection and broadcast update
@@ -692,6 +693,7 @@ io.on('connection', async (socket) => {
       muted: false,
       deafened: false,
       camera: false,
+      screenSharing: false,
       channel: channelName
     });
     
@@ -709,6 +711,7 @@ io.on('connection', async (socket) => {
         socket.emit('userMuted', { username: user.username, muted: existingState.muted });
         socket.emit('userDeafened', { username: user.username, deafened: existingState.deafened });
         socket.emit('userCamera', { username: user.username, camera: existingState.camera });
+        socket.emit('userScreenSharing', { username: user.username, screenSharing: existingState.screenSharing });
       }
     });
     
@@ -1069,6 +1072,21 @@ io.on('connection', async (socket) => {
     io.emit('userCamera', {
       username: username,
       camera: data.camera
+    });
+  });
+
+  socket.on('userScreenSharing', (data) => {
+    // Update stored state
+    const state = userVoiceStates.get(socket.id);
+    if (state) {
+      state.screenSharing = data.screenSharing;
+      userVoiceStates.set(socket.id, state);
+    }
+    
+    // Broadcast to EVERYONE so screen sharing state is visible
+    io.emit('userScreenSharing', {
+      username: username,
+      screenSharing: data.screenSharing
     });
   });
 });

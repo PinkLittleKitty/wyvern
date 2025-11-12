@@ -411,9 +411,10 @@
         peerConnections.delete(data.socketId);
       }
 
-      // Clean up video and audio
+      // Clean up video, audio, and screen
       removeRemoteAudio(data.username);
       removeRemoteVideo(data.username);
+      removeRemoteScreen(data.username);
 
       // Clear user voice state
       userVoiceStates.delete(data.username);
@@ -467,11 +468,68 @@
       log(`${data.username} camera ${data.camera ? 'enabled' : 'disabled'}`);
       
       // Update stored state
-      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false, camera: false };
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false, camera: false, screenSharing: false };
       state.camera = data.camera;
       userVoiceStates.set(data.username, state);
       
       // Update UI
+      updateParticipantStatus(data.username);
+    });
+
+    socket.on("userScreenSharing", (data) => {
+      log(`${data.username} screen sharing ${data.screenSharing ? 'started' : 'stopped'}`);
+      
+      // Update stored state
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false, camera: false, screenSharing: false };
+      state.screenSharing = data.screenSharing;
+      userVoiceStates.set(data.username, state);
+      
+      if (data.screenSharing) {
+        // They started sharing - check if we already received a video stream that we misidentified
+        const existingVideoStream = remoteVideoStreams.get(data.username);
+        const hasScreenStream = remoteScreenStreams.has(data.username);
+        
+        log(`📊 Screen sharing state for ${data.username}: hasVideo=${!!existingVideoStream}, hasScreen=${hasScreenStream}`);
+        
+        if (existingVideoStream && !hasScreenStream) {
+          // We have a video stream but no screen stream - the video stream might be the screen
+          // Move it from video to screen
+          log(`🔄 Re-identifying video stream as screen share for ${data.username}`);
+          remoteScreenStreams.set(data.username, existingVideoStream);
+          
+          // Don't delete from remoteVideoStreams yet - they might have both camera and screen
+          // Just hide the video elements that were created
+          const participants = document.querySelectorAll(`.voice-participant[data-username="${data.username}"]`);
+          participants.forEach(participant => {
+            const videoEl = participant.querySelector('video.remote-video');
+            if (videoEl && videoEl.srcObject === existingVideoStream) {
+              videoEl.srcObject = null;
+              videoEl.remove();
+              participant.classList.remove('has-video');
+            }
+          });
+          
+          const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${data.username}"]`);
+          voiceUsers.forEach(userEl => {
+            const videoContainer = userEl.querySelector('.voice-user-video-container');
+            if (videoContainer) {
+              const videoEl = videoContainer.querySelector('video');
+              if (videoEl && videoEl.srcObject === existingVideoStream) {
+                videoContainer.remove();
+                userEl.classList.remove('has-video-expanded');
+              }
+            }
+          });
+          
+          // Force re-render to restore original structure
+          forceUpdateVoiceChannelDisplay();
+        }
+      } else {
+        // They stopped sharing, remove the stream
+        removeRemoteScreen(data.username);
+      }
+      
+      // Update UI to show/hide screen sharing icon
       updateParticipantStatus(data.username);
     });
 
@@ -653,7 +711,7 @@
 
     if (voiceScreenShare) {
       voiceScreenShare.addEventListener('click', () => {
-        showToast('Screen sharing coming soon!', 'info', 'Feature Preview');
+        toggleScreenShare();
       });
     }
 
@@ -1057,15 +1115,44 @@
       });
     }
 
+    // Add local screen stream if screen sharing
+    if (localScreenStream && isScreenSharing) {
+      log(`🖥️ Adding screen track to peer connection for ${username}`);
+      localScreenStream.getTracks().forEach(track => {
+        pc.addTrack(track, localScreenStream);
+        log(`✅ Added screen track to ${username}`);
+      });
+    }
+
     // Handle incoming remote stream
     pc.ontrack = (event) => {
-      log(`📺 Received ${event.track.kind} track from ${username}`);
+      log(`📺 Received ${event.track.kind} track from ${username} (label: ${event.track.label}, stream: ${event.streams[0]?.id})`);
       const remoteStream = event.streams[0];
       
       if (event.track.kind === 'audio') {
         playRemoteAudio(remoteStream, username);
       } else if (event.track.kind === 'video') {
-        playRemoteVideo(remoteStream, username);
+        // Check if it's a screen share track
+        // Screen tracks typically have 'screen' in the label or come from getDisplayMedia
+        const trackLabel = event.track.label.toLowerCase();
+        const isScreenTrack = trackLabel.includes('screen') || 
+                             trackLabel.includes('monitor') ||
+                             trackLabel.includes('window') ||
+                             trackLabel.includes('tab') ||
+                             trackLabel.includes('display');
+        
+        // Also check if this user already has a video stream (camera)
+        // If they do, this must be their screen share
+        const hasExistingVideo = remoteVideoStreams.has(username);
+        const userState = userVoiceStates.get(username) || {};
+        
+        if (isScreenTrack || (hasExistingVideo && userState.screenSharing)) {
+          log(`🖥️ Detected screen share track from ${username} - storing for PIP only`);
+          playRemoteScreen(remoteStream, username);
+        } else {
+          log(`📹 Detected camera track from ${username} - displaying in UI`);
+          playRemoteVideo(remoteStream, username);
+        }
       }
     };
 
@@ -1234,6 +1321,105 @@
     log(`Removed video for ${username}`);
   }
 
+  function playRemoteScreen(stream, username) {
+    log(`🖥️ Playing screen share from ${username}`);
+    
+    // Store the screen stream
+    remoteScreenStreams.set(username, stream);
+    
+    // Ensure state is set (in case socket event hasn't arrived yet)
+    const state = userVoiceStates.get(username) || { muted: false, deafened: false, camera: false, screenSharing: false };
+    state.screenSharing = true;
+    userVoiceStates.set(username, state);
+    
+    // Update participant status to show screen sharing icon
+    updateParticipantStatus(username);
+  }
+
+  function removeRemoteScreen(username) {
+    remoteScreenStreams.delete(username);
+    updateParticipantStatus(username);
+    log(`Removed screen share for ${username}`);
+  }
+
+  function openScreenSharePIP(username) {
+    const stream = remoteScreenStreams.get(username);
+    if (!stream) {
+      showNotification(`${username} is not sharing their screen`, 'error');
+      return;
+    }
+
+    // Create a video element for PIP
+    let pipVideo = document.getElementById(`pip-${username}`);
+    if (!pipVideo) {
+      pipVideo = document.createElement('video');
+      pipVideo.id = `pip-${username}`;
+      pipVideo.autoplay = true;
+      pipVideo.playsInline = true;
+      pipVideo.controls = true;
+      pipVideo.style.display = 'none';
+      document.body.appendChild(pipVideo);
+    }
+
+    pipVideo.srcObject = stream;
+
+    // Wait for video to be ready, then try PIP
+    pipVideo.onloadedmetadata = () => {
+      // Check if PIP is supported
+      if (document.pictureInPictureEnabled && pipVideo.requestPictureInPicture) {
+        pipVideo.requestPictureInPicture()
+          .then(() => {
+            log(`Opened PIP for ${username}'s screen share`);
+            showNotification(`Viewing ${username}'s screen`, 'success');
+          })
+          .catch(err => {
+            console.error('PIP error:', err);
+            // Fallback to modal
+            openScreenShareModal(username, stream);
+          });
+      } else {
+        // PIP not supported, use modal fallback
+        log('PIP not supported, using modal fallback');
+        openScreenShareModal(username, stream);
+      }
+    };
+  }
+
+  function openScreenShareModal(username, stream) {
+    // Create a modal to display the screen share
+    let modal = document.getElementById('screen-share-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'screen-share-modal';
+      modal.className = 'screen-share-modal';
+      modal.innerHTML = `
+        <div class="screen-share-modal-content">
+          <div class="screen-share-modal-header">
+            <h3>${username}'s Screen</h3>
+            <button class="screen-share-modal-close" onclick="this.closest('.screen-share-modal').style.display='none'">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <video id="screen-share-video" autoplay playsinline controls></video>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    const video = modal.querySelector('#screen-share-video');
+    const header = modal.querySelector('h3');
+    
+    if (video) {
+      video.srcObject = stream;
+    }
+    if (header) {
+      header.textContent = `${username}'s Screen`;
+    }
+
+    modal.style.display = 'flex';
+    showNotification(`Viewing ${username}'s screen`, 'success');
+  }
+
   function switchToTextChannel(channelName) {
     // Switch to text channel without leaving voice
     if (window.wyvernSocket) {
@@ -1321,7 +1507,14 @@
     isCameraOn = false;
     hideLocalVideo();
 
-    // Clean up all peer connections and remote audio/video
+    // Stop and clean up screen sharing
+    if (localScreenStream) {
+      localScreenStream.getTracks().forEach(track => track.stop());
+      localScreenStream = null;
+    }
+    isScreenSharing = false;
+
+    // Clean up all peer connections and remote audio/video/screen
     peerConnections.forEach((pc, socketId) => {
       pc.close();
     });
@@ -1543,6 +1736,147 @@
     }
   }
 
+  async function toggleScreenShare() {
+    if (!currentVoiceChannel) {
+      showNotification('Join a voice channel first', 'error');
+      return;
+    }
+
+    try {
+      if (!isScreenSharing) {
+        // Start screen sharing
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            cursor: 'always'
+          },
+          audio: false
+        });
+
+        localScreenStream = screenStream;
+        isScreenSharing = true;
+
+        // Handle when user stops sharing via browser UI
+        screenStream.getVideoTracks()[0].onended = () => {
+          toggleScreenShare();
+        };
+
+        // Add screen track to all existing peer connections
+        const screenTrack = screenStream.getVideoTracks()[0];
+        log(`🖥️ Screen track label: "${screenTrack.label}", stream ID: ${screenStream.id}`);
+        
+        // Store our screen stream ID so we can identify it later
+        if (!window.localScreenStreamId) {
+          window.localScreenStreamId = screenStream.id;
+        }
+        
+        const renegotiationPromises = [];
+        
+        peerConnections.forEach((pc, socketId) => {
+          pc.addTrack(screenTrack, screenStream);
+          log(`Added screen track to peer ${socketId}`);
+          
+          // Create new offer to renegotiate
+          const renegotiate = async () => {
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              
+              if (window.wyvernSocket) {
+                window.wyvernSocket.emit('webrtc-offer', {
+                  offer: offer,
+                  to: socketId
+                });
+                log(`📤 Sent renegotiation offer to ${socketId} for screen track`);
+              }
+            } catch (error) {
+              console.error('Renegotiation error:', error);
+            }
+          };
+          
+          renegotiationPromises.push(renegotiate());
+        });
+
+        await Promise.all(renegotiationPromises);
+        showNotification('Screen sharing started', 'success');
+      } else {
+        // Stop screen sharing
+        if (localScreenStream) {
+          localScreenStream.getTracks().forEach(track => track.stop());
+          localScreenStream = null;
+        }
+
+        isScreenSharing = false;
+
+        // Remove screen track from all peer connections and renegotiate
+        const renegotiationPromises = [];
+        
+        peerConnections.forEach((pc, socketId) => {
+          const senders = pc.getSenders();
+          senders.forEach(sender => {
+            if (sender.track && sender.track.kind === 'video' && sender.track.label.includes('screen')) {
+              pc.removeTrack(sender);
+            }
+          });
+          
+          // Create new offer to renegotiate without screen
+          const renegotiate = async () => {
+            try {
+              const offer = await pc.createOffer();
+              await pc.setLocalDescription(offer);
+              
+              if (window.wyvernSocket) {
+                window.wyvernSocket.emit('webrtc-offer', {
+                  offer: offer,
+                  to: socketId
+                });
+                log(`📤 Sent renegotiation offer to ${socketId} to remove screen track`);
+              }
+            } catch (error) {
+              console.error('Renegotiation error:', error);
+            }
+          };
+          
+          renegotiationPromises.push(renegotiate());
+        });
+
+        await Promise.all(renegotiationPromises);
+        showNotification('Screen sharing stopped', 'success');
+      }
+
+      // Update button state
+      const voiceScreenShare = document.getElementById('voiceScreenShare');
+      if (voiceScreenShare) {
+        if (isScreenSharing) {
+          voiceScreenShare.classList.add('active');
+        } else {
+          voiceScreenShare.classList.remove('active');
+        }
+      }
+
+      // Update local state
+      const state = userVoiceStates.get(username) || { muted: false, deafened: false, camera: false, screenSharing: false };
+      state.screenSharing = isScreenSharing;
+      userVoiceStates.set(username, state);
+
+      // Broadcast screen sharing state
+      if (window.wyvernSocket) {
+        window.wyvernSocket.emit('userScreenSharing', { screenSharing: isScreenSharing });
+      }
+
+      // Update participant status to show screen sharing icon
+      updateParticipantStatus(username);
+
+      log(`Screen sharing ${isScreenSharing ? 'started' : 'stopped'}`);
+    } catch (error) {
+      console.error('Screen sharing error:', error);
+      if (error.name === 'NotAllowedError') {
+        showNotification('Screen sharing permission denied', 'error');
+      } else {
+        showNotification('Failed to share screen: ' + error.message, 'error');
+      }
+    }
+  }
+
   function showLocalVideo() {
     // Show in user panel avatar
     const userPanelAvatar = document.getElementById('userPanelAvatar');
@@ -1711,6 +2045,13 @@
         }
       }
     });
+
+    // Restore screen share buttons for all users
+    userVoiceStates.forEach((state, user) => {
+      if (state.screenSharing) {
+        updateParticipantStatus(user);
+      }
+    });
   }
 
   function showVoiceIndicators(channelName) {
@@ -1874,7 +2215,7 @@
   }
 
   function updateParticipantStatus(username) {
-    const state = userVoiceStates.get(username) || { muted: false, deafened: false };
+    const state = userVoiceStates.get(username) || { muted: false, deafened: false, camera: false, screenSharing: false };
     
     // Determine status icon and class
     let statusIcon = 'fa-microphone';
@@ -1895,6 +2236,21 @@
       if (statusEl) {
         statusEl.innerHTML = `<i class="fas ${statusIcon}"></i>`;
       }
+      
+      // Add/remove screen sharing button
+      let screenBtn = participant.querySelector('.screen-share-btn');
+      if (state.screenSharing) {
+        if (!screenBtn) {
+          screenBtn = document.createElement('button');
+          screenBtn.className = 'screen-share-btn';
+          screenBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+          screenBtn.title = `View ${username}'s screen`;
+          screenBtn.onclick = () => openScreenSharePIP(username);
+          participant.appendChild(screenBtn);
+        }
+      } else if (screenBtn) {
+        screenBtn.remove();
+      }
     });
     
     // Update voice channel list users
@@ -1903,6 +2259,21 @@
       const statusEl = userEl.querySelector('.voice-user-status');
       if (statusEl) {
         statusEl.className = `fas ${statusIcon} voice-user-status ${statusClass}`;
+      }
+      
+      // Add/remove screen sharing button
+      let screenBtn = userEl.querySelector('.screen-share-btn');
+      if (state.screenSharing) {
+        if (!screenBtn) {
+          screenBtn = document.createElement('button');
+          screenBtn.className = 'screen-share-btn';
+          screenBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+          screenBtn.title = `View ${username}'s screen`;
+          screenBtn.onclick = () => openScreenSharePIP(username);
+          userEl.appendChild(screenBtn);
+        }
+      } else if (screenBtn) {
+        screenBtn.remove();
       }
     });
   }
