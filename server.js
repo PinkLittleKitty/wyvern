@@ -138,7 +138,8 @@ const defaultVoiceChannels = [
   { name: 'Music', description: 'Music and chill', type: 'voice' }
 ];
 
-const voiceRooms = new Map();
+const voiceRooms = new Map(); // channelName -> Set of socket IDs
+const userVoiceStates = new Map(); // socketId -> { username, muted, deafened, channel }
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -617,6 +618,12 @@ io.on('connection', async (socket) => {
   socket.emit('channelUpdate', channels);
   socket.emit('voiceChannelUpdate', voiceChannels);
 
+  // Send current voice states to new connection
+  userVoiceStates.forEach((state, socketId) => {
+    socket.emit('userMuted', { username: state.username, muted: state.muted });
+    socket.emit('userDeafened', { username: state.username, deafened: state.deafened });
+  });
+
   // Send online users to the new connection and broadcast update
   broadcastOnlineUsers();
 
@@ -678,6 +685,14 @@ io.on('connection', async (socket) => {
     // Add the new user
     voiceRooms.get(channelName).add(socket.id);
     
+    // Initialize user voice state
+    userVoiceStates.set(socket.id, {
+      username,
+      muted: false,
+      deafened: false,
+      channel: channelName
+    });
+    
     // Send existing users to the new joiner so they can establish connections
     existingUsers.forEach(user => {
       socket.emit('userJoinedVoice', {
@@ -685,6 +700,13 @@ io.on('connection', async (socket) => {
         channel: channelName,
         socketId: user.socketId
       });
+      
+      // Send existing user's voice state to the new joiner
+      const existingState = userVoiceStates.get(user.socketId);
+      if (existingState) {
+        socket.emit('userMuted', { username: user.username, muted: existingState.muted });
+        socket.emit('userDeafened', { username: user.username, deafened: existingState.deafened });
+      }
     });
     
     // Get updated room users list
@@ -735,6 +757,10 @@ io.on('connection', async (socket) => {
       }
       
       console.log(`✅ ${username} left voice channel: ${socket.voiceChannel}`);
+      
+      // Clear user voice state
+      userVoiceStates.delete(socket.id);
+      
       socket.voiceChannel = null;
       
       // Broadcast updated online users list
@@ -999,12 +1025,33 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('userMuted', (data) => {
-    if (socket.voiceChannel) {
-      socket.to(`voice-${socket.voiceChannel}`).emit('userMuted', {
-        username: username,
-        muted: data.muted
-      });
+    // Update stored state
+    const state = userVoiceStates.get(socket.id);
+    if (state) {
+      state.muted = data.muted;
+      userVoiceStates.set(socket.id, state);
     }
+    
+    // Broadcast to EVERYONE (not just voice channel) so it shows in channel list
+    io.emit('userMuted', {
+      username: username,
+      muted: data.muted
+    });
+  });
+
+  socket.on('userDeafened', (data) => {
+    // Update stored state
+    const state = userVoiceStates.get(socket.id);
+    if (state) {
+      state.deafened = data.deafened;
+      userVoiceStates.set(socket.id, state);
+    }
+    
+    // Broadcast to EVERYONE (not just voice channel) so it shows in channel list
+    io.emit('userDeafened', {
+      username: username,
+      deafened: data.deafened
+    });
   });
 });
 }

@@ -74,6 +74,18 @@
 
   log(`Username: ${username}`);
 
+  // Voice chat variables (declared early for button handlers)
+  let currentVoiceChannel = null;
+  let localStream = null;
+  let peerConnections = new Map();
+  let isMuted = false;
+  
+  // Store voice channel users for each channel
+  const voiceChannelUsers = new Map();
+  
+  // Store user states (muted/deafened) for each user
+  const userVoiceStates = new Map(); // username -> { muted: bool, deafened: bool }
+
   // Get token
   function getCookie(name) {
     const value = `; ${document.cookie}`;
@@ -388,6 +400,9 @@
         peerConnections.get(data.socketId).close();
         peerConnections.delete(data.socketId);
       }
+
+      // Clear user voice state
+      userVoiceStates.delete(data.username);
     });
 
     socket.on("voiceChannelDeleted", (channelName) => {
@@ -411,15 +426,27 @@
     });
 
     socket.on("userMuted", (data) => {
-      // Handle mute indicator
-      const participants = document.querySelectorAll('.voice-participant');
-      participants.forEach(participant => {
-        const nameEl = participant.querySelector('.voice-participant-name');
-        const statusEl = participant.querySelector('.voice-participant-status');
-        if (nameEl && nameEl.textContent === data.username) {
-          statusEl.innerHTML = data.muted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
-        }
-      });
+      log(`${data.username} ${data.muted ? 'muted' : 'unmuted'}`);
+      
+      // Update stored state
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false };
+      state.muted = data.muted;
+      userVoiceStates.set(data.username, state);
+      
+      // Update UI
+      updateParticipantStatus(data.username);
+    });
+
+    socket.on("userDeafened", (data) => {
+      log(`${data.username} ${data.deafened ? 'deafened' : 'undeafened'}`);
+      
+      // Update stored state
+      const state = userVoiceStates.get(data.username) || { muted: false, deafened: false };
+      state.deafened = data.deafened;
+      userVoiceStates.set(data.username, state);
+      
+      // Update UI
+      updateParticipantStatus(data.username);
     });
 
     // WebRTC signaling events
@@ -568,57 +595,7 @@
     }
 
     // User panel button functionality
-    const userPanelMute = document.getElementById("userPanelMute");
-    const userPanelDeafen = document.getElementById("userPanelDeafen");
     const userPanelSettings = document.getElementById("userPanelSettings");
-
-    if (userPanelMute) {
-      userPanelMute.addEventListener("click", () => {
-        if (currentVoiceChannel) {
-          toggleMute();
-          // toggleMute already handles the muted class
-        } else {
-          showNotification('Join a voice channel first', 'error');
-        }
-      });
-    }
-
-    if (userPanelDeafen) {
-      userPanelDeafen.addEventListener("click", () => {
-        if (currentVoiceChannel) {
-          // Toggle deafen state
-          const isDeafened = userPanelDeafen.classList.toggle('deafened');
-          
-          if (isDeafened) {
-            // Mute microphone and disable all audio outputs
-            if (localStream) {
-              localStream.getAudioTracks().forEach(track => {
-                track.enabled = false;
-              });
-            }
-            // Mute all remote audio elements
-            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
-              audio.muted = true;
-            });
-            showNotification('Deafened', 'success');
-          } else {
-            // Unmute microphone if it wasn't muted before
-            if (localStream && !isMuted) {
-              localStream.getAudioTracks().forEach(track => {
-                track.enabled = true;
-              });
-            }
-            // Unmute all remote audio elements
-            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
-              audio.muted = false;
-            });
-            showNotification('Undeafened', 'success');
-          }
-        } else {
-          showNotification('Join a voice channel first', 'error');
-        }
-      });
-    }
 
     if (userPanelSettings) {
       userPanelSettings.addEventListener("click", () => {
@@ -626,16 +603,9 @@
       });
     }
 
-    // Voice connection bar controls
-    const voiceDisconnect = document.getElementById('voiceDisconnect');
+    // Voice connection bar controls (non-voice buttons)
     const voiceScreenShare = document.getElementById('voiceScreenShare');
     const voiceCamera = document.getElementById('voiceCamera');
-
-    if (voiceDisconnect) {
-      voiceDisconnect.addEventListener('click', () => {
-        leaveVoiceChannel();
-      });
-    }
 
     if (voiceScreenShare) {
       voiceScreenShare.addEventListener('click', () => {
@@ -898,9 +868,6 @@
     });
   }
 
-  // Store voice channel users for each channel
-  const voiceChannelUsers = new Map();
-
   function updateChannelList(channels, type) {
     const containerId = type === 'text' ? 'textChannelsList' : 'voiceChannelsList';
     const container = document.getElementById(containerId);
@@ -941,14 +908,28 @@
             <span class="voice-user-count">${users.length || ''}</span>
           </div>
           <div class="voice-channel-users" style="display: ${users.length > 0 ? 'block' : 'none'}">
-            ${users.map(user => `
-              <div class="voice-user ${user === username ? 'current-user' : ''}" data-username="${user}">
-                <span class="voice-user-avatar">${user.charAt(0).toUpperCase()}</span>
-                <span class="voice-user-name">${user}</span>
-                <i class="fas fa-microphone voice-user-status"></i>
-                ${user === username && isConnected ? '<button class="voice-user-disconnect" title="Disconnect"><i class="fas fa-phone-slash"></i></button>' : ''}
-              </div>
-            `).join('')}
+            ${users.map(user => {
+              const state = userVoiceStates.get(user) || { muted: false, deafened: false };
+              let statusIcon = 'fa-microphone';
+              let statusClass = '';
+              
+              if (state.deafened) {
+                statusIcon = 'fa-headphones-slash';
+                statusClass = 'deafened';
+              } else if (state.muted) {
+                statusIcon = 'fa-microphone-slash';
+                statusClass = 'muted';
+              }
+              
+              return `
+                <div class="voice-user ${user === username ? 'current-user' : ''}" data-username="${user}">
+                  <span class="voice-user-avatar">${user.charAt(0).toUpperCase()}</span>
+                  <span class="voice-user-name">${user}</span>
+                  <i class="fas ${statusIcon} voice-user-status ${statusClass}"></i>
+                  ${user === username && isConnected ? '<button class="voice-user-disconnect" title="Disconnect"><i class="fas fa-phone-slash"></i></button>' : ''}
+                </div>
+              `;
+            }).join('')}
           </div>
         `;
 
@@ -986,10 +967,6 @@
   });
 
   // Voice chat functionality
-  let currentVoiceChannel = null;
-  let localStream = null;
-  let peerConnections = new Map();
-  let isMuted = false;
   let currentTextChannel = 'general';
 
   // WebRTC configuration
@@ -1195,6 +1172,9 @@
       window.wyvernSocket.emit('leaveVoiceChannel');
     }
 
+    // Clear own voice state
+    userVoiceStates.delete(username);
+
     hideVoiceIndicators();
     currentVoiceChannel = null;
     log(`✅ Left voice channel`);
@@ -1240,6 +1220,14 @@
         userPanelMute.classList.remove('muted');
       }
     }
+
+    // Update local state
+    const state = userVoiceStates.get(username) || { muted: false, deafened: false };
+    state.muted = isMuted;
+    userVoiceStates.set(username, state);
+    
+    // Update own participant status in UI
+    updateParticipantStatus(username);
 
     if (window.wyvernSocket) {
       window.wyvernSocket.emit('userMuted', { muted: isMuted });
@@ -1345,11 +1333,21 @@
 
     const participantHTML = users.map(user => {
       const isCurrentUser = user === username;
+      const state = userVoiceStates.get(user) || { muted: false, deafened: false };
+      
+      // Determine status icon
+      let statusIcon = '<i class="fas fa-microphone"></i>';
+      if (state.deafened) {
+        statusIcon = '<i class="fas fa-headphones-slash"></i>';
+      } else if (state.muted) {
+        statusIcon = '<i class="fas fa-microphone-slash"></i>';
+      }
+      
       return `
-        <div class="voice-participant ${isCurrentUser ? 'current-user' : ''}">
+        <div class="voice-participant ${isCurrentUser ? 'current-user' : ''}" data-username="${user}">
           <div class="voice-participant-avatar">${user.charAt(0).toUpperCase()}</div>
           <div class="voice-participant-name">${user}${isCurrentUser ? ' (You)' : ''}</div>
-          <div class="voice-participant-status">🎤</div>
+          <div class="voice-participant-status">${statusIcon}</div>
         </div>
       `;
     }).join('');
@@ -1368,6 +1366,40 @@
 
     // Force re-render of voice channels to show updated user counts
     forceUpdateVoiceChannelDisplay();
+  }
+
+  function updateParticipantStatus(username) {
+    const state = userVoiceStates.get(username) || { muted: false, deafened: false };
+    
+    // Determine status icon and class
+    let statusIcon = 'fa-microphone';
+    let statusClass = '';
+    
+    if (state.deafened) {
+      statusIcon = 'fa-headphones-slash';
+      statusClass = 'deafened';
+    } else if (state.muted) {
+      statusIcon = 'fa-microphone-slash';
+      statusClass = 'muted';
+    }
+    
+    // Update voice UI participants
+    const participants = document.querySelectorAll(`.voice-participant[data-username="${username}"]`);
+    participants.forEach(participant => {
+      const statusEl = participant.querySelector('.voice-participant-status');
+      if (statusEl) {
+        statusEl.innerHTML = `<i class="fas ${statusIcon}"></i>`;
+      }
+    });
+    
+    // Update voice channel list users
+    const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${username}"]`);
+    voiceUsers.forEach(userEl => {
+      const statusEl = userEl.querySelector('.voice-user-status');
+      if (statusEl) {
+        statusEl.className = `fas ${statusIcon} voice-user-status ${statusClass}`;
+      }
+    });
   }
 
   function forceUpdateVoiceChannelDisplay() {
@@ -1599,6 +1631,75 @@
       }
     }
   };
+
+  // Setup voice control button handlers (must be after voice functions are defined)
+  function setupVoiceButtonHandlers() {
+    const userPanelMute = document.getElementById("userPanelMute");
+    const userPanelDeafen = document.getElementById("userPanelDeafen");
+    const voiceDisconnect = document.getElementById('voiceDisconnect');
+
+    if (userPanelMute) {
+      userPanelMute.addEventListener("click", () => {
+        if (currentVoiceChannel) {
+          toggleMute();
+        } else {
+          showNotification('Join a voice channel first', 'error');
+        }
+      });
+    }
+
+    if (userPanelDeafen) {
+      userPanelDeafen.addEventListener("click", () => {
+        if (currentVoiceChannel) {
+          const isDeafened = userPanelDeafen.classList.toggle('deafened');
+          
+          if (isDeafened) {
+            if (localStream) {
+              localStream.getAudioTracks().forEach(track => {
+                track.enabled = false;
+              });
+            }
+            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+              audio.muted = true;
+            });
+            showNotification('Deafened', 'success');
+          } else {
+            if (localStream && !isMuted) {
+              localStream.getAudioTracks().forEach(track => {
+                track.enabled = true;
+              });
+            }
+            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+              audio.muted = false;
+            });
+            showNotification('Undeafened', 'success');
+          }
+
+          const state = userVoiceStates.get(username) || { muted: false, deafened: false };
+          state.deafened = isDeafened;
+          userVoiceStates.set(username, state);
+          updateParticipantStatus(username);
+
+          if (window.wyvernSocket) {
+            window.wyvernSocket.emit('userDeafened', { deafened: isDeafened });
+          }
+        } else {
+          showNotification('Join a voice channel first', 'error');
+        }
+      });
+    }
+
+    if (voiceDisconnect) {
+      voiceDisconnect.addEventListener('click', () => {
+        leaveVoiceChannel();
+      });
+    }
+
+    log('Voice button handlers set up');
+  }
+
+  // Call setup function
+  setupVoiceButtonHandlers();
 
   // Debug info
   log('Chat.js loaded successfully');
