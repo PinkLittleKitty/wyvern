@@ -14,47 +14,74 @@ const { router: authRouter, authMiddleware } = require('./auth');
 
 const app = express();
 
-// HTTPS Configuration with your generated certificates
 let server;
 let isHttps = false;
 
-try {
-  const privateKey = fs.readFileSync('key.pem', 'utf8');
-  const certificate = fs.readFileSync('cert.pem', 'utf8');
-  const credentials = { key: privateKey, cert: certificate };
-  
-  server = https.createServer(credentials, app);
-  isHttps = true;
-  console.log('🔒 HTTPS server enabled with SSL certificates');
-} catch (error) {
-  console.log('⚠️  SSL certificates not found, falling back to HTTP');
-  console.log('   Voice chat will be disabled on HTTP');
-  server = http.createServer(app);
-  isHttps = false;
+function initializeServer() {
+  try {
+    if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
+      const privateKey = fs.readFileSync('key.pem', 'utf8');
+      const certificate = fs.readFileSync('cert.pem', 'utf8');
+      const credentials = { 
+        key: privateKey, 
+        cert: certificate,
+        secureProtocol: 'TLSv1_2_method',
+        honorCipherOrder: true
+      };
+      
+      server = https.createServer(credentials, app);
+      isHttps = true;
+      console.log('🔒 HTTPS server enabled with SSL certificates');
+    } else {
+      console.log('⚠️  SSL certificates not found, falling back to HTTP');
+      console.log('   Voice chat will be disabled on HTTP');
+      server = http.createServer(app);
+      isHttps = false;
+    }
+  } catch (error) {
+    console.error('❌ Error reading SSL certificates:', error.message);
+    console.log('⚠️  Falling back to HTTP server');
+    server = http.createServer(app);
+    isHttps = false;
+  }
+
+  // Initialize Socket.IO AFTER server is created
+  io = new Server(server, {
+    cors: {
+      origin: [
+        'http://193.149.164.240:4196', 
+        'https://193.149.164.240:4196',
+        'http://localhost:4196',
+        'https://localhost:4196',
+        'http://wyvern.justneki.com',
+        'https://wyvern.justneki.com'
+      ],
+      credentials: true,
+      methods: ["GET", "POST"]
+    },
+    transports: ["polling", "websocket"],
+    allowEIO3: true,
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    path: '/socket.io/'
+  });
+
+  // Add the upgrade handler AFTER server is created
+  server.on('upgrade', (request, socket, head) => {
+    console.log('WebSocket upgrade request received');
+  });
 }
 
-const io = new Server(server, {
-  cors: {
-    origin: [
-      'http://193.149.164.168:4196', 
-      'https://193.149.164.168:4196',
-      'http://localhost:4196',
-      'https://localhost:4196',
-      'http:wyvern.justneki.com/',
-      'https://wyvern.justneki.com/'
-    ],
-    credentials: true,
-  }
-});
+let io;
 
 app.use(cors({
   origin: [
-    'http://193.149.164.168:4196', 
-    'https://193.149.164.168:4196',
+    'http://193.149.164.240:4196', 
+    'https://193.149.164.240:4196',
     'http://localhost:4196',
     'https://localhost:4196',
-    'http:wyvern.justneki.com/',
-    'https://wyvern.justneki.com/'
+    'http://wyvern.justneki.com',
+    'https://wyvern.justneki.com'
   ],
   methods: ["GET", "POST"],
   credentials: true,
@@ -69,13 +96,29 @@ app.get('/', (req, res) => {
   res.redirect('/login.html');
 });
 
-// Add endpoint to check if HTTPS is enabled
 app.get('/api/server-info', (req, res) => {
   res.json({ 
     https: isHttps,
-    voiceSupported: isHttps 
+    voiceSupported: isHttps,
+    uptime: process.uptime(),
+    version: require('./package.json').version
   });
 });
+
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Add this route to serve Socket.IO client
+app.get('/socket.io/socket.io.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
+});
+
+
 
 let messagesCollection;
 let usersCollection;
@@ -102,6 +145,56 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
+function displayBanner() {
+  console.log('\n' + '='.repeat(60));
+  console.log('🐉 WYVERN CHAT SERVER');
+  console.log('='.repeat(60));
+  console.log(`📦 Version: ${require('./package.json').version}`);
+  console.log(`🌐 Protocol: ${isHttps ? 'HTTPS' : 'HTTP'}`);
+  console.log(`🔊 Voice Chat: ${isHttps ? 'Enabled' : 'Disabled'}`);
+  console.log(`⏰ Started: ${new Date().toLocaleString()}`);
+  console.log('='.repeat(60));
+}
+
+function displayHelp() {
+  console.log('\n📋 Available Commands:');
+  console.log('┌─────────────────────────────────────────────────────────┐');
+  console.log('│ 👑 ADMIN MANAGEMENT                                     │');
+  console.log('│   addadmin <username>        - Grant admin privileges   │');
+  console.log('│   removeadmin <username>     - Remove admin privileges  │');
+  console.log('│   listadmins                 - List all admins          │');
+  console.log('│                                                         │');
+  console.log('│ 📺 CHANNEL MANAGEMENT                                   │');
+  console.log('│   addchannel <type> <name> [desc] - Create channel      │');
+  console.log('│   removechannel <type> <name>     - Delete channel      │');
+  console.log('│   listchannels                    - List all channels   │');
+  console.log('│                                                         │');
+  console.log('│ 📊 SERVER INFO                                          │');
+  console.log('│   status                     - Show server status       │');
+  console.log('│   stats                      - Show detailed statistics │');
+  console.log('│   users                      - List connected users     │');
+  console.log('│   migrate                    - Migrate old messages     │');
+  console.log('│   countmessages              - Show message statistics  │');
+  console.log('│                                                         │');
+  console.log('│ 🔧 SERVER CONTROL                                       │');
+  console.log('│   restart                    - Restart the server       │');
+  console.log('│   stop                       - Stop the server          │');
+  console.log('│   help                       - Show this help           │');
+  console.log('└─────────────────────────────────────────────────────────┘');
+}
+
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (days > 0) return `${days}d ${hours}h ${minutes}m ${secs}s`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
+}
+
 function handleServerCommands() {
   rl.on('line', async (input) => {
     const [command, ...args] = input.trim().split(' ');
@@ -109,7 +202,7 @@ function handleServerCommands() {
     switch(command) {
       case 'addadmin':
         if (args.length === 0) {
-          console.log('Usage: addadmin <username>');
+          console.log('❌ Usage: addadmin <username>');
           return;
         }
         try {
@@ -124,13 +217,13 @@ function handleServerCommands() {
             console.log(`❌ User ${username} not found`);
           }
         } catch (err) {
-          console.error('Error adding admin:', err);
+          console.error('❌ Error adding admin:', err.message);
         }
         break;
         
       case 'removeadmin':
         if (args.length === 0) {
-          console.log('Usage: removeadmin <username>');
+          console.log('❌ Usage: removeadmin <username>');
           return;
         }
         try {
@@ -145,23 +238,29 @@ function handleServerCommands() {
             console.log(`❌ User ${username} not found`);
           }
         } catch (err) {
-          console.error('Error removing admin:', err);
+          console.error('❌ Error removing admin:', err.message);
         }
         break;
         
       case 'listadmins':
         try {
           const admins = await usersCollection.find({ isAdmin: true }).toArray();
-          console.log('👑 Admins:');
-          admins.forEach(admin => console.log(`  - ${admin.username}`));
+          if (admins.length === 0) {
+            console.log('👑 No admins found');
+          } else {
+            console.log('👑 Current Admins:');
+            admins.forEach((admin, index) => {
+              console.log(`   ${index + 1}. ${admin.username}`);
+            });
+          }
         } catch (err) {
-          console.error('Error listing admins:', err);
+          console.error('❌ Error listing admins:', err.message);
         }
         break;
         
       case 'addchannel':
         if (args.length < 2) {
-          console.log('Usage: addchannel <text|voice> <name> [description]');
+          console.log('❌ Usage: addchannel <text|voice> <name> [description]');
           return;
         }
         try {
@@ -175,6 +274,12 @@ function handleServerCommands() {
           }
           
           const collection = type === 'text' ? channelsCollection : voiceChannelsCollection;
+          const existing = await collection.findOne({ name });
+          if (existing) {
+            console.log(`❌ ${type} channel #${name} already exists`);
+            return;
+          }
+          
           await collection.insertOne({ name, description, type });
           console.log(`✅ ${type} channel #${name} created`);
           
@@ -184,13 +289,13 @@ function handleServerCommands() {
             io.emit('voiceChannelUpdate', await voiceChannelsCollection.find().toArray());
           }
         } catch (err) {
-          console.error('Error adding channel:', err);
+          console.error('❌ Error adding channel:', err.message);
         }
         break;
         
       case 'removechannel':
         if (args.length < 2) {
-          console.log('Usage: removechannel <text|voice> <name>');
+          console.log('❌ Usage: removechannel <text|voice> <name>');
           return;
         }
         try {
@@ -230,7 +335,7 @@ function handleServerCommands() {
             console.log(`❌ ${type} channel #${name} not found`);
           }
         } catch (err) {
-          console.error('Error removing channel:', err);
+          console.error('❌ Error removing channel:', err.message);
         }
         break;
         
@@ -238,72 +343,209 @@ function handleServerCommands() {
         try {
           const textChannels = await channelsCollection.find().toArray();
           const voiceChannels = await voiceChannelsCollection.find().toArray();
-          console.log('📺 Text Channels:');
-          textChannels.forEach(channel => console.log(`  - #${channel.name}: ${channel.description}`));
-          console.log('🔊 Voice Channels:');
-          voiceChannels.forEach(channel => console.log(`  - 🔊${channel.name}: ${channel.description}`));
+          
+          console.log('\n📺 Text Channels:');
+          if (textChannels.length === 0) {
+            console.log('   No text channels found');
+          } else {
+            textChannels.forEach((channel, index) => {
+              console.log(`   ${index + 1}. #${channel.name} - ${channel.description}`);
+            });
+          }
+          
+          console.log('\n🔊 Voice Channels:');
+          if (voiceChannels.length === 0) {
+            console.log('   No voice channels found');
+          } else {
+            voiceChannels.forEach((channel, index) => {
+              const userCount = voiceRooms.get(channel.name)?.size || 0;
+              console.log(`   ${index + 1}. 🔊${channel.name} - ${channel.description} (${userCount} users)`);
+            });
+          }
         } catch (err) {
-          console.error('Error listing channels:', err);
+          console.error('❌ Error listing channels:', err.message);
+        }
+        break;
+
+      case 'status':
+        try {
+          const connectedUsers = io.sockets.sockets.size;
+          const totalVoiceUsers = Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0);
+          const totalUsers = await usersCollection.countDocuments();
+          const totalMessages = await messagesCollection.countDocuments();
+          
+          console.log('\n📊 Server Status:');
+          console.log(`   🟢 Status: Running`);
+          console.log(`   ⏰ Uptime: ${formatUptime(process.uptime())}`);
+          console.log(`   👥 Connected Users: ${connectedUsers}`);
+          console.log(`   🔊 Voice Users: ${totalVoiceUsers}`);
+          console.log(`   📝 Total Registered: ${totalUsers}`);
+          console.log(`   💬 Total Messages: ${totalMessages}`);
+          console.log(`   🧠 Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+        } catch (err) {
+          console.error('❌ Error getting status:', err.message);
+        }
+        break;
+
+            case 'stats':
+        try {
+          const totalUsers = await usersCollection.countDocuments();
+          const totalMessages = await messagesCollection.countDocuments();
+          const totalChannels = await channelsCollection.countDocuments();
+          const totalVoiceChannels = await voiceChannelsCollection.countDocuments();
+          const connectedUsers = io.sockets.sockets.size;
+          const totalVoiceUsers = Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0);
+          
+          const messagesByChannel = await messagesCollection.aggregate([
+            { $group: { _id: '$channel', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ]).toArray();
+          
+          const topUsers = await messagesCollection.aggregate([
+            { $group: { _id: '$username', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 }
+          ]).toArray();
+          
+          console.log('\n📊 Detailed Server Statistics:');
+          console.log('┌─────────────────────────────────────────────────────────┐');
+          console.log('│ 📈 GENERAL STATS                                       │');
+          console.log(`│   Total Registered Users: ${totalUsers.toString().padStart(25)} │`);
+          console.log(`│   Currently Connected: ${connectedUsers.toString().padStart(29)} │`);
+          console.log(`│   Users in Voice Chat: ${totalVoiceUsers.toString().padStart(29)} │`);
+          console.log(`│   Total Messages Sent: ${totalMessages.toString().padStart(28)} │`);
+          console.log(`│   Text Channels: ${totalChannels.toString().padStart(34)} │`);
+          console.log(`│   Voice Channels: ${totalVoiceChannels.toString().padStart(33)} │`);
+          console.log('│                                                         │');
+          console.log('│ 💬 TOP CHANNELS BY MESSAGES                            │');
+          messagesByChannel.slice(0, 5).forEach((channel, index) => {
+            const name = `#${channel._id}`.padEnd(20);
+            const count = channel.count.toString().padStart(10);
+            console.log(`│   ${(index + 1)}. ${name}${count} messages │`);
+          });
+          console.log('│                                                         │');
+          console.log('│ 👑 TOP USERS BY MESSAGES                               │');
+          topUsers.forEach((user, index) => {
+            const name = user._id.padEnd(20);
+            const count = user.count.toString().padStart(10);
+            console.log(`│   ${(index + 1)}. ${name}${count} messages │`);
+          });
+          console.log('│                                                         │');
+          console.log('│ 🖥️  SYSTEM INFO                                         │');
+          console.log(`│   Uptime: ${formatUptime(process.uptime()).padStart(43)} │`);
+          console.log(`│   Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024).toString().padStart(35)}MB │`);
+          console.log(`│   Node.js Version: ${process.version.padStart(32)} │`);
+          console.log('└─────────────────────────────────────────────────────────┘');
+        } catch (err) {
+          console.error('❌ Error getting detailed stats:', err.message);
+        }
+        break;
+
+      case 'users':
+        try {
+          const connectedSockets = Array.from(io.sockets.sockets.values());
+          console.log('\n👥 Connected Users:');
+          if (connectedSockets.length === 0) {
+            console.log('   No users currently connected');
+          } else {
+            connectedSockets.forEach((socket, index) => {
+              const voiceStatus = socket.voiceChannel ? `🔊 ${socket.voiceChannel}` : '💬 Text only';
+              const adminStatus = socket.user.isAdmin ? '👑' : '👤';
+              console.log(`   ${index + 1}. ${adminStatus} ${socket.user.username} - ${voiceStatus}`);
+            });
+          }
+        } catch (err) {
+          console.error('❌ Error listing users:', err.message);
+        }
+        break;
+
+      case 'migrate':
+        try {
+          const result = await messagesCollection.updateMany(
+            { channel: { $exists: false } },
+            { $set: { channel: 'general' } }
+          );
+          console.log(`✅ Migrated ${result.modifiedCount} messages to #general`);
+        } catch (err) {
+          console.error('❌ Error migrating messages:', err.message);
+        }
+        break;
+
+      case 'countmessages':
+        try {
+          const totalMessages = await messagesCollection.countDocuments();
+          const messagesByChannel = await messagesCollection.aggregate([
+            { $group: { _id: '$channel', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ]).toArray();
+          
+          console.log(`\n💬 Total Messages: ${totalMessages}`);
+          console.log('📊 Messages by Channel:');
+          messagesByChannel.forEach((channel, index) => {
+            console.log(`   ${index + 1}. #${channel._id}: ${channel.count} messages`);
+          });
+        } catch (err) {
+          console.error('❌ Error counting messages:', err.message);
         }
         break;
         
-      case 'help':
-        console.log('Available commands:');
-        console.log('  addadmin <username>              - Make user an admin');
-        console.log('  removeadmin <username>           - Remove admin privileges');
-        console.log('  listadmins                       - List all admins');
-        console.log('  addchannel <text|voice> <name>   - Add new channel');
-        console.log('  removechannel <text|voice> <name> - Delete channel');
-        console.log('  listchannels                     - List all channels');
-        console.log('  migrate                          - Migrate old messages to #general');
-        console.log('  countmessages                    - Show message statistics');
-        console.log('  restart                          - Restart the server');
-        console.log('  stop                             - Stop the server');
-        console.log('  help                             - Show this help');
-        break;
-        
       case 'restart':
-        console.log('🔄 Restarting server...');
-        console.log('👋 Goodbye!');
+        console.log('🔄 Initiating server restart...');
+        console.log('📢 Notifying all connected users...');
         
-        // Close all socket connections gracefully
-        io.emit('serverRestart', 'Server is restarting, please refresh your page');
+        io.emit('serverRestart', 'Server is restarting, please refresh your page in 10 seconds');
         
-        // Close server
-        server.close(() => {
-          console.log('Server closed');
-          process.exit(0);
-        });
-        
-        // Force exit after 5 seconds if graceful shutdown fails
         setTimeout(() => {
-          console.log('Force exit');
-          process.exit(1);
-        }, 5000);
+          console.log('🔄 Restarting server...');
+          console.log('👋 Goodbye!');
+          
+          server.close(() => {
+            console.log('✅ Server closed gracefully');
+            process.exit(0);
+          });
+          
+          setTimeout(() => {
+            console.log('⚠️  Force exit - graceful shutdown timeout');
+            process.exit(1);
+          }, 5000);
+        }, 2000);
         break;
         
       case 'stop':
-        console.log('🛑 Stopping server...');
-        console.log('👋 Goodbye!');
+        console.log('🛑 Initiating server shutdown...');
+        console.log('📢 Notifying all connected users...');
         
-        // Notify all connected users
         io.emit('serverShutdown', 'Server is shutting down');
         
-        // Close server gracefully
-        server.close(() => {
-          console.log('Server stopped');
-          process.exit(0);
-        });
-        
-        // Force exit after 5 seconds
         setTimeout(() => {
-          process.exit(1);
-        }, 5000);
+          console.log('🛑 Stopping server...');
+          console.log('👋 Goodbye!');
+          
+          server.close(() => {
+            console.log('✅ Server stopped gracefully');
+            process.exit(0);
+          });
+          
+          setTimeout(() => {
+            console.log('⚠️  Force exit - graceful shutdown timeout');
+            process.exit(1);
+          }, 5000);
+        }, 2000);
+        break;
+
+      case 'clear':
+        console.clear();
+        displayBanner();
+        break;
+
+      case 'help':
+        displayHelp();
         break;
         
       default:
         if (command) {
-          console.log(`Unknown command: ${command}. Type 'help' for available commands.`);
+          console.log(`❌ Unknown command: ${command}`);
+          console.log('💡 Type "help" for available commands');
         }
     }
   });
@@ -318,23 +560,33 @@ app.get('/api/channels', async (req, res) => {
   }
 });
 
-io.use((socket, next) => {
+function setupSocketIO() {
+  console.log('🔌 Setting up Socket.IO handlers...');
+  
+  io.use((socket, next) => {
   const token = socket.handshake.auth.token || socket.request.headers.cookie?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
-  if (!token) return next(new Error("No token"));
+  console.log('Socket auth attempt:', { hasToken: !!token, socketId: socket.id });
+
+  if (!token) {
+    console.log('No token provided');
+    return next(new Error("Authentication error: No token provided"));
+  }
 
   try {
-    const payload = jwt.verify(token, 'your_jwt_secret_here');
+    const payload = jwt.verify(token, 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); // Use your actual JWT secret
     socket.user = payload;
+    console.log(`Socket authenticated: ${payload.username}`);
     next();
   } catch (err) {
-    next(new Error("Invalid token"));
+    console.log('Token verification failed:', err.message);
+    next(new Error("Authentication error: Invalid token"));
   }
 });
 
 io.on('connection', async (socket) => {
   const username = socket.user.username;
-  console.log(`User connected: ${username}`);
+  console.log(`👤 User connected: ${username}`);
   
   const user = await usersCollection.findOne({ username });
   socket.user.isAdmin = user?.isAdmin || false;
@@ -358,14 +610,13 @@ io.on('connection', async (socket) => {
         .toArray();
       socket.emit("chatHistory", history);
     } catch (err) {
-      console.error("Error fetching chat history:", err);
+      console.error("❌ Error fetching chat history:", err);
     }
   });
 
   socket.on('joinVoiceChannel', (channelName) => {
-    console.log(`${username} attempting to join voice channel: ${channelName}`);
+    console.log(`🔊 ${username} joining voice channel: ${channelName}`);
     
-    // Leave current voice channel if in one
     if (socket.voiceChannel) {
       socket.leave(`voice-${socket.voiceChannel}`);
       const oldRoom = voiceRooms.get(socket.voiceChannel);
@@ -389,7 +640,6 @@ io.on('connection', async (socket) => {
       }
     }
 
-    // Join new voice channel
     socket.join(`voice-${channelName}`);
     socket.voiceChannel = channelName;
     
@@ -398,30 +648,25 @@ io.on('connection', async (socket) => {
     }
     voiceRooms.get(channelName).add(socket.id);
     
-    // Get current users in the channel
     const roomUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
       const s = io.sockets.sockets.get(socketId);
       return s ? s.user.username : null;
     }).filter(Boolean);
     
-    console.log(`Voice channel ${channelName} now has users:`, roomUsers);
-    
-    // Emit updated user list to everyone
     io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
     
-    // Notify existing users in the channel about the new user
     socket.to(`voice-${channelName}`).emit('userJoinedVoice', { 
       username, 
       channel: channelName,
       socketId: socket.id 
     });
     
-    console.log(`${username} successfully joined voice channel: ${channelName}`);
+    console.log(`✅ ${username} joined voice channel: ${channelName}`);
   });
 
   socket.on('leaveVoiceChannel', () => {
     if (socket.voiceChannel) {
-      console.log(`${username} leaving voice channel: ${socket.voiceChannel}`);
+      console.log(`🔊 ${username} leaving voice channel: ${socket.voiceChannel}`);
       
       socket.leave(`voice-${socket.voiceChannel}`);
       const room = voiceRooms.get(socket.voiceChannel);
@@ -444,13 +689,12 @@ io.on('connection', async (socket) => {
         });
       }
       
-      console.log(`${username} left voice channel: ${socket.voiceChannel}`);
+      console.log(`✅ ${username} left voice channel: ${socket.voiceChannel}`);
       socket.voiceChannel = null;
     }
   });
 
   socket.on('webrtc-offer', (data) => {
-    console.log(`WebRTC offer from ${username} to ${data.to}`);
     const targetSocket = io.sockets.sockets.get(data.to);
     if (targetSocket && socket.voiceChannel) {
       targetSocket.emit('webrtc-offer', {
@@ -458,14 +702,10 @@ io.on('connection', async (socket) => {
         from: socket.id,
         username: username
       });
-      console.log(`WebRTC offer relayed from ${username} to ${targetSocket.user.username}`);
-    } else {
-      console.log(`Target socket ${data.to} not found or not in voice channel`);
     }
   });
 
   socket.on('webrtc-answer', (data) => {
-    console.log(`WebRTC answer from ${username} to ${data.to}`);
     const targetSocket = io.sockets.sockets.get(data.to);
     if (targetSocket && socket.voiceChannel) {
       targetSocket.emit('webrtc-answer', {
@@ -473,14 +713,10 @@ io.on('connection', async (socket) => {
         from: socket.id,
         username: username
       });
-      console.log(`WebRTC answer relayed from ${username} to ${targetSocket.user.username}`);
-    } else {
-      console.log(`Target socket ${data.to} not found or not in voice channel`);
     }
   });
 
   socket.on('webrtc-ice-candidate', (data) => {
-    console.log(`ICE candidate from ${username} to ${data.to}`);
     const targetSocket = io.sockets.sockets.get(data.to);
     if (targetSocket && socket.voiceChannel) {
       targetSocket.emit('webrtc-ice-candidate', {
@@ -488,9 +724,6 @@ io.on('connection', async (socket) => {
         from: socket.id,
         username: username
       });
-      console.log(`ICE candidate relayed from ${username} to ${targetSocket.user.username}`);
-    } else {
-      console.log(`Target socket ${data.to} not found or not in voice channel`);
     }
   });
 
@@ -505,7 +738,7 @@ io.on('connection', async (socket) => {
       await messagesCollection.insertOne(messageToSave);
       io.to(socket.currentChannel || 'general').emit("chatMessage", messageToSave);
     } catch (err) {
-      console.error("Error saving message:", err);
+      console.error("❌ Error saving message:", err);
     }
   });
 
@@ -537,7 +770,7 @@ io.on('connection', async (socket) => {
         const channels = await channelsCollection.find().toArray();
         io.emit('channelUpdate', channels);
       } else {
-        const voiceChannels = await voiceChannelsCollection.find().toArray();
+                const voiceChannels = await voiceChannelsCollection.find().toArray();
         io.emit('voiceChannelUpdate', voiceChannels);
       }
       
@@ -594,10 +827,9 @@ io.on('connection', async (socket) => {
     }
   });
 
-    socket.on('disconnect', () => {
-    console.log(`User disconnected: ${username}`);
+  socket.on('disconnect', () => {
+    console.log(`👤 User disconnected: ${username}`);
     
-    // Clean up voice channel
     if (socket.voiceChannel) {
       const room = voiceRooms.get(socket.voiceChannel);
       if (room) {
@@ -639,8 +871,42 @@ io.on('connection', async (socket) => {
     }
   });
 });
+}
 
 const PORT = process.env.PORT || 4196;
+
+async function gracefulShutdown(signal) {
+  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+  
+  io.emit('serverShutdown', 'Server is shutting down');
+  
+  setTimeout(() => {
+    server.close(() => {
+      console.log('✅ Server closed gracefully');
+      process.exit(0);
+    });
+    
+    setTimeout(() => {
+      console.log('⚠️  Force exit - graceful shutdown timeout');
+      process.exit(1);
+    }, 5000);
+  }, 1000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('UNHANDLED_REJECTION');
+});
+
+initializeServer();
 
 connect().then(async () => {
   const db = getDb();
@@ -663,20 +929,32 @@ connect().then(async () => {
   
   server.listen(PORT, () => {
     const protocol = isHttps ? 'https' : 'http';
-    console.log(`🚀 Server listening on ${protocol}://193.149.164.168:${PORT}`);
+    
+    displayBanner();
+    
+    console.log(`🚀 Server running on ${protocol}://193.149.164.240:${PORT}`);
+    console.log(`🌐 Domain: ${protocol}://wyvern.justneki.com`);
     
     if (isHttps) {
-      console.log('🔊 Voice chat enabled (HTTPS)');
-      console.log('⚠️  You may need to accept the self-signed certificate in your browser');
+      console.log('🔊 Voice chat: ENABLED');
+      console.log('⚠️  You may need to accept the self-signed certificate');
     } else {
-      console.log('⚠️  Voice chat disabled (HTTP only)');
-      console.log('   Generate SSL certificates to enable voice features');
+      console.log('🔊 Voice chat: DISABLED (HTTP only)');
+      console.log('💡 Generate SSL certificates to enable voice features');
     }
     
-    console.log('💬 Type "help" for available commands');
+    // Setup Socket.IO after server is listening
+    setupSocketIO();
+    console.log('✅ Socket.IO initialized');
+    
+    console.log('\n💡 Type "help" for available commands');
+    console.log('📊 Type "status" for server status');
+    console.log('👥 Type "users" to see connected users\n');
+    
     handleServerCommands();
   });
 }).catch(err => {
-  console.error('Failed to connect to database:', err);
+  console.error('💥 Failed to connect to database:', err);
+  console.error('🔍 Check your database connection string and network');
   process.exit(1);
 });

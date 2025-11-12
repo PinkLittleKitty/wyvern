@@ -5,7 +5,23 @@ const jwt = require("jsonwebtoken");
 const { getDb } = require("./database");
 
 const router = express.Router();
-const JWT_SECRET = 'your_jwt_secret_here';
+const JWT_SECRET = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
+
+function authMiddleware(req, res, next) {
+  const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
 
 router.post("/register", async (req, res) => {
   try {
@@ -19,13 +35,23 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Username already taken." });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.collection("users").insertOne({ username, password: hashedPassword });
+    await db.collection("users").insertOne({ 
+      username, 
+      password: hashedPassword,
+      isAdmin: false,
+      createdAt: new Date()
+    });
 
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: 'lax'
+    });
     res.json({ success: true, token });
   } catch (e) {
-    console.error(e);
+    console.error('Registration error:', e);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -46,10 +72,15 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid username or password." });
 
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, { 
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000,
+      secure: true,
+      sameSite: 'lax'
+    });
     res.json({ success: true, token });
   } catch (e) {
-    console.error(e);
+    console.error('Login error:', e);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -58,20 +89,5 @@ router.post("/logout", (req, res) => {
   res.clearCookie('token');
   res.json({ success: true });
 });
-
-function authMiddleware(req, res, next) {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-  
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
-  }
-}
 
 module.exports = { router, authMiddleware };

@@ -99,7 +99,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function setupSocket() {
-    socket = io("http://193.149.164.168:4196", {
+    socket = io("http://193.149.164.240:4196", {
       transports: ["websocket"],
     });
 
