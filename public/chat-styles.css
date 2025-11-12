@@ -3227,3 +3227,96 @@ body.users-panel-hidden .users-panel {
     opacity: 1;
   }
 }
+
+
+/* Mentions */
+.mention {
+  background: rgba(88, 101, 242, 0.15);
+  color: rgba(88, 101, 242, 1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mention:hover {
+  background: rgba(88, 101, 242, 0.25);
+}
+
+.mention-me {
+  background: rgba(250, 166, 26, 0.2);
+  color: rgba(250, 166, 26, 1);
+}
+
+.mention-me:hover {
+  background: rgba(250, 166, 26, 0.3);
+}
+
+.message-container.mentioned {
+  background: rgba(250, 166, 26, 0.08);
+  border-left: 3px solid rgba(250, 166, 26, 0.8);
+  padding-left: 12px;
+  margin-left: -3px;
+}
+
+.message-container.mentioned .message-text {
+  color: var(--text);
+}
+
+
+/* Mention Autocomplete */
+.mention-autocomplete {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  z-index: 100;
+}
+
+.mention-autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mention-autocomplete-item:hover,
+.mention-autocomplete-item.selected {
+  background: rgba(88, 101, 242, 0.2);
+}
+
+.mention-autocomplete-item i {
+  color: var(--text-muted);
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+}
+
+.mention-autocomplete-item span {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.mention-autocomplete-item.selected i {
+  color: rgba(88, 101, 242, 1);
+}
+
+.mention-autocomplete-item.selected span {
+  color: rgba(88, 101, 242, 1);
+}
+
+/* Make chat input container relative for autocomplete positioning */
+.chat-input {
+  position: relative;
+}

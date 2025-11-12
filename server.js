@@ -812,11 +812,17 @@ io.on('connection', async (socket) => {
       const messageToSave = {
         username: username,
         message: msg.message,
+        mentions: msg.mentions || [],
         channel: socket.currentChannel || 'general',
         timestamp: new Date(),
       };
       await messagesCollection.insertOne(messageToSave);
       io.to(socket.currentChannel || 'general').emit("chatMessage", messageToSave);
+      
+      // Log mentions for debugging
+      if (msg.mentions && msg.mentions.length > 0) {
+        console.log(`💬 ${username} mentioned: ${msg.mentions.join(', ')}`);
+      }
     } catch (err) {
       console.error("❌ Error saving message:", err);
     }

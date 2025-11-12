@@ -633,12 +633,32 @@
       const text = input.value.trim();
       if (!text) return;
 
-      log(`Sending message: ${text}`);
-      socket.emit("chatMessage", { username, message: text });
+      // Extract mentions from the message
+      const mentions = extractMentions(text);
+
+      log(`Sending message: ${text}${mentions.length > 0 ? ` (mentions: ${mentions.join(', ')})` : ''}`);
+      socket.emit("chatMessage", { 
+        username, 
+        message: text,
+        mentions: mentions 
+      });
       input.value = "";
       
       // Stop typing indicator when message is sent
       stopTyping();
+    }
+
+    function extractMentions(text) {
+      const mentions = [];
+      // Match @username or @everyone
+      const mentionRegex = /@(\w+)/g;
+      let match;
+      
+      while ((match = mentionRegex.exec(text)) !== null) {
+        mentions.push(match[1]);
+      }
+      
+      return mentions;
     }
 
     function startTyping() {
@@ -683,6 +703,150 @@
       input.addEventListener("blur", () => {
         stopTyping();
       });
+
+      // Mention autocomplete
+      input.addEventListener("input", handleMentionAutocomplete);
+      input.addEventListener("keydown", handleMentionKeydown);
+    }
+
+    // Mention autocomplete variables
+    let mentionAutocompleteVisible = false;
+    let mentionAutocompleteIndex = 0;
+    let mentionSuggestions = [];
+
+    function handleMentionAutocomplete(e) {
+      if (!input) {
+        log('❌ Input element not found in autocomplete handler');
+        return;
+      }
+      
+      const text = input.value;
+      const cursorPos = input.selectionStart;
+      
+      // Find if we're typing a mention
+      const textBeforeCursor = text.substring(0, cursorPos);
+      const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+      
+      log(`Autocomplete check: "${textBeforeCursor}" - match: ${mentionMatch ? mentionMatch[0] : 'none'}`);
+      
+      if (mentionMatch) {
+        const query = mentionMatch[1].toLowerCase();
+        log(`Showing autocomplete for query: "${query}"`);
+        showMentionAutocomplete(query);
+      } else {
+        hideMentionAutocomplete();
+      }
+    }
+
+    function showMentionAutocomplete(query) {
+      // Get online users from the users list
+      const onlineUsers = Array.from(document.querySelectorAll('#usersList .user-item')).map(el => {
+        return el.querySelector('.user-name')?.textContent || '';
+      }).filter(name => name && name !== username);
+      
+      log(`Found ${onlineUsers.length} online users: ${onlineUsers.join(', ')}`);
+      
+      // Add @everyone option
+      const allOptions = ['everyone', ...onlineUsers];
+      
+      // Filter based on query
+      mentionSuggestions = allOptions.filter(name => 
+        name.toLowerCase().startsWith(query)
+      );
+      
+      log(`Filtered suggestions for "${query}": ${mentionSuggestions.join(', ')}`);
+      
+      if (mentionSuggestions.length === 0) {
+        log('No suggestions found, hiding autocomplete');
+        hideMentionAutocomplete();
+        return;
+      }
+      
+      mentionAutocompleteIndex = 0;
+      mentionAutocompleteVisible = true;
+      
+      // Create or update autocomplete UI
+      let autocompleteEl = document.getElementById('mention-autocomplete');
+      if (!autocompleteEl) {
+        autocompleteEl = document.createElement('div');
+        autocompleteEl.id = 'mention-autocomplete';
+        autocompleteEl.className = 'mention-autocomplete';
+        document.querySelector('.chat-input').appendChild(autocompleteEl);
+      }
+      
+      autocompleteEl.innerHTML = mentionSuggestions.map((name, index) => `
+        <div class="mention-autocomplete-item ${index === 0 ? 'selected' : ''}" data-index="${index}">
+          <i class="fas ${name === 'everyone' ? 'fa-users' : 'fa-user'}"></i>
+          <span>${name}</span>
+        </div>
+      `).join('');
+      
+      autocompleteEl.style.display = 'block';
+      
+      // Add click handlers
+      autocompleteEl.querySelectorAll('.mention-autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          selectMention(parseInt(item.dataset.index));
+        });
+      });
+    }
+
+    function hideMentionAutocomplete() {
+      mentionAutocompleteVisible = false;
+      const autocompleteEl = document.getElementById('mention-autocomplete');
+      if (autocompleteEl) {
+        autocompleteEl.style.display = 'none';
+      }
+    }
+
+    function handleMentionKeydown(e) {
+      if (!mentionAutocompleteVisible) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        mentionAutocompleteIndex = (mentionAutocompleteIndex + 1) % mentionSuggestions.length;
+        updateAutocompleteSelection();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        mentionAutocompleteIndex = (mentionAutocompleteIndex - 1 + mentionSuggestions.length) % mentionSuggestions.length;
+        updateAutocompleteSelection();
+      } else if (e.key === 'Tab' || e.key === 'Enter') {
+        if (mentionAutocompleteVisible) {
+          e.preventDefault();
+          selectMention(mentionAutocompleteIndex);
+        }
+      } else if (e.key === 'Escape') {
+        hideMentionAutocomplete();
+      }
+    }
+
+    function updateAutocompleteSelection() {
+      const items = document.querySelectorAll('.mention-autocomplete-item');
+      items.forEach((item, index) => {
+        if (index === mentionAutocompleteIndex) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
+    function selectMention(index) {
+      const selectedName = mentionSuggestions[index];
+      if (!selectedName) return;
+      
+      const text = input.value;
+      const cursorPos = input.selectionStart;
+      const textBeforeCursor = text.substring(0, cursorPos);
+      const textAfterCursor = text.substring(cursorPos);
+      
+      // Replace the @mention being typed
+      const newTextBefore = textBeforeCursor.replace(/@\w*$/, `@${selectedName} `);
+      input.value = newTextBefore + textAfterCursor;
+      input.selectionStart = input.selectionEnd = newTextBefore.length;
+      
+      hideMentionAutocomplete();
+      input.focus();
     }
 
     // Logout functionality
@@ -729,6 +893,46 @@
   // Track if current user is admin
   let isCurrentUserAdmin = false;
 
+  function highlightMentions(text, mentions) {
+    if (!mentions || mentions.length === 0) return text;
+    
+    // Replace @mentions with highlighted spans
+    let highlightedText = text;
+    mentions.forEach(mention => {
+      const mentionRegex = new RegExp(`@${mention}\\b`, 'gi');
+      const isCurrentUser = mention.toLowerCase() === username.toLowerCase();
+      const isEveryone = mention.toLowerCase() === 'everyone';
+      const mentionClass = (isCurrentUser || isEveryone) ? 'mention mention-me' : 'mention';
+      
+      highlightedText = highlightedText.replace(mentionRegex, `<span class="${mentionClass}">@${mention}</span>`);
+    });
+    
+    return highlightedText;
+  }
+
+  function playNotificationSound() {
+    try {
+      // Create a simple beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.log('Could not play notification sound:', error);
+    }
+  }
+
   function displayMessage(data) {
     const messagesContainer = document.getElementById("chat-messages");
     const messageEl = document.createElement("div");
@@ -764,7 +968,24 @@
     const adminBadge = isAdmin ? '<span class="message-admin-badge">Admin</span>' : '';
 
     // Escape HTML in message but preserve line breaks
-    const escapedMessage = escapeHtml(data.message);
+    let escapedMessage = escapeHtml(data.message);
+    
+    // Highlight mentions
+    escapedMessage = highlightMentions(escapedMessage, data.mentions);
+    
+    // Check if current user is mentioned
+    const isMentioned = data.mentions && (
+      data.mentions.includes(username) || 
+      data.mentions.includes('everyone')
+    );
+    
+    if (isMentioned && data.username !== username) {
+      messageEl.classList.add('mentioned');
+      // Show notification for mention
+      showToast(`${data.username} mentioned you`, 'info', 'Mention');
+      // Play notification sound
+      playNotificationSound();
+    }
 
     // Admin delete button (show if current user is admin and it's not their message)
     const canDelete = isCurrentUserAdmin && data.username !== username;
