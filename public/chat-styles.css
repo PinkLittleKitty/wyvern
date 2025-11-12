@@ -6133,25 +6133,43 @@ body.users-panel-visible .mobile-overlay {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--sidebar-dark);
   border: none;
   color: var(--text);
   font-size: 20px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.server-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
 }
 
 .server-icon:hover {
   border-radius: 35%;
-  background: var(--accent);
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.server-icon:hover::after {
+  opacity: 1;
 }
 
 .server-icon.active {
   border-radius: 35%;
-  background: var(--accent);
-  color: white;
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+}
+
+.server-icon.active::after {
+  opacity: 1;
 }
 
 .server-icon.active::before {
@@ -6164,12 +6182,20 @@ body.users-panel-visible .mobile-overlay {
   height: 40px;
   background: white;
   border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  z-index: 1;
+}
+
+.server-icon img,
+.server-icon i {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .server-icon img {
   width: 30px;
   height: 30px;
-  pointer-events: none;
 }
 
 .server-icon.dm-icon {
@@ -6179,7 +6205,7 @@ body.users-panel-visible .mobile-overlay {
 .server-separator {
   width: 32px;
   height: 2px;
-  background: var(--border);
+  background: linear-gradient(90deg, transparent 0%, var(--border) 50%, transparent 100%);
   margin: 8px auto;
   border-radius: 1px;
 }
@@ -6187,71 +6213,206 @@ body.users-panel-visible .mobile-overlay {
 /* DM View */
 .dm-view {
   display: none;
+  animation: fadeIn 0.2s ease;
 }
 
 .dm-view.active {
   display: block;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dm-search-container {
-  padding: 8px 12px;
+  padding: 16px 12px;
   margin-bottom: 8px;
+  background: linear-gradient(180deg, var(--sidebar-dark) 0%, var(--sidebar) 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.dm-search-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent-glow) 50%, transparent 100%);
 }
 
 .dm-search {
   width: 100%;
-  padding: 8px 12px;
-  background: var(--chat-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: 12px 16px 12px 40px;
+  background: var(--bg);
+  border: 2px solid transparent;
+  border-radius: 10px;
   color: var(--text);
   font-size: 14px;
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.dm-search-container::before {
+  content: '\f002';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+  transition: color 0.3s ease;
 }
 
 .dm-search:focus {
   border-color: var(--accent);
-  background: var(--sidebar-dark);
+  background: var(--chat-bg);
+  box-shadow: 0 0 0 4px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.dm-search:focus + .dm-search-container::before {
+  color: var(--accent);
 }
 
 .dm-search::placeholder {
   color: var(--text-muted);
+  font-weight: 400;
 }
 
 /* DM Items */
 .dm-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  margin: 2px 8px;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 3px 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  border: 2px solid transparent;
+  background: transparent;
+  overflow: hidden;
+  animation: dmItemSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes dmItemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dm-item:nth-child(1) { animation-delay: 0.05s; }
+.dm-item:nth-child(2) { animation-delay: 0.1s; }
+.dm-item:nth-child(3) { animation-delay: 0.15s; }
+.dm-item:nth-child(4) { animation-delay: 0.2s; }
+.dm-item:nth-child(5) { animation-delay: 0.25s; }
+.dm-item:nth-child(n+6) { animation-delay: 0.3s; }
+
+.dm-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--hover-bg) 0%, rgba(139, 92, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
 }
 
 .dm-item:hover {
-  background: var(--hover-bg);
+  transform: translateX(4px);
+  border-color: var(--border);
+}
+
+.dm-item:hover::before {
+  opacity: 1;
 }
 
 .dm-item.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
   color: var(--text-bright);
+  box-shadow: 0 4px 16px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-soft);
+  transform: translateX(4px);
+}
+
+.dm-item.active::before {
+  opacity: 0;
+}
+
+.dm-item.active::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 28px;
+  background: white;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: 28px;
+    opacity: 1;
+  }
 }
 
 .dm-avatar {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   flex-shrink: 0;
   overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.dm-item:hover .dm-avatar {
+  border-color: var(--accent-glow);
+  transform: scale(1.08) rotate(2deg);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.dm-item.active .dm-avatar {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .dm-avatar img {
@@ -6265,44 +6426,84 @@ body.users-panel-visible .mobile-overlay {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .dm-username {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+}
+
+.dm-item:hover .dm-username {
+  color: var(--text-bright);
+}
+
+.dm-item.active .dm-username {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .dm-preview {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  opacity: 0.85;
+  transition: all 0.2s ease;
+  line-height: 1.3;
+}
+
+.dm-item:hover .dm-preview {
+  opacity: 1;
+  color: var(--text);
 }
 
 .dm-item.active .dm-preview {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  opacity: 1;
 }
 
 .dm-unread-badge {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--voice-red) 0%, #dc2626 100%);
   color: white;
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
+  padding: 4px 8px;
+  border-radius: 14px;
+  min-width: 22px;
   text-align: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: badgePulse 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
 }
 
 .dm-item.active .dm-unread-badge {
-  background: white;
+  background: linear-gradient(135deg, white 0%, #f0f0f0 100%);
   color: var(--accent);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4), inset 0 1px 0 rgba(139, 92, 246, 0.1);
+  font-weight: 800;
 }
 
 /* Empty state for DM list */
@@ -6320,19 +6521,6 @@ body.users-panel-visible .mobile-overlay {
   position: relative;
 }
 
-.user-item::after {
-  content: 'Double-click to DM';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-}
-
 .user-item:hover::after {
   opacity: 1;
 }
@@ -6345,40 +6533,101 @@ body.users-panel-visible .mobile-overlay {
 .dm-user-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  margin: 2px 8px;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 3px 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+  animation: dmUserSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes dmUserSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dm-user-item:nth-child(1) { animation-delay: 0.05s; }
+.dm-user-item:nth-child(2) { animation-delay: 0.1s; }
+.dm-user-item:nth-child(3) { animation-delay: 0.15s; }
+.dm-user-item:nth-child(4) { animation-delay: 0.2s; }
+.dm-user-item:nth-child(5) { animation-delay: 0.25s; }
+.dm-user-item:nth-child(n+6) { animation-delay: 0.3s; }
+
+.dm-user-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--hover-bg) 0%, rgba(16, 185, 129, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: inherit;
 }
 
 .dm-user-item:hover {
-  background: var(--hover-bg);
+  transform: translateX(4px);
+  border-color: var(--border);
+}
+
+.dm-user-item:hover::before {
+  opacity: 1;
 }
 
 .dm-user-item.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
   color: var(--text-bright);
+  box-shadow: 0 4px 16px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-soft);
+  transform: translateX(4px);
+}
+
+.dm-user-item.active::before {
+  opacity: 0;
 }
 
 .dm-user-item.active .dm-user-badge {
   background: white;
   color: var(--accent);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .dm-user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.dm-user-item:hover .dm-user-avatar {
+  border-color: var(--accent-glow);
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.dm-user-item.active .dm-user-avatar {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
 }
 
 .dm-user-avatar img {
@@ -6391,30 +6640,66 @@ body.users-panel-visible .mobile-overlay {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--voice-green);
-  border: 2px solid var(--sidebar);
+  background: linear-gradient(135deg, var(--voice-green) 0%, #059669 100%);
+  border: 3px solid var(--sidebar);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+  animation: statusPulse 3s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.9), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+  }
 }
 
 .dm-user-name {
   flex: 1;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.dm-user-item:hover .dm-user-name {
+  color: var(--text-bright);
+}
+
+.dm-user-item.active .dm-user-name {
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .dm-user-badge {
   font-size: 10px;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: var(--accent);
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
   color: white;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.dm-user-item:hover .dm-user-badge {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--accent-glow), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* DM Welcome Screen */
@@ -6425,47 +6710,117 @@ body.users-panel-visible .mobile-overlay {
   justify-content: center;
   height: 100%;
   text-align: center;
-  padding: 40px;
+  padding: 60px 40px;
   color: var(--text-muted);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dm-welcome::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.3;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.5;
+  }
 }
 
 .dm-welcome i {
-  font-size: 64px;
-  margin-bottom: 20px;
-  color: var(--accent);
-  opacity: 0.5;
+  font-size: 80px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: float 3s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 4px 12px var(--accent-glow));
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 .dm-welcome h3 {
-  font-size: 20px;
-  color: var(--text);
-  margin-bottom: 12px;
+  font-size: 26px;
+  color: var(--text-bright);
+  margin-bottom: 16px;
   font-weight: 600;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .dm-welcome p {
-  font-size: 14px;
-  max-width: 400px;
-  line-height: 1.5;
+  font-size: 15px;
+  max-width: 450px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  opacity: 0.95;
+  position: relative;
+  z-index: 1;
 }
 
 /* Empty states */
 #dmList:empty::after {
   content: 'No conversations yet';
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: var(--text-muted);
-  font-size: 12px;
-  padding: 20px 12px;
+  font-size: 13px;
+  padding: 32px 16px;
+  font-style: italic;
+  opacity: 0.7;
+  animation: fadeIn 0.5s ease;
 }
 
 #dmOnlineUsers:empty::after {
   content: 'No users online';
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: var(--text-muted);
-  font-size: 12px;
-  padding: 20px 12px;
+  font-size: 13px;
+  padding: 32px 16px;
+  font-style: italic;
+  opacity: 0.7;
+  animation: fadeIn 0.5s ease;
 }
 
 /* Mobile adjustments for DMs */
@@ -6496,4 +6851,436 @@ body.users-panel-visible .mobile-overlay {
   .dm-user-item {
     padding: 10px 12px;
   }
+}
+
+/* ==================== DM MODE ENHANCEMENTS ==================== */
+
+/* DM Mode - Special styling when in a DM conversation */
+body[data-dm-mode="true"] .chat-header h2 {
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+body[data-dm-mode="true"] .chat-header h2::before {
+  content: '@';
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* DM Messages - More intimate styling */
+body[data-dm-mode="true"] .message-container {
+  padding: 6px 20px;
+  border-radius: 8px;
+  margin: 2px 0;
+}
+
+body[data-dm-mode="true"] .message-container:hover {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+body[data-dm-mode="true"] .message-container.mine {
+  background: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.12) 100%);
+  border-left: 3px solid var(--accent);
+  padding-left: 17px;
+}
+
+body[data-dm-mode="true"] .message-container.mine:hover {
+  background: linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.18) 100%);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+/* DM Hover Tooltips */
+.dm-item::after,
+.dm-user-item::after {
+  content: attr(data-username);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  background: var(--sidebar-dark);
+  color: var(--text-bright);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+}
+
+.dm-item:hover::after,
+.dm-user-item:hover::after {
+  opacity: 0;
+  transform: translateY(-50%) translateX(12px);
+}
+
+/* Typing indicator in DM */
+body[data-dm-mode="true"] .typing-indicator {
+  background: rgba(139, 92, 246, 0.05);
+  border-left: 3px solid var(--accent);
+  padding: 8px 16px;
+  margin: 0 16px 8px 16px;
+  border-radius: 0 6px 6px 0;
+}
+
+/* DM Input styling */
+body[data-dm-mode="true"] .chat-input input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow), 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Smooth transitions for DM view switching - handled by display property in JS */
+
+/* DM notification badge on server icon */
+.server-icon.dm-icon {
+  position: relative;
+}
+
+.server-icon.dm-icon[data-unread]::after {
+  content: attr(data-unread);
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, var(--voice-red) 0%, #dc2626 100%);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  animation: badgePulse 2s ease-in-out infinite;
+  z-index: 2;
+  border: 2px solid var(--sidebar-dark);
+}
+
+/* Enhanced scrollbar for DM lists */
+#dmList::-webkit-scrollbar,
+#dmOnlineUsers::-webkit-scrollbar {
+  width: 8px;
+}
+
+#dmList::-webkit-scrollbar-thumb,
+#dmOnlineUsers::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
+  border-radius: 4px;
+  border: 2px solid var(--sidebar);
+}
+
+#dmList::-webkit-scrollbar-thumb:hover,
+#dmOnlineUsers::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--accent-soft) 0%, var(--accent) 100%);
+}
+
+#dmList::-webkit-scrollbar-track,
+#dmOnlineUsers::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* DM Section Headers */
+.dm-view .channel-section h4 {
+  position: relative;
+  padding: 8px 12px;
+  margin: 12px 8px 8px 8px;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+.dm-view .channel-section h4::after {
+  display: none;
+}
+
+/* Online count badge */
+#onlineCount {
+  background: linear-gradient(135deg, var(--voice-green) 0%, #059669 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  margin-left: 4px;
+}
+
+/* Smooth loading state for DM lists */
+#dmList.loading,
+#dmOnlineUsers.loading {
+  position: relative;
+  min-height: 100px;
+}
+
+#dmList.loading::before,
+#dmOnlineUsers.loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* DM Avatar images */
+.dm-avatar img,
+.dm-user-avatar img {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dm-item:hover .dm-avatar img,
+.dm-user-item:hover .dm-user-avatar img {
+  transform: scale(1.1);
+}
+
+/* Subtle glow effect on active DM */
+.dm-item.active,
+.dm-user-item.active {
+  position: relative;
+}
+
+.dm-item.active::before,
+.dm-user-item.active::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+  border-radius: inherit;
+  opacity: 0.15;
+  filter: blur(8px);
+  z-index: -1;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* DM timestamp in preview */
+.dm-timestamp {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.dm-item:hover .dm-timestamp {
+  opacity: 1;
+  color: var(--text);
+}
+
+.dm-item.active .dm-timestamp {
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
+}
+
+/* Micro-interactions */
+.dm-item:active,
+.dm-user-item:active {
+  transform: translateX(4px) scale(0.98);
+}
+
+/* Focus states for accessibility */
+.dm-item:focus-visible,
+.dm-user-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dm-search:focus-visible {
+  outline: none;
+}
+
+/* Smooth color transitions */
+.dm-item *,
+.dm-user-item * {
+  transition: color 0.2s ease;
+}
+
+/* ==================== DM MESSAGE ANIMATIONS ==================== */
+
+/* Smooth message appearance in DM mode */
+body[data-dm-mode="true"] .message-container {
+  animation: dmMessageSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+@keyframes dmMessageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Special styling for self messages in DM */
+body[data-dm-mode="true"] .message-container.mine .message-avatar {
+  box-shadow: 0 2px 12px var(--accent-glow);
+  border: 2px solid var(--accent-glow);
+}
+
+/* Enhanced message text in DM mode */
+body[data-dm-mode="true"] .message-text {
+  line-height: 1.5;
+  letter-spacing: 0.2px;
+}
+
+/* DM chat messages container */
+body[data-dm-mode="true"] .chat-messages {
+  background: linear-gradient(180deg, var(--chat-bg) 0%, rgba(139, 92, 246, 0.02) 100%);
+}
+
+/* Attachment styling in DM mode */
+body[data-dm-mode="true"] .message-attachments {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+  margin-left: 4px;
+}
+
+/* Link styling in DM mode */
+body[data-dm-mode="true"] .message-text a {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-glow);
+  text-underline-offset: 2px;
+  transition: all 0.2s ease;
+}
+
+body[data-dm-mode="true"] .message-text a:hover {
+  color: var(--accent-soft);
+  text-decoration-color: var(--accent-soft);
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Mention styling in DM mode */
+body[data-dm-mode="true"] .mention {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-left: 3px solid var(--accent);
+  padding: 2px 6px 2px 8px;
+  border-radius: 0 4px 4px 0;
+  font-weight: 600;
+}
+
+/* Timestamp in DM mode */
+body[data-dm-mode="true"] .message-timestamp {
+  color: var(--accent);
+  opacity: 0.6;
+}
+
+/* Message actions in DM mode */
+body[data-dm-mode="true"] .message-actions {
+  background: linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-dark) 100%);
+  border: 1px solid var(--accent-glow);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+/* Smooth scroll behavior in DM */
+body[data-dm-mode="true"] .chat-messages {
+  scroll-behavior: smooth;
+}
+
+/* DM header icon animation */
+body[data-dm-mode="true"] .chat-header h2 i {
+  animation: iconPulse 3s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Enhanced file preview in DM mode */
+body[data-dm-mode="true"] .message-file {
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
+}
+
+body[data-dm-mode="true"] .message-file:hover {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-left-color: var(--accent-soft);
+}
+
+/* Image attachments in DM mode */
+body[data-dm-mode="true"] .message-attachment img {
+  border: 2px solid var(--accent-glow);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body[data-dm-mode="true"] .message-attachment img:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px var(--accent-glow);
+  transform: scale(1.02);
+}
+
+/* Video attachments in DM mode */
+body[data-dm-mode="true"] .message-attachment video {
+  border: 2px solid var(--accent-glow);
+  border-radius: 8px;
+}
+
+/* Code blocks in DM mode */
+body[data-dm-mode="true"] .message-text code {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid var(--accent-glow);
+  color: var(--accent-soft);
+}
+
+body[data-dm-mode="true"] .message-text pre {
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 3px solid var(--accent);
+}
+
+/* Grouped messages in DM mode */
+body[data-dm-mode="true"] .message-container.grouped {
+  margin-left: 8px;
+}
+
+/* Send button glow in DM mode */
+body[data-dm-mode="true"] #send-button {
+  box-shadow: 0 4px 16px var(--accent-glow), 0 0 20px var(--accent-glow);
+  animation: sendButtonGlow 3s ease-in-out infinite;
+}
+
+@keyframes sendButtonGlow {
+  0%, 100% {
+    box-shadow: 0 4px 16px var(--accent-glow), 0 0 20px var(--accent-glow);
+  }
+  50% {
+    box-shadow: 0 6px 24px var(--accent-glow), 0 0 30px var(--accent-glow);
+  }
+}
+
+body[data-dm-mode="true"] #send-button:hover {
+  box-shadow: 0 8px 32px var(--accent-glow), 0 0 40px var(--accent-glow);
 }

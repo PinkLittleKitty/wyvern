@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   // Unified Toast Notification System
   const toastContainer = document.getElementById('toastContainer');
   let toastId = 0;
@@ -63,6 +63,109 @@
     // Only show debug toasts in development or when needed
     // showToast(msg, 'debug', 'Debug', 3000);
   }
+
+  // ==================== SOUND MANAGER ====================
+  const soundManager = {
+    sounds: {
+      notification: new Audio('/sounds/notification.mp3'),
+      join: new Audio('/sounds/join.mp3'),
+      leave: new Audio('/sounds/leave.mp3')
+    },
+    
+    enabled: localStorage.getItem('wyvernSoundsEnabled') !== 'false',
+    volume: parseFloat(localStorage.getItem('wyvernSoundsVolume') || '0.5'),
+    
+    init() {
+      // Set volume for all sounds
+      Object.values(this.sounds).forEach(sound => {
+        sound.volume = this.volume;
+      });
+      
+      // Create fallback sounds using Web Audio API if files don't exist
+      this.createFallbackSounds();
+    },
+    
+    createFallbackSounds() {
+      // Simple beep sounds as fallback
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      this.playBeep = (frequency = 440, duration = 100, volume = 0.3) => {
+        if (!this.enabled) return;
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(volume * this.volume, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration / 1000);
+      };
+    },
+    
+    play(soundName) {
+      if (!this.enabled) return;
+      
+      const sound = this.sounds[soundName];
+      if (sound) {
+        // Clone and play to allow overlapping sounds
+        const clone = sound.cloneNode();
+        clone.volume = this.volume;
+        clone.play().catch(err => {
+          log(`Sound play error: ${err.message}`);
+          // Fallback to beep
+          this.playFallback(soundName);
+        });
+      } else {
+        this.playFallback(soundName);
+      }
+    },
+    
+    playFallback(soundName) {
+      // Play different beeps for different events
+      switch(soundName) {
+        case 'message':
+          this.playBeep(600, 80, 0.3);
+          break;
+        case 'notification':
+          this.playBeep(700, 120, 0.35);
+          break;
+        case 'join':
+          this.playBeep(500, 100, 0.25);
+          setTimeout(() => this.playBeep(700, 100, 0.25), 80);
+          break;
+        case 'leave':
+          this.playBeep(700, 100, 0.25);
+          setTimeout(() => this.playBeep(500, 100, 0.25), 80);
+          break;
+      }
+    },
+    
+    setEnabled(enabled) {
+      this.enabled = enabled;
+      localStorage.setItem('wyvernSoundsEnabled', enabled);
+    },
+    
+    setVolume(volume) {
+      this.volume = Math.max(0, Math.min(1, volume));
+      localStorage.setItem('wyvernSoundsVolume', this.volume);
+      Object.values(this.sounds).forEach(sound => {
+        sound.volume = this.volume;
+      });
+    }
+  };
+  
+  // Initialize sound manager
+  soundManager.init();
+  
+  // Make it globally accessible for settings
+  window.soundManager = soundManager;
 
   // Check if user is logged in
   let username = sessionStorage.getItem("wyvernUsername");
@@ -421,8 +524,9 @@
         await Promise.all(uniqueUsernames.map(name => getUserProfile(name)));
         
         // Now display messages sequentially (profiles are cached)
+        // Pass true to indicate this is history loading (no notifications)
         for (const message of history) {
-          await displayMessage(message);
+          await displayMessage(message, true);
         }
         
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -529,6 +633,11 @@
     socket.on("userJoinedVoice", (data) => {
       log(`${data.username} joined voice channel: ${data.channel}`);
       showNotification(`${data.username} joined voice chat`, 'success');
+      
+      // Play join sound if not self
+      if (data.username !== username) {
+        soundManager.play('join');
+      }
 
       // Create peer connection for new user if we're in the same channel and have local stream
       if (data.socketId !== socket.id && currentVoiceChannel === data.channel && localStream) {
@@ -550,6 +659,9 @@
     socket.on("userLeftVoice", (data) => {
       log(`${data.username} left voice channel: ${data.channel}`);
       showNotification(`${data.username} left voice chat`, 'info');
+      
+      // Play leave sound
+      soundManager.play('leave');
 
       // Clean up peer connection
       if (peerConnections.has(data.socketId)) {
@@ -784,6 +896,7 @@
       // Show notification if not from self
       if (data.sender !== username) {
         showToast(`New message from ${data.sender}`, 'info', 'Direct Message');
+        soundManager.play('message');
       }
     });
 
@@ -1486,6 +1599,39 @@
       });
     }
 
+    // Sound effects settings
+    const soundEffects = document.getElementById('soundEffects');
+    const soundVolume = document.getElementById('soundVolume');
+    const soundVolumeValue = document.getElementById('soundVolumeValue');
+    const testSound = document.getElementById('testSound');
+
+    if (soundEffects) {
+      soundEffects.checked = soundManager.enabled;
+      soundEffects.addEventListener('change', () => {
+        soundManager.setEnabled(soundEffects.checked);
+        if (soundEffects.checked) {
+          soundManager.play('notification');
+        }
+      });
+    }
+
+    if (soundVolume && soundVolumeValue) {
+      soundVolume.value = soundManager.volume * 100;
+      soundVolumeValue.textContent = `${Math.round(soundManager.volume * 100)}%`;
+      
+      soundVolume.addEventListener('input', () => {
+        const volume = soundVolume.value / 100;
+        soundManager.setVolume(volume);
+        soundVolumeValue.textContent = `${soundVolume.value}%`;
+      });
+    }
+
+    if (testSound) {
+      testSound.addEventListener('click', () => {
+        soundManager.play('notification');
+      });
+    }
+
     // Close modal when clicking outside
     const settingsModal = document.getElementById('settingsModal');
     if (settingsModal) {
@@ -1892,7 +2038,7 @@
     }
   }
 
-  async function displayMessage(data) {
+  async function displayMessage(data, isHistoryLoad = false) {
     const messagesContainer = document.getElementById("chat-messages");
     const messageEl = document.createElement("div");
     messageEl.className = "message-container";
@@ -1943,13 +2089,16 @@
     if (isMentioned && data.username !== username) {
       messageEl.classList.add('mentioned');
       
-      // Check if mention notifications are enabled
-      const mentionNotificationsEnabled = localStorage.getItem('wyvernMentionNotifications') !== 'false';
-      if (mentionNotificationsEnabled) {
-        // Show notification for mention
-        showToast(`${data.username} mentioned you`, 'info', 'Mention');
-        // Play notification sound
-        playNotificationSound();
+      // Only show notification for new messages, not history
+      if (!isHistoryLoad) {
+        // Check if mention notifications are enabled
+        const mentionNotificationsEnabled = localStorage.getItem('wyvernMentionNotifications') !== 'false';
+        if (mentionNotificationsEnabled) {
+          // Show notification for mention
+          showToast(`${data.username} mentioned you`, 'info', 'Mention');
+          // Play notification sound
+          playNotificationSound();
+        }
       }
     }
 
@@ -3866,6 +4015,9 @@
     isDMMode = false;
     currentDMRecipient = null;
     
+    // Remove DM mode styling
+    document.body.removeAttribute('data-dm-mode');
+    
     document.getElementById('channelsView').style.display = 'block';
     document.getElementById('dmView').style.display = 'none';
     
@@ -4076,6 +4228,9 @@
     isDMMode = true;
     currentDMRecipient = targetUsername;
     currentTextChannel = null;
+    
+    // Set body data attribute for DM mode styling
+    document.body.setAttribute('data-dm-mode', 'true');
     
     // Update UI
     const currentChannelEl = document.getElementById('currentChannel');

@@ -630,6 +630,24 @@
               <input type="range" id="inputVolume" min="0" max="100" value="100" class="settings-slider" />
               <span class="settings-slider-value" id="inputVolumeValue">100%</span>
             </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Sound Effects</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="soundEffects" checked />
+                <label for="soundEffects">Enable sound effects</label>
+              </div>
+              <p class="settings-hint">Play sounds for messages, DMs, and voice events</p>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Sound Volume</label>
+              <input type="range" id="soundVolume" min="0" max="100" value="50" class="settings-slider" />
+              <span class="settings-slider-value" id="soundVolumeValue">50%</span>
+              <button class="settings-button secondary" id="testSound" style="margin-top: 8px;">
+                <i class="fas fa-volume-up"></i> Test Sound
+              </button>
+            </div>
           </div>
           
           <!-- Privacy Tab -->
