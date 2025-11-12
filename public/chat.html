@@ -255,6 +255,113 @@
     <img id="lightboxImage" src="" alt="Full size image" />
   </div>
 
+  <!-- Profile Modal -->
+  <div class="modal" id="profileModal">
+    <div class="modal-content profile-modal-content">
+      <div class="profile-modal-header">
+        <h3 id="profileModalTitle">User Profile</h3>
+        <button class="modal-close-btn" id="closeProfileBtn">×</button>
+      </div>
+      
+      <div class="profile-modal-body">
+        <!-- Profile Banner -->
+        <div class="profile-banner" id="profileBanner">
+          <button class="profile-banner-edit" id="editBannerBtn" style="display: none;">
+            <i class="fas fa-camera"></i>
+          </button>
+          <input type="file" id="bannerInput" accept="image/*" style="display: none;" />
+        </div>
+        
+        <!-- Profile Avatar -->
+        <div class="profile-avatar-container">
+          <div class="profile-avatar" id="profileAvatar">
+            <span id="profileAvatarLetter">U</span>
+            <img id="profileAvatarImage" style="display: none;" />
+          </div>
+          <button class="profile-avatar-edit" id="editAvatarBtn" style="display: none;">
+            <i class="fas fa-camera"></i>
+          </button>
+          <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
+        </div>
+        
+        <!-- Profile Info -->
+        <div class="profile-info">
+          <div class="profile-username" id="profileUsername">Username</div>
+          <div class="profile-status" id="profileStatus">Online</div>
+        </div>
+        
+        <!-- Profile Sections -->
+        <div class="profile-sections">
+          <!-- About Me -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>About Me</h4>
+              <button class="profile-edit-btn" id="editAboutBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileAbout">No bio set</p>
+              <textarea id="profileAboutEdit" style="display: none;" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+              <div class="profile-edit-actions" id="aboutEditActions" style="display: none;">
+                <button class="settings-button secondary" id="cancelAboutBtn">Cancel</button>
+                <button class="settings-button" id="saveAboutBtn">Save</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Custom Status -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Custom Status</h4>
+              <button class="profile-edit-btn" id="editStatusBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileCustomStatus">No status set</p>
+              <input type="text" id="profileCustomStatusEdit" style="display: none;" maxlength="100" placeholder="What's on your mind?" />
+              <div class="profile-edit-actions" id="statusEditActions" style="display: none;">
+                <button class="settings-button secondary" id="cancelStatusBtn">Cancel</button>
+                <button class="settings-button" id="saveStatusBtn">Save</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Profile Color -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Profile Color</h4>
+              <button class="profile-edit-btn" id="editColorBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <div class="profile-color-preview" id="profileColorPreview"></div>
+              <div id="profileColorEdit" style="display: none;">
+                <input type="color" id="profileColorPicker" value="#8b5cf6" />
+                <div class="profile-edit-actions">
+                  <button class="settings-button secondary" id="cancelColorBtn">Cancel</button>
+                  <button class="settings-button" id="saveColorBtn">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Member Since -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Member Since</h4>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileMemberSince">Unknown</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Modal -->
   <div class="modal" id="settingsModal">
     <div class="modal-content settings-modal-content">

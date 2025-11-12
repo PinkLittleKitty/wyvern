@@ -4177,3 +4177,284 @@ body.compact-mode .message-container.grouped .message-avatar {
 .image-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* Profile Modal */
+.profile-modal-content {
+  max-width: 600px;
+  width: 90vw;
+  max-height: 85vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--sidebar-dark);
+}
+
+.profile-modal-header h3 {
+  color: var(--text-bright);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.profile-modal-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.profile-banner {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+}
+
+.profile-banner-edit {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-banner-edit:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.profile-avatar-container {
+  position: relative;
+  margin: -40px auto 0;
+  width: 100px;
+  height: 100px;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 6px solid var(--chat-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: bold;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--accent);
+  border: 3px solid var(--chat-bg);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar-edit:hover {
+  background: var(--accent-soft);
+}
+
+.profile-info {
+  text-align: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-username {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.profile-status {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.profile-sections {
+  padding: 20px;
+}
+
+.profile-section {
+  margin-bottom: 24px;
+}
+
+.profile-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.profile-section-header h4 {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.profile-edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.profile-edit-btn:hover {
+  background: var(--hover-bg);
+  color: var(--accent);
+}
+
+.profile-section-content {
+  background: var(--sidebar-dark);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.profile-section-content p {
+  color: var(--text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.profile-section-content textarea,
+.profile-section-content input[type="text"] {
+  width: 100%;
+  background: var(--chat-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.profile-section-content input[type="text"] {
+  min-height: auto;
+}
+
+.profile-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.profile-color-preview {
+  width: 100%;
+  height: 60px;
+  border-radius: 6px;
+  background: var(--accent);
+  border: 2px solid var(--border);
+}
+
+.profile-section-content input[type="color"] {
+  width: 100%;
+  height: 60px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--chat-bg);
+}
+
+.profile-section-content input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 4px;
+}
+
+.profile-section-content input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+/* Custom Avatar Colors in Messages */
+.message-avatar[data-custom-color] {
+  background: var(--user-color, var(--accent));
+}
+
+.user-item[data-custom-color] .user-avatar {
+  background: var(--user-color, var(--accent));
+}
+
+/* Clickable usernames */
+.message-username {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.message-username:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.user-item {
+  cursor: pointer;
+}
+
+/* User avatar images */
+.user-item-avatar img,
+.message-avatar img,
+.user-panel-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.user-item-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.message-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.user-panel-avatar {
+  position: relative;
+  overflow: hidden;
+}

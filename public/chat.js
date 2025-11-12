@@ -74,6 +74,48 @@
 
   log(`Username: ${username}`);
 
+  // User profiles cache
+  const userProfiles = new Map();
+
+  async function getUserProfile(targetUsername) {
+    // Check cache first
+    if (userProfiles.has(targetUsername)) {
+      return userProfiles.get(targetUsername);
+    }
+
+    try {
+      const token = sessionStorage.getItem('wyvernToken');
+      const response = await fetch(`/api/profile/${targetUsername}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load profile');
+      }
+
+      const profile = await response.json();
+      userProfiles.set(targetUsername, profile);
+      return profile;
+    } catch (error) {
+      log(`Profile fetch error for ${targetUsername}: ${error.message}`);
+      return null;
+    }
+  }
+
+  function getAvatarHTML(targetUsername, profile) {
+    if (profile && profile.avatar) {
+      return `<img src="${profile.avatar}" alt="${targetUsername}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+    } else {
+      return targetUsername.charAt(0).toUpperCase();
+    }
+  }
+
+  function getProfileColor(profile) {
+    return profile && profile.profileColor ? profile.profileColor : '#8b5cf6';
+  }
+
   // Voice chat variables (declared early for button handlers)
   let currentVoiceChannel = null;
   let localStream = null;
@@ -224,6 +266,9 @@
     socket.on("connect", () => {
       log("✅ Connected to server successfully!");
       showNotification('Connected to Wyvern!', 'success');
+      
+      // Load and display own profile in user panel
+      updateUserPanel();
 
       // Join default channel after connection
       socket.emit('joinChannel', 'general');
@@ -285,11 +330,21 @@
       displayMessage(data);
     });
 
-    socket.on("chatHistory", (history) => {
+    socket.on("chatHistory", async (history) => {
       log(`Received ${history.length} messages`);
       const messagesContainer = document.getElementById("chat-messages");
       messagesContainer.innerHTML = "";
-      history.forEach(displayMessage);
+      
+      // Pre-fetch all unique user profiles in parallel
+      const uniqueUsernames = [...new Set(history.map(msg => msg.username))];
+      await Promise.all(uniqueUsernames.map(name => getUserProfile(name)));
+      
+      // Now display messages sequentially (profiles are cached)
+      for (const message of history) {
+        await displayMessage(message);
+      }
+      
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
 
     // Message deleted by admin
@@ -1285,6 +1340,332 @@
       });
     }
 
+    // Profile Modal Functionality
+    let currentProfileUser = null;
+    let isOwnProfile = false;
+
+    function openProfileModal(targetUsername) {
+      currentProfileUser = targetUsername;
+      isOwnProfile = targetUsername === username;
+      
+      const modal = document.getElementById('profileModal');
+      if (modal) {
+        modal.classList.add('show');
+        loadUserProfile(targetUsername);
+      }
+    }
+
+    function closeProfileModal() {
+      const modal = document.getElementById('profileModal');
+      if (modal) {
+        modal.classList.remove('show');
+      }
+    }
+
+    async function loadUserProfile(targetUsername) {
+      try {
+        const token = sessionStorage.getItem('wyvernToken');
+        const response = await fetch(`/api/profile/${targetUsername}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load profile');
+        }
+
+        const profile = await response.json();
+        displayProfile(profile);
+      } catch (error) {
+        log(`Profile load error: ${error.message}`);
+        showToast('Failed to load profile', 'error');
+      }
+    }
+
+    function displayProfile(profile) {
+      // Set title
+      document.getElementById('profileModalTitle').textContent = `${profile.username}'s Profile`;
+      
+      // Set banner
+      const banner = document.getElementById('profileBanner');
+      if (profile.banner) {
+        banner.style.backgroundImage = `url(${profile.banner})`;
+      } else {
+        banner.style.background = `linear-gradient(135deg, ${profile.profileColor} 0%, ${adjustColor(profile.profileColor, -40)} 100%)`;
+      }
+      
+      // Set avatar
+      const avatarLetter = document.getElementById('profileAvatarLetter');
+      const avatarImage = document.getElementById('profileAvatarImage');
+      const profileAvatar = document.getElementById('profileAvatar');
+      
+      if (profile.avatar) {
+        avatarImage.src = profile.avatar;
+        avatarImage.style.display = 'block';
+        avatarLetter.style.display = 'none';
+      } else {
+        avatarLetter.textContent = profile.username.charAt(0).toUpperCase();
+        avatarLetter.style.display = 'block';
+        avatarImage.style.display = 'none';
+      }
+      
+      profileAvatar.style.background = profile.profileColor;
+      
+      // Set username and status
+      document.getElementById('profileUsername').textContent = profile.username;
+      document.getElementById('profileStatus').textContent = profile.customStatus || 'Online';
+      
+      // Set bio
+      document.getElementById('profileAbout').textContent = profile.bio || 'No bio set';
+      document.getElementById('profileAboutEdit').value = profile.bio || '';
+      
+      // Set custom status
+      document.getElementById('profileCustomStatus').textContent = profile.customStatus || 'No status set';
+      document.getElementById('profileCustomStatusEdit').value = profile.customStatus || '';
+      
+      // Set profile color
+      const colorPreview = document.getElementById('profileColorPreview');
+      colorPreview.style.background = profile.profileColor;
+      document.getElementById('profileColorPicker').value = profile.profileColor;
+      
+      // Set member since
+      const memberSince = new Date(profile.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      document.getElementById('profileMemberSince').textContent = memberSince;
+      
+      // Show/hide edit buttons
+      const editButtons = document.querySelectorAll('.profile-edit-btn, .profile-avatar-edit, .profile-banner-edit');
+      editButtons.forEach(btn => {
+        btn.style.display = isOwnProfile ? 'flex' : 'none';
+      });
+    }
+
+    async function updateProfile(field, value) {
+      try {
+        const token = sessionStorage.getItem('wyvernToken');
+        const response = await fetch('/api/profile/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ [field]: value })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update profile');
+        }
+
+        // Clear cache for this user
+        userProfiles.delete(username);
+        
+        showToast('Profile updated!', 'success');
+        loadUserProfile(username);
+        
+        // Update user panel if it's own profile
+        if (currentProfileUser === username) {
+          updateUserPanel();
+        }
+      } catch (error) {
+        log(`Profile update error: ${error.message}`);
+        showToast('Failed to update profile', 'error');
+      }
+    }
+
+    // Close profile modal
+    const closeProfileBtn = document.getElementById('closeProfileBtn');
+    if (closeProfileBtn) {
+      closeProfileBtn.addEventListener('click', closeProfileModal);
+    }
+
+    const profileModal = document.getElementById('profileModal');
+    if (profileModal) {
+      profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) {
+          closeProfileModal();
+        }
+      });
+    }
+
+    // Edit About
+    const editAboutBtn = document.getElementById('editAboutBtn');
+    const saveAboutBtn = document.getElementById('saveAboutBtn');
+    const cancelAboutBtn = document.getElementById('cancelAboutBtn');
+    
+    if (editAboutBtn) {
+      editAboutBtn.addEventListener('click', () => {
+        document.getElementById('profileAbout').style.display = 'none';
+        document.getElementById('profileAboutEdit').style.display = 'block';
+        document.getElementById('aboutEditActions').style.display = 'flex';
+      });
+    }
+    
+    if (saveAboutBtn) {
+      saveAboutBtn.addEventListener('click', () => {
+        const bio = document.getElementById('profileAboutEdit').value;
+        updateProfile('bio', bio);
+        document.getElementById('profileAbout').style.display = 'block';
+        document.getElementById('profileAboutEdit').style.display = 'none';
+        document.getElementById('aboutEditActions').style.display = 'none';
+      });
+    }
+    
+    if (cancelAboutBtn) {
+      cancelAboutBtn.addEventListener('click', () => {
+        document.getElementById('profileAbout').style.display = 'block';
+        document.getElementById('profileAboutEdit').style.display = 'none';
+        document.getElementById('aboutEditActions').style.display = 'none';
+      });
+    }
+
+    // Edit Status
+    const editStatusBtn = document.getElementById('editStatusBtn');
+    const saveStatusBtn = document.getElementById('saveStatusBtn');
+    const cancelStatusBtn = document.getElementById('cancelStatusBtn');
+    
+    if (editStatusBtn) {
+      editStatusBtn.addEventListener('click', () => {
+        document.getElementById('profileCustomStatus').style.display = 'none';
+        document.getElementById('profileCustomStatusEdit').style.display = 'block';
+        document.getElementById('statusEditActions').style.display = 'flex';
+      });
+    }
+    
+    if (saveStatusBtn) {
+      saveStatusBtn.addEventListener('click', () => {
+        const customStatus = document.getElementById('profileCustomStatusEdit').value;
+        updateProfile('customStatus', customStatus);
+        document.getElementById('profileCustomStatus').style.display = 'block';
+        document.getElementById('profileCustomStatusEdit').style.display = 'none';
+        document.getElementById('statusEditActions').style.display = 'none';
+      });
+    }
+    
+    if (cancelStatusBtn) {
+      cancelStatusBtn.addEventListener('click', () => {
+        document.getElementById('profileCustomStatus').style.display = 'block';
+        document.getElementById('profileCustomStatusEdit').style.display = 'none';
+        document.getElementById('statusEditActions').style.display = 'none';
+      });
+    }
+
+    // Edit Color
+    const editColorBtn = document.getElementById('editColorBtn');
+    const saveColorBtn = document.getElementById('saveColorBtn');
+    const cancelColorBtn = document.getElementById('cancelColorBtn');
+    
+    if (editColorBtn) {
+      editColorBtn.addEventListener('click', () => {
+        document.getElementById('profileColorPreview').style.display = 'none';
+        document.getElementById('profileColorEdit').style.display = 'block';
+      });
+    }
+    
+    if (saveColorBtn) {
+      saveColorBtn.addEventListener('click', () => {
+        const profileColor = document.getElementById('profileColorPicker').value;
+        updateProfile('profileColor', profileColor);
+        document.getElementById('profileColorPreview').style.display = 'block';
+        document.getElementById('profileColorEdit').style.display = 'none';
+      });
+    }
+    
+    if (cancelColorBtn) {
+      cancelColorBtn.addEventListener('click', () => {
+        document.getElementById('profileColorPreview').style.display = 'block';
+        document.getElementById('profileColorEdit').style.display = 'none';
+      });
+    }
+
+    // Avatar upload
+    const editAvatarBtn = document.getElementById('editAvatarBtn');
+    const avatarInput = document.getElementById('avatarInput');
+    
+    if (editAvatarBtn && avatarInput) {
+      editAvatarBtn.addEventListener('click', () => {
+        avatarInput.click();
+      });
+      
+      avatarInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('files', file);
+        
+        try {
+          const token = sessionStorage.getItem('wyvernToken');
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+          
+          if (!response.ok) throw new Error('Upload failed');
+          
+          const data = await response.json();
+          const avatarUrl = data.files[0].url;
+          
+          await updateProfile('avatar', avatarUrl);
+        } catch (error) {
+          log(`Avatar upload error: ${error.message}`);
+          showToast('Failed to upload avatar', 'error');
+        }
+        
+        avatarInput.value = '';
+      });
+    }
+
+    // Banner upload
+    const editBannerBtn = document.getElementById('editBannerBtn');
+    const bannerInput = document.getElementById('bannerInput');
+    
+    if (editBannerBtn && bannerInput) {
+      editBannerBtn.addEventListener('click', () => {
+        bannerInput.click();
+      });
+      
+      bannerInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('files', file);
+        
+        try {
+          const token = sessionStorage.getItem('wyvernToken');
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+          
+          if (!response.ok) throw new Error('Upload failed');
+          
+          const data = await response.json();
+          const bannerUrl = data.files[0].url;
+          
+          await updateProfile('banner', bannerUrl);
+        } catch (error) {
+          log(`Banner upload error: ${error.message}`);
+          showToast('Failed to upload banner', 'error');
+        }
+        
+        bannerInput.value = '';
+      });
+    }
+
+    // Make openProfileModal globally accessible
+    window.openProfileModal = openProfileModal;
+
     // Voice connection bar controls (non-voice buttons)
     const voiceScreenShare = document.getElementById('voiceScreenShare');
     const voiceCamera = document.getElementById('voiceCamera');
@@ -1301,7 +1682,9 @@
     const userPanelInfo = document.querySelector('.user-panel-info');
     if (userPanelInfo) {
       userPanelInfo.addEventListener("click", () => {
-        showNotification(`Logged in as ${username}`, 'success');
+        if (window.openProfileModal) {
+          window.openProfileModal(username);
+        }
       });
     }
   }
@@ -1353,7 +1736,7 @@
     }
   }
 
-  function displayMessage(data) {
+  async function displayMessage(data) {
     const messagesContainer = document.getElementById("chat-messages");
     const messageEl = document.createElement("div");
     messageEl.className = "message-container";
@@ -1380,8 +1763,10 @@
       messageEl.classList.add("grouped");
     }
 
-    // Get first letter for avatar
-    const avatarLetter = data.username.charAt(0).toUpperCase();
+    // Get user profile for avatar and color
+    const profile = await getUserProfile(data.username);
+    const avatarHTML = getAvatarHTML(data.username, profile);
+    const profileColor = getProfileColor(profile);
     
     // Check if user is admin
     const isAdmin = data.isAdmin || false;
@@ -1464,7 +1849,7 @@
     }
 
     messageEl.innerHTML = `
-      <div class="message-avatar">${avatarLetter}</div>
+      <div class="message-avatar" style="background: ${profileColor};">${avatarHTML}</div>
       <div class="message-content">
         <div class="message-header">
           <span class="message-username">${escapeHtml(data.username)}</span>
@@ -1496,6 +1881,15 @@
           deleteMessage(data._id || data.id, messageEl);
         });
       }
+    }
+
+    // Make username clickable to view profile
+    const usernameEl = messageEl.querySelector('.message-username');
+    if (usernameEl) {
+      usernameEl.style.cursor = 'pointer';
+      usernameEl.addEventListener('click', () => {
+        openProfileModal(data.username);
+      });
     }
 
     messagesContainer.appendChild(messageEl);
@@ -1542,8 +1936,25 @@
     }
   }
 
+  // Update user panel with profile
+  async function updateUserPanel() {
+    const profile = await getUserProfile(username);
+    const userPanelAvatar = document.getElementById('userPanelAvatar');
+    
+    if (userPanelAvatar && profile) {
+      const avatarHTML = getAvatarHTML(username, profile);
+      const profileColor = getProfileColor(profile);
+      
+      userPanelAvatar.style.background = profileColor;
+      userPanelAvatar.innerHTML = `
+        ${avatarHTML}
+        <div class="user-panel-status" id="userPanelStatus"></div>
+      `;
+    }
+  }
+
   // Online users list functionality
-  function updateOnlineUsersList(users) {
+  async function updateOnlineUsersList(users) {
     const usersList = document.getElementById('usersList');
     const usersCount = document.getElementById('usersCount');
     
@@ -1552,7 +1963,7 @@
     usersCount.textContent = users.length;
     usersList.innerHTML = '';
 
-    users.forEach(user => {
+    for (const user of users) {
       const userItem = document.createElement('div');
       userItem.className = 'user-item';
       
@@ -1563,9 +1974,14 @@
       const statusText = user.voiceChannel ? `<i class="fas fa-volume-up"></i> ${user.voiceChannel}` : 'Online';
       const statusClass = user.voiceChannel ? 'in-voice' : '';
 
+      // Get user profile for avatar
+      const profile = await getUserProfile(user.username);
+      const avatarHTML = getAvatarHTML(user.username, profile);
+      const profileColor = getProfileColor(profile);
+
       userItem.innerHTML = `
-        <div class="user-item-avatar">
-          ${user.username.charAt(0).toUpperCase()}
+        <div class="user-item-avatar" style="background: ${profileColor};">
+          ${avatarHTML}
           <div class="user-item-status ${statusClass}"></div>
         </div>
         <div class="user-item-info">
@@ -1577,6 +1993,11 @@
         </div>
       `;
 
+      // Click to view profile
+      userItem.addEventListener('click', () => {
+        openProfileModal(user.username);
+      });
+
       // Add admin context menu for other users
       if (isCurrentUserAdmin && user.username !== username) {
         userItem.addEventListener('contextmenu', (e) => {
@@ -1586,7 +2007,7 @@
       }
 
       usersList.appendChild(userItem);
-    });
+    }
   }
 
   // Show admin context menu
