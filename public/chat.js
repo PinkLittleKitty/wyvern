@@ -3823,3 +3823,176 @@
       }
     });
   }
+
+  // Mobile menu functionality
+  const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+  const mobileOverlay = document.getElementById('mobileOverlay');
+  const toggleUsersBtn = document.getElementById('toggleUsersBtn');
+
+  function closeMobileMenus() {
+    document.body.classList.remove('sidebar-visible');
+    document.body.classList.remove('users-panel-visible');
+  }
+
+  if (mobileMenuToggle) {
+    mobileMenuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isSidebarVisible = document.body.classList.contains('sidebar-visible');
+      
+      // Close users panel if open
+      document.body.classList.remove('users-panel-visible');
+      
+      // Toggle sidebar
+      if (isSidebarVisible) {
+        document.body.classList.remove('sidebar-visible');
+      } else {
+        document.body.classList.add('sidebar-visible');
+      }
+    });
+  }
+
+  if (toggleUsersBtn) {
+    toggleUsersBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isUsersVisible = document.body.classList.contains('users-panel-visible');
+      
+      // Close sidebar if open
+      document.body.classList.remove('sidebar-visible');
+      
+      // Toggle users panel
+      if (isUsersVisible) {
+        document.body.classList.remove('users-panel-visible');
+        toggleUsersBtn.classList.remove('active');
+      } else {
+        document.body.classList.add('users-panel-visible');
+        toggleUsersBtn.classList.add('active');
+      }
+    });
+  }
+
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', () => {
+      closeMobileMenus();
+      if (toggleUsersBtn) {
+        toggleUsersBtn.classList.remove('active');
+      }
+    });
+  }
+
+  // Close mobile menus when clicking on a channel
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.channel') || e.target.closest('.voice-channel-item')) {
+      // Small delay to allow the channel switch to happen
+      setTimeout(() => {
+        closeMobileMenus();
+      }, 100);
+    }
+  });
+
+  // Prevent body scroll when mobile menu is open
+  const observer = new MutationObserver(() => {
+    if (document.body.classList.contains('sidebar-visible') || 
+        document.body.classList.contains('users-panel-visible')) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  });
+
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
+
+  // Handle orientation change
+  window.addEventListener('orientationchange', () => {
+    closeMobileMenus();
+    if (toggleUsersBtn) {
+      toggleUsersBtn.classList.remove('active');
+    }
+  });
+
+  // Handle window resize
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      // Close mobile menus when resizing to desktop
+      if (window.innerWidth > 800) {
+        closeMobileMenus();
+        if (toggleUsersBtn) {
+          toggleUsersBtn.classList.remove('active');
+        }
+        document.body.style.overflow = '';
+      }
+    }, 250);
+  });
+
+  // Touch gestures for mobile
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchEndX = 0;
+  let touchEndY = 0;
+
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    handleSwipe();
+  }, { passive: true });
+
+  function handleSwipe() {
+    const swipeThreshold = 100;
+    const swipeDistanceX = touchEndX - touchStartX;
+    const swipeDistanceY = Math.abs(touchEndY - touchStartY);
+    
+    // Only trigger if horizontal swipe is dominant
+    if (swipeDistanceY < 100) {
+      // Swipe right to open sidebar (from left edge)
+      if (swipeDistanceX > swipeThreshold && touchStartX < 50) {
+        document.body.classList.add('sidebar-visible');
+        document.body.classList.remove('users-panel-visible');
+      }
+      
+      // Swipe left to close sidebar
+      if (swipeDistanceX < -swipeThreshold && document.body.classList.contains('sidebar-visible')) {
+        document.body.classList.remove('sidebar-visible');
+      }
+      
+      // Swipe left to open users panel (from right edge)
+      if (swipeDistanceX < -swipeThreshold && touchStartX > window.innerWidth - 50) {
+        document.body.classList.add('users-panel-visible');
+        document.body.classList.remove('sidebar-visible');
+        if (toggleUsersBtn) {
+          toggleUsersBtn.classList.add('active');
+        }
+      }
+      
+      // Swipe right to close users panel
+      if (swipeDistanceX > swipeThreshold && document.body.classList.contains('users-panel-visible')) {
+        document.body.classList.remove('users-panel-visible');
+        if (toggleUsersBtn) {
+          toggleUsersBtn.classList.remove('active');
+        }
+      }
+    }
+  }
+
+  // Improve mobile input focus behavior
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.addEventListener('focus', () => {
+      // Scroll to input on mobile when focused
+      if (window.innerWidth <= 800) {
+        setTimeout(() => {
+          chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    });
+  }
+
+  console.log('✅ Mobile optimizations loaded');

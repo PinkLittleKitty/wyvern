@@ -14,21 +14,38 @@
     }
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       background: var(--bg);
       color: var(--text);
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
     }
     .container {
       background: #181820;
       padding: 32px;
       border-radius: 12px;
       box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
-      width: 320px;
+      width: 100%;
+      max-width: 400px;
       text-align: center;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px 20px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      input {
+        font-size: 16px !important;
+      }
+      button {
+        font-size: 16px !important;
+        padding: 14px !important;
+      }
     }
     h1 {
       margin-bottom: 24px;

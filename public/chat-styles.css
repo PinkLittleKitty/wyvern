@@ -26,6 +26,20 @@
       font-family: 'Segoe UI', sans-serif;
     }
 
+    /* Prevent zoom on double-tap for mobile */
+    button,
+    input,
+    select,
+    textarea,
+    a {
+      touch-action: manipulation;
+    }
+
+    /* Improve mobile tap highlighting */
+    * {
+      -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+    }
+
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 16px;
@@ -1832,16 +1846,217 @@
       animation: pulse 1s infinite;
     }
 
+    /* ========================================
+       MOBILE OPTIMIZATIONS
+       ======================================== */
+    
+    /* Mobile Menu Toggle Button */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 2000;
+      background: var(--accent);
+      color: white;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .mobile-menu-toggle:active {
+      transform: scale(0.95);
+    }
+
+    .mobile-menu-toggle i {
+      pointer-events: none;
+      transition: transform 0.3s ease;
+    }
+
+    body.sidebar-visible .mobile-menu-toggle {
+      background: var(--accent-dark);
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.7);
+    }
+
+    body.sidebar-visible .mobile-menu-toggle i {
+      transform: rotate(90deg);
+    }
+
+    /* Mobile Overlay */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1400;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+
+    .mobile-overlay.active {
+      opacity: 1;
+    }
+
+    body.sidebar-visible .mobile-overlay,
+    body.users-panel-visible .mobile-overlay {
+      opacity: 1;
+    }
+
     @media (max-width: 800px) {
-      body {
-        grid-template-columns: 0 0 1fr 0;
+      /* Show mobile menu toggle */
+      .mobile-menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .server-sidebar,
-      .channel-list {
+      /* Adjust body grid for mobile */
+      body {
+        grid-template-columns: 0 1fr 0;
+      }
+
+      /* Hide sidebars by default on mobile */
+      .sidebar-container {
+        position: fixed;
+        left: -330px;
+        top: 0;
+        height: 100vh;
+        width: 330px;
+        z-index: 1500;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+        will-change: left;
+      }
+
+      body.sidebar-visible .sidebar-container {
+        left: 0;
+      }
+
+      body.sidebar-visible .mobile-overlay {
+        display: block;
+      }
+
+      /* Users panel mobile behavior */
+      .users-panel {
+        position: fixed;
+        right: -250px;
+        top: 0;
+        height: 100vh;
+        width: 250px;
+        z-index: 1500;
+        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+        will-change: right;
+      }
+
+      body.users-panel-visible .users-panel {
+        right: 0;
+      }
+
+      body.users-panel-visible .mobile-overlay {
+        display: block;
+      }
+
+      /* Chat header adjustments */
+      .chat-header {
+        padding: 12px 60px 12px 60px;
+        height: 56px;
+      }
+
+      .chat-header h2 {
+        font-size: 18px;
+        text-align: center;
+        flex: 1;
+      }
+
+      .user-info {
+        gap: 8px;
+      }
+
+      .logout-btn span {
         display: none;
       }
 
+      .logout-btn {
+        padding: 10px;
+        min-width: 44px;
+        justify-content: center;
+      }
+
+      .toggle-users-btn {
+        padding: 10px;
+        min-width: 44px;
+      }
+
+      /* Message adjustments for mobile */
+      .chat-messages {
+        padding: 12px 8px;
+      }
+
+      .message-container {
+        padding: 6px 8px;
+      }
+
+      .message-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+        margin-right: 12px;
+      }
+
+      .message-username {
+        font-size: 14px;
+      }
+
+      .message-text {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .message-timestamp {
+        font-size: 11px;
+      }
+
+      /* Chat input mobile optimization */
+      .chat-input {
+        padding: 12px 8px 12px 8px;
+        gap: 8px;
+      }
+
+      .chat-input input {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 12px 14px;
+        min-height: 48px;
+      }
+
+      .chat-input button {
+        min-width: 48px;
+        height: 48px;
+        font-size: 18px;
+      }
+
+      .chat-input-btn {
+        min-width: 48px;
+        height: 48px;
+      }
+
+      /* Typing indicator mobile */
+      .typing-indicator {
+        padding: 0 8px 8px 8px;
+        font-size: 12px;
+      }
+
+      /* Voice panel mobile */
       .voice-panel {
         position: fixed;
         top: 0;
@@ -1854,6 +2069,818 @@
       .voice-controls {
         left: 10px;
         bottom: 10px;
+      }
+
+      /* Voice connection bar mobile */
+      .voice-connection-bar {
+        padding: 10px 8px;
+        flex-wrap: wrap;
+      }
+
+      .voice-connection-info {
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .voice-connection-label {
+        display: none;
+      }
+
+      .voice-connection-controls {
+        gap: 6px;
+      }
+
+      .voice-connection-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      /* User panel mobile */
+      .user-panel {
+        padding: 10px 8px;
+        gap: 8px;
+      }
+
+      .user-panel-info {
+        padding: 6px 8px;
+      }
+
+      .user-panel-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+      }
+
+      .user-panel-name {
+        font-size: 13px;
+      }
+
+      .user-panel-status-text {
+        font-size: 10px;
+      }
+
+      .user-panel-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 13px;
+      }
+
+      /* Modal mobile optimization */
+      .modal-content {
+        width: 95%;
+        max-width: 95%;
+        padding: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+
+      .modal input,
+      .modal textarea,
+      .modal select {
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      /* Settings modal mobile */
+      .settings-modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+      }
+
+      .settings-modal-body {
+        flex-direction: column;
+      }
+
+      .settings-sidebar {
+        width: 100%;
+        height: auto;
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 10px;
+        border-right: none;
+        border-bottom: 1px solid #222;
+        flex-shrink: 0;
+      }
+
+      .settings-nav-item {
+        white-space: nowrap;
+        padding: 10px 16px;
+        flex-shrink: 0;
+      }
+
+      .settings-nav-item span {
+        display: inline;
+      }
+
+      .settings-content {
+        padding: 16px;
+      }
+
+      /* Profile modal mobile */
+      .profile-modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        border-radius: 0;
+      }
+
+      .profile-banner {
+        height: 120px;
+      }
+
+      .profile-avatar-container {
+        margin-top: -40px;
+      }
+
+      .profile-avatar {
+        width: 80px;
+        height: 80px;
+      }
+
+      /* Voice UI mobile */
+      .voice-ui-participants {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .voice-ui-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
+
+      .voice-ui-participant-name {
+        font-size: 14px;
+      }
+
+      .voice-ui-controls {
+        padding: 12px 0;
+      }
+
+      .voice-ui-controls .voice-btn {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+      }
+
+      /* Voice modal mobile */
+      .voice-modal-content {
+        width: 95%;
+        max-width: 95%;
+        max-height: 85vh;
+      }
+
+      /* Context menu mobile */
+      .context-menu {
+        min-width: 200px;
+        max-width: 90vw;
+      }
+
+      .context-menu-item {
+        padding: 12px 16px;
+        font-size: 15px;
+      }
+
+      /* Toast positioning for mobile */
+      .toast-container {
+        left: 8px;
+        right: 8px;
+        bottom: 16px;
+      }
+
+      .toast {
+        min-width: auto;
+        max-width: 100%;
+        padding: 12px 14px;
+      }
+
+      /* Channel list mobile */
+      .channel-list {
+        padding: 16px 12px;
+      }
+
+      .channel {
+        padding: 10px 12px;
+        font-size: 15px;
+      }
+
+      .channel-name {
+        font-size: 16px;
+      }
+
+      /* Voice channel mobile */
+      .voice-channel-item {
+        margin: 4px 0;
+      }
+
+      .voice-channel-header {
+        padding: 10px 12px;
+      }
+
+      .voice-channel-name {
+        font-size: 16px;
+      }
+
+      .voice-user {
+        padding: 8px 10px;
+      }
+
+      .voice-user-name {
+        font-size: 14px;
+      }
+
+      /* Users list mobile */
+      .users-list {
+        padding: 8px;
+      }
+
+      .user-item {
+        padding: 10px 12px;
+      }
+
+      .user-item-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+      }
+
+      .user-item-name {
+        font-size: 15px;
+      }
+
+      /* File preview mobile */
+      .file-preview {
+        max-width: 100%;
+      }
+
+      .file-preview-item {
+        max-width: 100%;
+      }
+
+      /* Image lightbox mobile */
+      .image-lightbox {
+        padding: 20px;
+      }
+
+      .image-lightbox-close {
+        top: 10px;
+        right: 10px;
+        width: 48px;
+        height: 48px;
+        font-size: 28px;
+      }
+
+      #lightboxImage {
+        max-width: 100%;
+        max-height: 85vh;
+      }
+
+      /* Loading screen mobile */
+      .loading-content {
+        padding: 20px;
+      }
+
+      .loading-logo-img {
+        width: 80px;
+        height: 80px;
+      }
+
+      .loading-text {
+        font-size: 16px;
+      }
+
+      .loading-tips {
+        font-size: 13px;
+      }
+
+      /* Theme selector mobile */
+      .theme-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .theme-option {
+        padding: 10px;
+      }
+
+      .theme-preview {
+        width: 100%;
+        height: 50px;
+      }
+
+      /* Improve touch targets */
+      button,
+      .channel,
+      .user-item,
+      .voice-user,
+      .message-avatar,
+      .user-panel-btn,
+      .voice-connection-btn {
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Prevent text selection on interactive elements */
+      .channel,
+      .user-item,
+      .voice-user,
+      button {
+        -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+        -webkit-touch-callout: none;
+      }
+
+      /* Smooth scrolling on mobile */
+      .chat-messages,
+      .channel-list,
+      .users-list,
+      .settings-content {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Hide desktop-only elements */
+      .message-actions {
+        display: none !important;
+      }
+
+      /* Show message actions on long press instead */
+      .message-container.long-press-active .message-actions {
+        display: flex !important;
+      }
+    }
+
+    /* Tablet optimizations (between mobile and desktop) */
+    @media (min-width: 801px) and (max-width: 1200px) {
+      body {
+        grid-template-columns: 280px 1fr 220px;
+      }
+
+      .sidebar-container {
+        width: 280px;
+      }
+
+      .server-sidebar {
+        width: 70px;
+      }
+
+      .channel-list {
+        padding: 16px 12px;
+      }
+
+      .users-panel {
+        width: 220px;
+      }
+
+      .chat-messages {
+        padding: 14px;
+      }
+
+      .settings-modal-content {
+        width: 90%;
+        max-width: 900px;
+      }
+    }
+
+    /* Large screen optimizations */
+    @media (min-width: 1600px) {
+      body {
+        grid-template-columns: 350px 1fr 280px;
+      }
+
+      .sidebar-container {
+        width: 350px;
+      }
+
+      .users-panel {
+        width: 280px;
+      }
+
+      .chat-messages {
+        padding: 20px 24px;
+      }
+
+      .message-text {
+        font-size: 16px;
+      }
+    }
+
+    /* Additional mobile polish */
+    @media (max-width: 800px) {
+      /* Better scrollbar for mobile */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(139, 92, 246, 0.3);
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        border-radius: 4px;
+      }
+
+      /* Improve modal animations on mobile */
+      .modal.show,
+      .settings-modal.show,
+      .voice-modal.show {
+        animation: mobileModalSlideUp 0.3s ease-out;
+      }
+
+      @keyframes mobileModalSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Better file preview on mobile */
+      .file-preview-item {
+        padding: 8px;
+      }
+
+      .file-preview-item img {
+        max-height: 120px;
+      }
+
+      /* Improve voice UI on mobile */
+      .voice-ui-header {
+        padding: 14px 16px;
+      }
+
+      .voice-ui-channel-info h2 {
+        font-size: 18px;
+      }
+
+      /* Better context menu positioning on mobile */
+      .context-menu {
+        position: fixed;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+      }
+
+      /* Improve message grouping on mobile */
+      .message-container.grouped .message-content {
+        margin-left: 48px;
+      }
+
+      /* Better emoji/reaction sizing on mobile */
+      .message-text {
+        word-break: break-word;
+        overflow-wrap: break-word;
+      }
+
+      /* Improve code blocks on mobile */
+      .message-text pre {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .message-text code {
+        font-size: 13px;
+      }
+
+      /* Better link styling on mobile */
+      .message-text a {
+        word-break: break-all;
+      }
+
+      /* Improve loading screen on mobile */
+      .loading-screen {
+        padding: 20px;
+      }
+
+      .loading-bar {
+        width: 100%;
+        max-width: 300px;
+      }
+
+      /* Better voice participant cards on mobile */
+      .voice-ui-participant {
+        padding: 16px;
+      }
+
+      /* Improve settings on mobile */
+      .settings-section input[type="text"],
+      .settings-section select {
+        max-width: 100%;
+      }
+
+      /* Better profile modal on mobile */
+      .profile-section {
+        padding: 12px;
+      }
+
+      .profile-section-content {
+        font-size: 14px;
+      }
+
+      /* Improve channel description on mobile */
+      .channel-description {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      /* Better admin badge on mobile */
+      .message-admin-badge,
+      .user-item-badge,
+      .user-panel-admin-badge {
+        font-size: 9px;
+        padding: 2px 5px;
+      }
+
+      /* Improve typing indicator on mobile */
+      .typing-indicator {
+        min-height: 20px;
+      }
+
+      /* Better voice status indicators on mobile */
+      .voice-status-indicator {
+        width: 10px;
+        height: 10px;
+      }
+
+      /* Improve user panel on mobile */
+      .user-panel-status {
+        width: 8px;
+        height: 8px;
+      }
+
+      /* Better modal close buttons on mobile */
+      .modal-close-btn,
+      .voice-modal-close {
+        width: 44px;
+        height: 44px;
+        font-size: 28px;
+      }
+
+      /* Improve theme selector on mobile */
+      .theme-option-label {
+        font-size: 11px;
+      }
+
+      /* Better custom theme builder on mobile */
+      .custom-theme-colors {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .color-picker-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .color-picker-group input[type="color"] {
+        width: 100%;
+        height: 44px;
+        border: none;
+        border-radius: 6px;
+      }
+
+      /* Improve voice connection bar on mobile */
+      .voice-connection-channel {
+        font-size: 11px;
+        padding: 3px 6px;
+      }
+
+      /* Better message actions positioning on mobile */
+      .message-actions {
+        top: -8px;
+        right: 8px;
+        padding: 3px;
+      }
+
+      .message-action-btn {
+        padding: 6px 10px;
+        font-size: 18px;
+      }
+
+      /* Improve server icon on mobile */
+      .server-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      /* Better channel section headers on mobile */
+      .channel-section h4 {
+        font-size: 11px;
+        padding: 0 6px;
+      }
+
+      /* Improve voice channel user count on mobile */
+      .voice-user-count {
+        font-size: 10px;
+        padding: 2px 5px;
+      }
+
+      /* Better delete channel button on mobile */
+      .delete-channel-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 11px;
+      }
+
+      /* Improve add channel button on mobile */
+      .add-channel-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 15px;
+      }
+
+      /* Better voice modal participant on mobile */
+      .voice-modal-participant {
+        padding: 10px;
+      }
+
+      .voice-modal-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      /* Improve profile color preview on mobile */
+      .profile-color-preview {
+        height: 60px;
+        border-radius: 8px;
+      }
+
+      /* Better settings button on mobile */
+      .settings-button {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+
+      /* Improve profile avatar edit button on mobile */
+      .profile-avatar-edit,
+      .profile-banner-edit {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+      }
+
+      /* Better profile banner on mobile */
+      .profile-banner {
+        height: 100px;
+      }
+
+      /* Improve profile avatar on mobile */
+      .profile-avatar {
+        width: 70px;
+        height: 70px;
+      }
+
+      .profile-avatar-container {
+        margin-top: -35px;
+      }
+
+      /* Better profile username on mobile */
+      .profile-username {
+        font-size: 20px;
+      }
+
+      /* Improve profile status on mobile */
+      .profile-status {
+        font-size: 13px;
+      }
+
+      /* Better profile section header on mobile */
+      .profile-section-header h4 {
+        font-size: 14px;
+      }
+
+      /* Improve profile edit button on mobile */
+      .profile-edit-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      /* Better profile about textarea on mobile */
+      #profileAboutEdit {
+        font-size: 14px;
+        min-height: 100px;
+      }
+
+      /* Improve profile custom status input on mobile */
+      #profileCustomStatusEdit {
+        font-size: 14px;
+      }
+
+      /* Better profile color picker on mobile */
+      #profileColorPicker {
+        width: 100%;
+        height: 50px;
+      }
+
+      /* Improve member since text on mobile */
+      #profileMemberSince {
+        font-size: 13px;
+      }
+    }
+
+    /* Landscape mobile optimizations */
+    @media (max-width: 800px) and (orientation: landscape) {
+      .chat-header {
+        height: 48px;
+        padding: 8px 60px 8px 60px;
+      }
+
+      .chat-input {
+        padding: 8px;
+      }
+
+      .chat-input input {
+        min-height: 40px;
+        padding: 10px 12px;
+      }
+
+      .chat-input button {
+        min-width: 40px;
+        height: 40px;
+      }
+
+      .voice-ui-controls .voice-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+      }
+
+      .modal-content,
+      .settings-modal-content,
+      .profile-modal-content {
+        max-height: 95vh;
+      }
+    }
+
+    /* Very small mobile devices */
+    @media (max-width: 360px) {
+      .mobile-menu-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+
+      .chat-header h2 {
+        font-size: 16px;
+      }
+
+      .message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+        margin-right: 10px;
+      }
+
+      .message-username {
+        font-size: 13px;
+      }
+
+      .message-text {
+        font-size: 13px;
+      }
+
+      .chat-input input {
+        font-size: 15px;
+        padding: 10px 12px;
+      }
+
+      .user-panel-avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 11px;
+      }
+
+      .user-panel-name {
+        font-size: 12px;
+      }
+
+      .user-panel-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+      }
+
+      .voice-ui-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+
+      .voice-ui-controls .voice-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
       }
     }
 
@@ -4619,3 +5646,478 @@ body.compact-mode .message-container.grouped .message-avatar {
 }
 
 /* Loading screen covers everything with high z-index */
+
+
+/* ========================================
+   MOBILE OPTIMIZATIONS
+   ======================================== */
+
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2000;
+  background: var(--accent);
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+.mobile-menu-toggle i {
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+
+body.sidebar-visible .mobile-menu-toggle {
+  background: var(--accent-dark);
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.7);
+}
+
+body.sidebar-visible .mobile-menu-toggle i {
+  transform: rotate(90deg);
+}
+
+/* Mobile Overlay */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1400;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.mobile-overlay.active {
+  opacity: 1;
+}
+
+body.sidebar-visible .mobile-overlay,
+body.users-panel-visible .mobile-overlay {
+  opacity: 1;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 800px) {
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Adjust body grid for mobile */
+  body {
+    grid-template-columns: 0 1fr 0;
+  }
+
+  /* Hide sidebars by default on mobile */
+  .sidebar-container {
+    position: fixed;
+    left: -330px;
+    top: 0;
+    height: 100vh;
+    width: 330px;
+    z-index: 1500;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+    will-change: left;
+  }
+
+  body.sidebar-visible .sidebar-container {
+    left: 0;
+  }
+
+  body.sidebar-visible .mobile-overlay {
+    display: block;
+  }
+
+  /* Users panel mobile behavior */
+  .users-panel {
+    position: fixed;
+    right: -250px;
+    top: 0;
+    height: 100vh;
+    width: 250px;
+    z-index: 1500;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+    will-change: right;
+  }
+
+  body.users-panel-visible .users-panel {
+    right: 0;
+  }
+
+  body.users-panel-visible .mobile-overlay {
+    display: block;
+  }
+
+  /* Chat header adjustments */
+  .chat-header {
+    padding: 12px 60px 12px 60px;
+    height: 56px;
+  }
+
+  .chat-header h2 {
+    font-size: 18px;
+    text-align: center;
+    flex: 1;
+  }
+
+  .user-info {
+    gap: 8px;
+  }
+
+  .logout-btn span {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 10px;
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .toggle-users-btn {
+    padding: 10px;
+    min-width: 44px;
+  }
+
+  /* Message adjustments for mobile */
+  .chat-messages {
+    padding: 12px 8px;
+  }
+
+  .message-container {
+    padding: 6px 8px;
+  }
+
+  .message-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    margin-right: 12px;
+  }
+
+  .message-username {
+    font-size: 14px;
+  }
+
+  .message-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .message-timestamp {
+    font-size: 11px;
+  }
+
+  /* Chat input mobile optimization */
+  .chat-input {
+    padding: 12px 8px 12px 8px;
+    gap: 8px;
+  }
+
+  .chat-input input {
+    font-size: 16px;
+    padding: 12px 14px;
+    min-height: 48px;
+  }
+
+  .chat-input button {
+    min-width: 48px;
+    height: 48px;
+    font-size: 18px;
+  }
+
+  .chat-input-btn {
+    min-width: 48px;
+    height: 48px;
+  }
+
+  /* Modal mobile optimization */
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+
+  /* Settings modal mobile */
+  .settings-modal-content {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .settings-modal-body {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    height: auto;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    border-right: none;
+    border-bottom: 1px solid #222;
+    flex-shrink: 0;
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    padding: 10px 16px;
+    flex-shrink: 0;
+  }
+
+  /* Voice UI mobile */
+  .voice-ui-participants {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .voice-ui-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+
+  .voice-ui-controls .voice-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 24px;
+  }
+
+  /* Channel list mobile */
+  .channel-list {
+    padding: 16px 12px;
+  }
+
+  .channel {
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  /* Users list mobile */
+  .users-list {
+    padding: 8px;
+  }
+
+  .user-item {
+    padding: 10px 12px;
+  }
+
+  .user-item-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+  }
+
+  /* User panel mobile */
+  .user-panel {
+    padding: 10px 8px;
+    gap: 8px;
+  }
+
+  .user-panel-info {
+    padding: 6px 8px;
+  }
+
+  .user-panel-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .user-panel-name {
+    font-size: 13px;
+  }
+
+  .user-panel-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  /* Improve touch targets */
+  button,
+  .channel,
+  .user-item,
+  .voice-user,
+  .message-avatar {
+    min-height: 44px;
+  }
+
+  /* Prevent text selection on interactive elements */
+  .channel,
+  .user-item,
+  .voice-user,
+  button {
+    -webkit-tap-highlight-color: rgba(139, 92, 246, 0.2);
+    -webkit-touch-callout: none;
+  }
+
+  /* Smooth scrolling on mobile */
+  .chat-messages,
+  .channel-list,
+  .users-list,
+  .settings-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better scrollbar for mobile */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(139, 92, 246, 0.3);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 4px;
+  }
+
+  /* Toast positioning for mobile */
+  .toast-container {
+    left: 8px;
+    right: 8px;
+    bottom: 16px;
+  }
+
+  .toast {
+    min-width: auto;
+    max-width: 100%;
+    padding: 12px 14px;
+  }
+
+  /* Context menu mobile */
+  .context-menu {
+    min-width: 200px;
+    max-width: 90vw;
+  }
+
+  .context-menu-item {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  /* Image lightbox mobile */
+  .image-lightbox {
+    padding: 20px;
+  }
+
+  .image-lightbox-close {
+    top: 10px;
+    right: 10px;
+    width: 48px;
+    height: 48px;
+    font-size: 28px;
+  }
+
+  #lightboxImage {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+
+  /* Voice connection bar mobile */
+  .voice-connection-bar {
+    padding: 10px 8px;
+    flex-wrap: wrap;
+  }
+
+  .voice-connection-info {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .voice-connection-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  /* Profile modal mobile */
+  .profile-modal-content {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .profile-banner {
+    height: 120px;
+  }
+
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .profile-avatar-container {
+    margin-top: -40px;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 801px) and (max-width: 1200px) {
+  body {
+    grid-template-columns: 280px 1fr 220px;
+  }
+
+  .sidebar-container {
+    width: 280px;
+  }
+
+  .server-sidebar {
+    width: 70px;
+  }
+
+  .users-panel {
+    width: 220px;
+  }
+}
+
+/* Large screen optimizations */
+@media (min-width: 1600px) {
+  body {
+    grid-template-columns: 350px 1fr 280px;
+  }
+
+  .sidebar-container {
+    width: 350px;
+  }
+
+  .users-panel {
+    width: 280px;
+  }
+
+  .message-text {
+    font-size: 16px;
+  }
+}
