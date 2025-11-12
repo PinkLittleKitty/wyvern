@@ -81,15 +81,20 @@
   let isMuted = false;
   let isCameraOn = false;
   let localVideoStream = null;
+  let isScreenSharing = false;
+  let localScreenStream = null;
   
   // Store voice channel users for each channel
   const voiceChannelUsers = new Map();
   
   // Store user states (muted/deafened) for each user
-  const userVoiceStates = new Map(); // username -> { muted: bool, deafened: bool, camera: bool }
+  const userVoiceStates = new Map(); // username -> { muted: bool, deafened: bool, camera: bool, screenSharing: bool }
   
   // Store remote video streams for restoration after re-renders
   const remoteVideoStreams = new Map(); // username -> MediaStream
+  
+  // Store remote screen streams
+  const remoteScreenStreams = new Map(); // username -> MediaStream
 
   // Get token
   function getCookie(name) {
@@ -1174,8 +1179,15 @@
         videoContainer.appendChild(videoEl);
         videoContainer.appendChild(nameOverlay);
         
-        // Insert at the beginning of the user element
-        userEl.insertBefore(videoContainer, userEl.firstChild);
+        // Move status icon into video container
+        const statusIcon = userEl.querySelector('.voice-user-status');
+        if (statusIcon) {
+          videoContainer.appendChild(statusIcon);
+        }
+        
+        // Replace entire user element content with video container
+        userEl.innerHTML = '';
+        userEl.appendChild(videoContainer);
       }
       
       const videoEl = videoContainer.querySelector('video');
@@ -1202,7 +1214,7 @@
       participant.classList.remove('has-video');
     });
 
-    // Remove from voice channel list
+    // Remove from voice channel list and restore original structure
     const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${username}"]`);
     voiceUsers.forEach(userEl => {
       const videoContainer = userEl.querySelector('.voice-user-video-container');
@@ -1215,6 +1227,9 @@
       }
       userEl.classList.remove('has-video-expanded');
     });
+    
+    // Force re-render to restore original structure
+    forceUpdateVoiceChannelDisplay();
 
     log(`Removed video for ${username}`);
   }
@@ -1567,8 +1582,15 @@
         videoContainer.appendChild(videoEl);
         videoContainer.appendChild(nameOverlay);
         
-        // Insert at the beginning of the user element
-        userEl.insertBefore(videoContainer, userEl.firstChild);
+        // Move status icon into video container
+        const statusIcon = userEl.querySelector('.voice-user-status');
+        if (statusIcon) {
+          videoContainer.appendChild(statusIcon);
+        }
+        
+        // Replace entire user element content with video container
+        userEl.innerHTML = '';
+        userEl.appendChild(videoContainer);
       }
       
       const videoEl = videoContainer.querySelector('video');
@@ -1592,7 +1614,7 @@
       userPanelAvatar.classList.remove('has-video');
     }
 
-    // Hide from voice channel list
+    // Hide from voice channel list and restore original structure
     const currentUserVoiceElements = document.querySelectorAll(`.voice-user.current-user[data-username="${username}"]`);
     currentUserVoiceElements.forEach(userEl => {
       const videoContainer = userEl.querySelector('.voice-user-video-container');
@@ -1604,6 +1626,9 @@
         videoContainer.remove();
       }
       userEl.classList.remove('has-video-expanded');
+      
+      // Force re-render to restore original structure
+      forceUpdateVoiceChannelDisplay();
     });
   }
 
@@ -1630,7 +1655,16 @@
           
           videoContainer.appendChild(videoEl);
           videoContainer.appendChild(nameOverlay);
-          userEl.insertBefore(videoContainer, userEl.firstChild);
+          
+          // Move status icon into video container
+          const statusIcon = userEl.querySelector('.voice-user-status');
+          if (statusIcon) {
+            videoContainer.appendChild(statusIcon);
+          }
+          
+          // Replace entire user element content with video container
+          userEl.innerHTML = '';
+          userEl.appendChild(videoContainer);
           userEl.classList.add('has-video-expanded');
         }
       });
@@ -1661,7 +1695,16 @@
               
               videoContainer.appendChild(videoEl);
               videoContainer.appendChild(nameOverlay);
-              userEl.insertBefore(videoContainer, userEl.firstChild);
+              
+              // Move status icon into video container
+              const statusIcon = userEl.querySelector('.voice-user-status');
+              if (statusIcon) {
+                videoContainer.appendChild(statusIcon);
+              }
+              
+              // Replace entire user element content with video container
+              userEl.innerHTML = '';
+              userEl.appendChild(videoContainer);
               userEl.classList.add('has-video-expanded');
             }
           });
