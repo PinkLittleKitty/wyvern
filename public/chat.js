@@ -865,7 +865,298 @@
 
     if (userPanelSettings) {
       userPanelSettings.addEventListener("click", () => {
-        showNotification('Settings coming soon!', 'success');
+        openSettingsModal();
+      });
+    }
+
+    // Settings Modal Functionality
+    function openSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (modal) {
+        modal.classList.add('show');
+      }
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (modal) {
+        modal.classList.remove('show');
+      }
+    }
+
+    // Close settings button
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener('click', closeSettingsModal);
+    }
+
+    // Settings navigation
+    const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+    settingsNavItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const tab = item.dataset.tab;
+        
+        // Update active nav item
+        settingsNavItems.forEach(nav => nav.classList.remove('active'));
+        item.classList.add('active');
+        
+        // Update active tab
+        document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+      });
+    });
+
+    // Theme switching
+    const themeOptions = document.querySelectorAll('.theme-option');
+    const currentTheme = localStorage.getItem('wyvernTheme') || 'wyvern';
+    const customThemeBuilder = document.getElementById('customThemeBuilder');
+    
+    // Apply saved theme
+    applyTheme(currentTheme);
+    
+    // Mark current theme as selected
+    themeOptions.forEach(option => {
+      if (option.dataset.theme === currentTheme) {
+        option.classList.add('selected');
+      }
+      
+      option.addEventListener('click', () => {
+        const theme = option.dataset.theme;
+        
+        // Update UI
+        themeOptions.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Show/hide custom theme builder
+        if (theme === 'custom') {
+          customThemeBuilder.style.display = 'block';
+          loadCustomTheme();
+        } else {
+          customThemeBuilder.style.display = 'none';
+        }
+        
+        // Apply theme
+        applyTheme(theme);
+        localStorage.setItem('wyvernTheme', theme);
+        
+        const themeName = theme.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        showToast(`Theme changed to ${themeName}`, 'success', 'Settings');
+      });
+    });
+    
+    // Show custom theme builder if custom theme is selected
+    if (currentTheme === 'custom') {
+      customThemeBuilder.style.display = 'block';
+      loadCustomTheme();
+    }
+    
+    function applyTheme(theme) {
+      if (theme === 'custom') {
+        applyCustomTheme();
+      } else {
+        document.body.setAttribute('data-theme', theme);
+        // Remove custom theme styles if any
+        const customStyle = document.getElementById('custom-theme-style');
+        if (customStyle) {
+          customStyle.remove();
+        }
+      }
+    }
+    
+    function loadCustomTheme() {
+      const customTheme = JSON.parse(localStorage.getItem('wyvernCustomTheme') || '{}');
+      const base = customTheme.base || 'dark';
+      
+      document.getElementById('customThemeBase').value = base;
+      document.getElementById('customAccent').value = customTheme.accent || '#8b5cf6';
+      document.getElementById('customBg').value = customTheme.bg || '#0a0a0f';
+      document.getElementById('customSidebar').value = customTheme.sidebar || '#13131a';
+      document.getElementById('customText').value = customTheme.text || '#e4e4e7';
+    }
+    
+    function applyCustomTheme() {
+      const customTheme = JSON.parse(localStorage.getItem('wyvernCustomTheme') || '{}');
+      const base = customTheme.base || 'dark';
+      
+      // Start with base theme
+      document.body.setAttribute('data-theme', base === 'dark' ? 'wyvern' : base === 'light' ? 'wyvern-light' : 'wyvern-amoled');
+      
+      // Apply custom colors
+      if (Object.keys(customTheme).length > 0) {
+        let customStyle = document.getElementById('custom-theme-style');
+        if (!customStyle) {
+          customStyle = document.createElement('style');
+          customStyle.id = 'custom-theme-style';
+          document.head.appendChild(customStyle);
+        }
+        
+        const accent = customTheme.accent || '#8b5cf6';
+        const bg = customTheme.bg || '#0a0a0f';
+        const sidebar = customTheme.sidebar || '#13131a';
+        const text = customTheme.text || '#e4e4e7';
+        
+        customStyle.textContent = `
+          body {
+            --accent: ${accent} !important;
+            --accent-soft: ${adjustColor(accent, -20)} !important;
+            --accent-dark: ${adjustColor(accent, -40)} !important;
+            --bg: ${bg} !important;
+            --chat-bg: ${adjustColor(bg, 10)} !important;
+            --sidebar: ${sidebar} !important;
+            --sidebar-dark: ${adjustColor(sidebar, -10)} !important;
+            --text: ${text} !important;
+            --text-bright: ${adjustColor(text, 20)} !important;
+            --text-muted: ${adjustColor(text, -30)} !important;
+          }
+        `;
+      }
+    }
+    
+    function adjustColor(color, percent) {
+      const num = parseInt(color.replace('#', ''), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255))
+        .toString(16).slice(1);
+    }
+    
+    // Custom theme builder
+    const applyCustomThemeBtn = document.getElementById('applyCustomTheme');
+    const resetCustomThemeBtn = document.getElementById('resetCustomTheme');
+    
+    if (applyCustomThemeBtn) {
+      applyCustomThemeBtn.addEventListener('click', () => {
+        const customTheme = {
+          base: document.getElementById('customThemeBase').value,
+          accent: document.getElementById('customAccent').value,
+          bg: document.getElementById('customBg').value,
+          sidebar: document.getElementById('customSidebar').value,
+          text: document.getElementById('customText').value
+        };
+        
+        localStorage.setItem('wyvernCustomTheme', JSON.stringify(customTheme));
+        applyCustomTheme();
+        showToast('Custom theme applied!', 'success', 'Settings');
+      });
+    }
+    
+    if (resetCustomThemeBtn) {
+      resetCustomThemeBtn.addEventListener('click', () => {
+        const base = document.getElementById('customThemeBase').value;
+        localStorage.removeItem('wyvernCustomTheme');
+        
+        // Reset to base theme defaults
+        if (base === 'dark') {
+          document.getElementById('customAccent').value = '#8b5cf6';
+          document.getElementById('customBg').value = '#0a0a0f';
+          document.getElementById('customSidebar').value = '#13131a';
+          document.getElementById('customText').value = '#e4e4e7';
+        } else if (base === 'light') {
+          document.getElementById('customAccent').value = '#8b5cf6';
+          document.getElementById('customBg').value = '#f5f5f7';
+          document.getElementById('customSidebar').value = '#e8e8ec';
+          document.getElementById('customText').value = '#1a1a1f';
+        } else {
+          document.getElementById('customAccent').value = '#8b5cf6';
+          document.getElementById('customBg').value = '#000000';
+          document.getElementById('customSidebar').value = '#000000';
+          document.getElementById('customText').value = '#ffffff';
+        }
+        
+        showToast('Reset to base theme', 'info', 'Settings');
+      });
+    }
+    
+    // Update custom theme preview when base changes
+    const customThemeBase = document.getElementById('customThemeBase');
+    if (customThemeBase) {
+      customThemeBase.addEventListener('change', () => {
+        const base = customThemeBase.value;
+        if (base === 'dark') {
+          document.getElementById('customBg').value = '#0a0a0f';
+          document.getElementById('customSidebar').value = '#13131a';
+          document.getElementById('customText').value = '#e4e4e7';
+        } else if (base === 'light') {
+          document.getElementById('customBg').value = '#f5f5f7';
+          document.getElementById('customSidebar').value = '#e8e8ec';
+          document.getElementById('customText').value = '#1a1a1f';
+        } else {
+          document.getElementById('customBg').value = '#000000';
+          document.getElementById('customSidebar').value = '#000000';
+          document.getElementById('customText').value = '#ffffff';
+        }
+      });
+    }
+
+    // Compact mode
+    const compactMode = document.getElementById('compactMode');
+    if (compactMode) {
+      const isCompact = localStorage.getItem('wyvernCompactMode') === 'true';
+      compactMode.checked = isCompact;
+      if (isCompact) {
+        document.body.classList.add('compact-mode');
+      }
+      
+      compactMode.addEventListener('change', () => {
+        if (compactMode.checked) {
+          document.body.classList.add('compact-mode');
+          localStorage.setItem('wyvernCompactMode', 'true');
+        } else {
+          document.body.classList.remove('compact-mode');
+          localStorage.setItem('wyvernCompactMode', 'false');
+        }
+      });
+    }
+
+    // Notification settings
+    const desktopNotifications = document.getElementById('desktopNotifications');
+    const notificationSounds = document.getElementById('notificationSounds');
+    const mentionNotifications = document.getElementById('mentionNotifications');
+
+    if (desktopNotifications) {
+      desktopNotifications.checked = localStorage.getItem('wyvernDesktopNotifications') !== 'false';
+      desktopNotifications.addEventListener('change', () => {
+        localStorage.setItem('wyvernDesktopNotifications', desktopNotifications.checked);
+        if (desktopNotifications.checked) {
+          Notification.requestPermission();
+        }
+      });
+    }
+
+    if (notificationSounds) {
+      notificationSounds.checked = localStorage.getItem('wyvernNotificationSounds') !== 'false';
+      notificationSounds.addEventListener('change', () => {
+        localStorage.setItem('wyvernNotificationSounds', notificationSounds.checked);
+      });
+    }
+
+    if (mentionNotifications) {
+      mentionNotifications.checked = localStorage.getItem('wyvernMentionNotifications') !== 'false';
+      mentionNotifications.addEventListener('change', () => {
+        localStorage.setItem('wyvernMentionNotifications', mentionNotifications.checked);
+      });
+    }
+
+    // Input volume slider
+    const inputVolume = document.getElementById('inputVolume');
+    const inputVolumeValue = document.getElementById('inputVolumeValue');
+    if (inputVolume && inputVolumeValue) {
+      inputVolume.addEventListener('input', () => {
+        inputVolumeValue.textContent = `${inputVolume.value}%`;
+      });
+    }
+
+    // Close modal when clicking outside
+    const settingsModal = document.getElementById('settingsModal');
+    if (settingsModal) {
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+          closeSettingsModal();
+        }
       });
     }
 
@@ -911,6 +1202,10 @@
   }
 
   function playNotificationSound() {
+    // Check if notification sounds are enabled
+    const soundsEnabled = localStorage.getItem('wyvernNotificationSounds') !== 'false';
+    if (!soundsEnabled) return;
+    
     try {
       // Create a simple beep sound using Web Audio API
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -981,10 +1276,15 @@
     
     if (isMentioned && data.username !== username) {
       messageEl.classList.add('mentioned');
-      // Show notification for mention
-      showToast(`${data.username} mentioned you`, 'info', 'Mention');
-      // Play notification sound
-      playNotificationSound();
+      
+      // Check if mention notifications are enabled
+      const mentionNotificationsEnabled = localStorage.getItem('wyvernMentionNotifications') !== 'false';
+      if (mentionNotificationsEnabled) {
+        // Show notification for mention
+        showToast(`${data.username} mentioned you`, 'info', 'Mention');
+        // Play notification sound
+        playNotificationSound();
+      }
     }
 
     // Admin delete button (show if current user is admin and it's not their message)

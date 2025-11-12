@@ -243,6 +243,256 @@
       <span>Ban User</span>
     </div>
   </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content settings-modal-content">
+      <div class="settings-modal-header">
+        <h3>Settings</h3>
+        <button class="modal-close-btn" id="closeSettingsBtn">×</button>
+      </div>
+      
+      <div class="settings-modal-body">
+        <div class="settings-sidebar">
+          <div class="settings-nav-item active" data-tab="appearance">
+            <i class="fas fa-palette"></i>
+            <span>Appearance</span>
+          </div>
+          <div class="settings-nav-item" data-tab="notifications">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+          </div>
+          <div class="settings-nav-item" data-tab="voice">
+            <i class="fas fa-microphone"></i>
+            <span>Voice & Video</span>
+          </div>
+          <div class="settings-nav-item" data-tab="privacy">
+            <i class="fas fa-shield-alt"></i>
+            <span>Privacy</span>
+          </div>
+        </div>
+        
+        <div class="settings-content">
+          <!-- Appearance Tab -->
+          <div class="settings-tab active" id="appearance-tab">
+            <h4>Appearance</h4>
+            <p class="settings-description">Customize how Wyvern looks on your device</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Theme</label>
+              <div class="theme-selector">
+                <div class="theme-option" data-theme="wyvern">
+                  <div class="theme-preview wyvern-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="wyvern-light">
+                  <div class="theme-preview wyvern-light-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern Light</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="wyvern-amoled">
+                  <div class="theme-preview wyvern-amoled-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern AMOLED</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="discord">
+                  <div class="theme-preview discord-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Discord</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="d4rk">
+                  <div class="theme-preview d4rk-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">D4rk</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="custom">
+                  <div class="theme-preview custom-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Custom</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Custom Theme Builder -->
+            <div class="settings-section custom-theme-builder" id="customThemeBuilder" style="display: none;">
+              <label class="settings-label">Custom Theme Builder</label>
+              <p class="settings-hint">Create your own theme by customizing colors</p>
+              
+              <div class="custom-theme-base">
+                <label>Base Theme</label>
+                <select id="customThemeBase" class="settings-select">
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="amoled">AMOLED</option>
+                </select>
+              </div>
+              
+              <div class="custom-theme-colors">
+                <div class="color-picker-group">
+                  <label>Accent Color</label>
+                  <input type="color" id="customAccent" value="#8b5cf6" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Background Color</label>
+                  <input type="color" id="customBg" value="#0a0a0f" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Sidebar Color</label>
+                  <input type="color" id="customSidebar" value="#13131a" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Text Color</label>
+                  <input type="color" id="customText" value="#e4e4e7" />
+                </div>
+              </div>
+              
+              <button class="settings-button" id="applyCustomTheme">Apply Custom Theme</button>
+              <button class="settings-button secondary" id="resetCustomTheme">Reset to Base</button>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Message Display</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="compactMode" />
+                <label for="compactMode">Compact Mode</label>
+              </div>
+              <p class="settings-hint">Show more messages at once</p>
+            </div>
+          </div>
+          
+          <!-- Notifications Tab -->
+          <div class="settings-tab" id="notifications-tab">
+            <h4>Notifications</h4>
+            <p class="settings-description">Control when and how you receive notifications</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Desktop Notifications</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="desktopNotifications" checked />
+                <label for="desktopNotifications">Enable desktop notifications</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Notification Sounds</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="notificationSounds" checked />
+                <label for="notificationSounds">Play sound for mentions</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Mention Notifications</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="mentionNotifications" checked />
+                <label for="mentionNotifications">Notify when mentioned</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Voice & Video Tab -->
+          <div class="settings-tab" id="voice-tab">
+            <h4>Voice & Video</h4>
+            <p class="settings-description">Manage your voice and video settings</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Input Device</label>
+              <select id="inputDevice" class="settings-select">
+                <option>Default Microphone</option>
+              </select>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Output Device</label>
+              <select id="outputDevice" class="settings-select">
+                <option>Default Speakers</option>
+              </select>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Input Volume</label>
+              <input type="range" id="inputVolume" min="0" max="100" value="100" class="settings-slider" />
+              <span class="settings-slider-value" id="inputVolumeValue">100%</span>
+            </div>
+          </div>
+          
+          <!-- Privacy Tab -->
+          <div class="settings-tab" id="privacy-tab">
+            <h4>Privacy & Safety</h4>
+            <p class="settings-description">Control your privacy settings</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Direct Messages</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="allowDMs" checked />
+                <label for="allowDMs">Allow direct messages from server members</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Activity Status</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="showActivity" checked />
+                <label for="showActivity">Display current activity</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="chat.js"></script>
 </body>
 </html>
