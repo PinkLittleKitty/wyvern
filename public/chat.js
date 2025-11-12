@@ -200,6 +200,12 @@
       }
     });
 
+    // Online users list
+    socket.on("onlineUsers", (users) => {
+      log(`Received ${users.length} online users`);
+      updateOnlineUsersList(users);
+    });
+
     // Basic chat functionality
     socket.on("chatMessage", (data) => {
       log(`Received message from ${data.username}`);
@@ -424,6 +430,66 @@
 
     messagesContainer.appendChild(messageEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Online users list functionality
+  function updateOnlineUsersList(users) {
+    const usersList = document.getElementById('usersList');
+    const usersCount = document.getElementById('usersCount');
+    
+    if (!usersList || !usersCount) return;
+
+    usersCount.textContent = users.length;
+    usersList.innerHTML = '';
+
+    users.forEach(user => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      
+      if (user.username === username) {
+        userItem.classList.add('self');
+      }
+
+      const statusText = user.voiceChannel ? `🔊 ${user.voiceChannel}` : 'Online';
+      const statusClass = user.voiceChannel ? 'in-voice' : '';
+
+      userItem.innerHTML = `
+        <div class="user-item-avatar">
+          ${user.username.charAt(0).toUpperCase()}
+          <div class="user-item-status ${statusClass}"></div>
+        </div>
+        <div class="user-item-info">
+          <div class="user-item-name">
+            ${user.username}
+            ${user.isAdmin ? '<span class="user-item-badge">ADMIN</span>' : ''}
+          </div>
+          <div class="user-item-status-text">${statusText}</div>
+        </div>
+      `;
+
+      usersList.appendChild(userItem);
+    });
+  }
+
+  // Toggle users panel
+  const toggleUsersBtn = document.getElementById('toggleUsersBtn');
+  if (toggleUsersBtn) {
+    // Check localStorage for saved state
+    const usersPanelHidden = localStorage.getItem('usersPanelHidden') === 'true';
+    if (usersPanelHidden) {
+      document.body.classList.add('users-panel-hidden');
+    } else {
+      toggleUsersBtn.classList.add('active');
+    }
+
+    toggleUsersBtn.addEventListener('click', () => {
+      document.body.classList.toggle('users-panel-hidden');
+      toggleUsersBtn.classList.toggle('active');
+      
+      // Save state to localStorage
+      const isHidden = document.body.classList.contains('users-panel-hidden');
+      localStorage.setItem('usersPanelHidden', isHidden);
+    });
   }
 
   // Store voice channel users for each channel

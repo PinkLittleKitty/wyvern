@@ -584,6 +584,25 @@ function setupSocketIO() {
   }
 });
 
+// Helper function to get online users
+function getOnlineUsers() {
+  const users = [];
+  io.sockets.sockets.forEach(socket => {
+    users.push({
+      username: socket.user.username,
+      isAdmin: socket.user.isAdmin || false,
+      voiceChannel: socket.voiceChannel || null
+    });
+  });
+  return users;
+}
+
+// Helper function to broadcast online users
+function broadcastOnlineUsers() {
+  const users = getOnlineUsers();
+  io.emit('onlineUsers', users);
+}
+
 io.on('connection', async (socket) => {
   const username = socket.user.username;
   console.log(`👤 User connected: ${username}`);
@@ -597,6 +616,9 @@ io.on('connection', async (socket) => {
   const voiceChannels = await voiceChannelsCollection.find().toArray();
   socket.emit('channelUpdate', channels);
   socket.emit('voiceChannelUpdate', voiceChannels);
+
+  // Send online users to the new connection and broadcast update
+  broadcastOnlineUsers();
 
   socket.on('joinChannel', async (channelName) => {
     socket.leave(socket.currentChannel);
@@ -662,6 +684,9 @@ io.on('connection', async (socket) => {
     });
     
     console.log(`✅ ${username} joined voice channel: ${channelName}`);
+    
+    // Broadcast updated online users list
+    broadcastOnlineUsers();
   });
 
   socket.on('leaveVoiceChannel', () => {
@@ -691,6 +716,9 @@ io.on('connection', async (socket) => {
       
       console.log(`✅ ${username} left voice channel: ${socket.voiceChannel}`);
       socket.voiceChannel = null;
+      
+      // Broadcast updated online users list
+      broadcastOnlineUsers();
     }
   });
 
@@ -851,6 +879,9 @@ io.on('connection', async (socket) => {
         });
       }
     }
+
+    // Broadcast updated online users list after disconnect
+    broadcastOnlineUsers();
   });
 
   socket.on('userSpeaking', (data) => {

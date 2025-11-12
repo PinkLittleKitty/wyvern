@@ -61,6 +61,7 @@
       <div class="user-info">
         <span id="username"></span>
         <span class="admin-badge" id="adminBadge" style="display: none;">ADMIN</span>
+        <button class="toggle-users-btn" id="toggleUsersBtn" title="Toggle User List">👥</button>
         <button class="logout-btn" id="logoutBtn">Logout</button>
       </div>
     </div>
@@ -69,6 +70,16 @@
     <div class="chat-input">
       <input id="chat-input" placeholder="Message #general" />
       <button id="send-button">Send</button>
+    </div>
+  </div>
+
+  <div class="users-panel" id="usersPanel">
+    <div class="users-panel-header">
+      <h3>Online Users</h3>
+      <span class="users-count" id="usersCount">0</span>
+    </div>
+    <div class="users-list" id="usersList">
+      <!-- Users will be populated here -->
     </div>
   </div>
 
