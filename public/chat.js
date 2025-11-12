@@ -198,6 +198,16 @@
       if (data.isAdmin) {
         document.getElementById("adminBadge").style.display = 'inline';
       }
+
+      // Update user panel
+      const userPanelName = document.getElementById("userPanelName");
+      const userPanelAvatar = document.getElementById("userPanelAvatar");
+      if (userPanelName) {
+        userPanelName.textContent = data.username;
+      }
+      if (userPanelAvatar) {
+        userPanelAvatar.textContent = data.username.charAt(0).toUpperCase();
+      }
     });
 
     // Online users list
@@ -293,7 +303,7 @@
         const nameEl = participant.querySelector('.voice-participant-name');
         const statusEl = participant.querySelector('.voice-participant-status');
         if (nameEl && nameEl.textContent === data.username) {
-          statusEl.textContent = data.speaking ? '🗣️' : '🎤';
+          statusEl.innerHTML = data.speaking ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-microphone"></i>';
         }
       });
     });
@@ -305,7 +315,7 @@
         const nameEl = participant.querySelector('.voice-participant-name');
         const statusEl = participant.querySelector('.voice-participant-status');
         if (nameEl && nameEl.textContent === data.username) {
-          statusEl.textContent = data.muted ? '🔇' : '🎤';
+          statusEl.innerHTML = data.muted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
         }
       });
     });
@@ -405,6 +415,73 @@
         window.location.href = "/login.html";
       });
     }
+
+    // User panel button functionality
+    const userPanelMute = document.getElementById("userPanelMute");
+    const userPanelDeafen = document.getElementById("userPanelDeafen");
+    const userPanelSettings = document.getElementById("userPanelSettings");
+
+    if (userPanelMute) {
+      userPanelMute.addEventListener("click", () => {
+        if (currentVoiceChannel) {
+          toggleMute();
+          userPanelMute.classList.toggle('muted');
+        } else {
+          showNotification('Join a voice channel first', 'error');
+        }
+      });
+    }
+
+    if (userPanelDeafen) {
+      userPanelDeafen.addEventListener("click", () => {
+        if (currentVoiceChannel) {
+          // Toggle deafen state
+          const isDeafened = userPanelDeafen.classList.toggle('deafened');
+          
+          if (isDeafened) {
+            // Mute microphone and disable all audio outputs
+            if (localStream) {
+              localStream.getAudioTracks().forEach(track => {
+                track.enabled = false;
+              });
+            }
+            // Mute all remote audio elements
+            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+              audio.muted = true;
+            });
+            showNotification('Deafened', 'success');
+          } else {
+            // Unmute microphone if it wasn't muted before
+            if (localStream && !isMuted) {
+              localStream.getAudioTracks().forEach(track => {
+                track.enabled = true;
+              });
+            }
+            // Unmute all remote audio elements
+            document.querySelectorAll('audio[id^="audio-"]').forEach(audio => {
+              audio.muted = false;
+            });
+            showNotification('Undeafened', 'success');
+          }
+        } else {
+          showNotification('Join a voice channel first', 'error');
+        }
+      });
+    }
+
+    if (userPanelSettings) {
+      userPanelSettings.addEventListener("click", () => {
+        showNotification('Settings coming soon!', 'success');
+      });
+    }
+
+    // User panel info click - show profile or settings
+    const userPanelInfo = document.querySelector('.user-panel-info');
+    if (userPanelInfo) {
+      userPanelInfo.addEventListener("click", () => {
+        showNotification(`Logged in as ${username}`, 'success');
+      });
+    }
   }
 
   function displayMessage(data) {
@@ -454,9 +531,15 @@
         <div class="message-text">${escapedMessage}</div>
       </div>
       <div class="message-actions">
-        <button class="message-action-btn" title="Add Reaction">😊</button>
-        <button class="message-action-btn" title="Reply">💬</button>
-        <button class="message-action-btn" title="More">⋯</button>
+        <button class="message-action-btn" title="Add Reaction">
+          <i class="far fa-smile"></i>
+        </button>
+        <button class="message-action-btn" title="Reply">
+          <i class="fas fa-reply"></i>
+        </button>
+        <button class="message-action-btn" title="More">
+          <i class="fas fa-ellipsis-h"></i>
+        </button>
       </div>
     `;
 
@@ -489,7 +572,7 @@
         userItem.classList.add('self');
       }
 
-      const statusText = user.voiceChannel ? `🔊 ${user.voiceChannel}` : 'Online';
+      const statusText = user.voiceChannel ? `<i class="fas fa-volume-up"></i> ${user.voiceChannel}` : 'Online';
       const statusClass = user.voiceChannel ? 'in-voice' : '';
 
       userItem.innerHTML = `
@@ -817,21 +900,35 @@
     const muteBtn = document.getElementById('muteBtn');
     const voiceUIMuteBtn = document.getElementById('voiceUIMuteBtn');
     const modalMuteBtn = document.getElementById('modalMuteBtn');
+    const userPanelMute = document.getElementById('userPanelMute');
 
-    if (isMuted) {
-      muteBtn?.classList.replace('unmute', 'mute');
-      voiceUIMuteBtn?.classList.replace('unmute', 'mute');
-      modalMuteBtn?.classList.replace('unmute', 'mute');
-      muteBtn && (muteBtn.textContent = '🔇');
-      voiceUIMuteBtn && (voiceUIMuteBtn.textContent = '🔇');
-      modalMuteBtn && (modalMuteBtn.textContent = '🔇');
-    } else {
-      muteBtn?.classList.replace('mute', 'unmute');
-      voiceUIMuteBtn?.classList.replace('mute', 'unmute');
-      modalMuteBtn?.classList.replace('mute', 'unmute');
-      muteBtn && (muteBtn.textContent = '🎤');
-      voiceUIMuteBtn && (voiceUIMuteBtn.textContent = '🎤');
-      modalMuteBtn && (modalMuteBtn.textContent = '🎤');
+    // Update button icons
+    [muteBtn, voiceUIMuteBtn, modalMuteBtn].forEach(btn => {
+      if (btn) {
+        const icon = btn.querySelector('i');
+        if (icon) {
+          if (isMuted) {
+            icon.className = 'fas fa-microphone-slash';
+            btn.classList.replace('unmute', 'mute');
+          } else {
+            icon.className = 'fas fa-microphone';
+            btn.classList.replace('mute', 'unmute');
+          }
+        }
+      }
+    });
+
+    // Update user panel button
+    if (userPanelMute) {
+      const icon = userPanelMute.querySelector('i');
+      if (icon) {
+        icon.className = isMuted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+      }
+      if (isMuted) {
+        userPanelMute.classList.add('muted');
+      } else {
+        userPanelMute.classList.remove('muted');
+      }
     }
 
     if (window.wyvernSocket) {
@@ -847,6 +944,7 @@
     const voiceStatus = document.getElementById('voiceStatus');
     const voiceUITitle = document.getElementById('voiceUITitle');
     const voiceUsername = document.getElementById('voiceUsername');
+    const userPanelStatusText = document.getElementById('userPanelStatusText');
 
     if (voiceControls) {
       voiceControls.style.display = 'flex';
@@ -857,11 +955,17 @@
     }
 
     if (voiceUITitle) {
-      voiceUITitle.textContent = `🔊 ${channelName}`;
+      voiceUITitle.innerHTML = `<i class="fas fa-volume-up"></i> ${channelName}`;
     }
 
     if (voiceUsername) {
       voiceUsername.textContent = username;
+    }
+
+    // Update user panel status
+    if (userPanelStatusText) {
+      userPanelStatusText.innerHTML = `<i class="fas fa-volume-up"></i> ${channelName}`;
+      userPanelStatusText.style.color = 'var(--voice-green)';
     }
 
     // Update channel list to show connection
@@ -889,10 +993,23 @@
   function hideVoiceIndicators() {
     // Hide voice controls and update UI
     const voiceControls = document.getElementById('voiceControls');
+    const userPanelStatusText = document.getElementById('userPanelStatusText');
+    const userPanelMute = document.getElementById('userPanelMute');
+    const userPanelDeafen = document.getElementById('userPanelDeafen');
 
     if (voiceControls) {
       voiceControls.style.display = 'none';
     }
+
+    // Reset user panel status
+    if (userPanelStatusText) {
+      userPanelStatusText.textContent = 'Online';
+      userPanelStatusText.style.color = '';
+    }
+
+    // Reset user panel buttons
+    userPanelMute?.classList.remove('muted');
+    userPanelDeafen?.classList.remove('deafened');
 
     // Update channel list to remove connection indicators
     updateChannelActiveStates();

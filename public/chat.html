@@ -6,6 +6,7 @@
   <title>Wyvern — Chat</title>
   <link rel="icon" href="/wyvernLogo.png" />
   <link rel="stylesheet" href="chat-styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 </head>
@@ -13,30 +14,34 @@
   <div class="debug" id="debug">Connecting...</div>
   <div class="notification hidden" id="notification"></div>
   
-  <div class="server-sidebar">
-    <div class="server-icon">
-      <img src="/wyvernLogo.png" alt="Wyvern Logo" />
-    </div>
-  </div>
+  <div class="sidebar-container">
+    <div class="sidebar-top">
+      <div class="server-sidebar">
+        <div class="server-icon">
+          <img src="/wyvernLogo.png" alt="Wyvern Logo" />
+        </div>
+      </div>
 
-  <div class="channel-list">
-    <div class="channel-section">
-      <h4>
-        Text Channels
-        <button class="add-channel-btn" id="addTextChannelBtn" style="display: none;">+</button>
-      </h4>
-      <div id="textChannelsList"></div>
-    </div>
-    
-    <div class="channel-section">
-      <h4>
-        Voice Channels
-        <button class="add-channel-btn" id="addVoiceChannelBtn" style="display: none;">+</button>
-      </h4>
-      <div id="voiceChannelsList"></div>
+      <div class="channel-list">
+        <div class="channel-section">
+          <h4>
+            Text Channels
+            <button class="add-channel-btn" id="addTextChannelBtn" style="display: none;">+</button>
+          </h4>
+          <div id="textChannelsList"></div>
+        </div>
+        
+        <div class="channel-section">
+          <h4>
+            Voice Channels
+            <button class="add-channel-btn" id="addVoiceChannelBtn" style="display: none;">+</button>
+          </h4>
+          <div id="voiceChannelsList"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- User Panel at bottom -->
+    <!-- User Panel spanning both sidebars -->
     <div class="user-panel">
       <div class="user-panel-info">
         <div class="user-panel-avatar" id="userPanelAvatar">
@@ -48,9 +53,15 @@
         </div>
       </div>
       <div class="user-panel-controls">
-        <button class="user-panel-btn" id="userPanelMute" title="Mute/Unmute">🎤</button>
-        <button class="user-panel-btn" id="userPanelDeafen" title="Deafen">🔊</button>
-        <button class="user-panel-btn" id="userPanelSettings" title="Settings">⚙️</button>
+        <button class="user-panel-btn" id="userPanelMute" title="Mute/Unmute">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <button class="user-panel-btn" id="userPanelDeafen" title="Deafen">
+          <i class="fas fa-headphones"></i>
+        </button>
+        <button class="user-panel-btn" id="userPanelSettings" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -61,8 +72,13 @@
       <div class="user-info">
         <span id="username"></span>
         <span class="admin-badge" id="adminBadge" style="display: none;">ADMIN</span>
-        <button class="toggle-users-btn" id="toggleUsersBtn" title="Toggle User List">👥</button>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
+        <button class="toggle-users-btn" id="toggleUsersBtn" title="Toggle User List">
+          <i class="fas fa-users"></i>
+        </button>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
       </div>
     </div>
     <div id="chat-messages" class="chat-messages"></div>
@@ -71,10 +87,14 @@
       <div class="chat-input-wrapper">
         <input id="chat-input" placeholder="Message #general" />
         <div class="chat-input-actions">
-          <button class="chat-input-action-btn" title="Add emoji">😊</button>
+          <button class="chat-input-action-btn" title="Add emoji">
+            <i class="far fa-smile"></i>
+          </button>
         </div>
       </div>
-      <button id="send-button" title="Send message">➤</button>
+      <button id="send-button" title="Send message">
+        <i class="fas fa-paper-plane"></i>
+      </button>
     </div>
   </div>
 
