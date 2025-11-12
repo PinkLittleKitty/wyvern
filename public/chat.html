@@ -11,6 +11,23 @@
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <img src="/wyvernLogo.png" alt="Wyvern" class="loading-logo-img" />
+        <div class="loading-logo-glow"></div>
+      </div>
+      <div class="loading-text" id="loadingText">Connecting to Wyvern...</div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+      <div class="loading-tips" id="loadingTips">
+        <span class="loading-tip">Did you know? You can customize your profile with avatars and colors!</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
   

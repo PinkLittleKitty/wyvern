@@ -74,6 +74,86 @@
 
   log(`Username: ${username}`);
 
+  // Loading screen
+  const loadingScreen = document.getElementById('loadingScreen');
+  const loadingTips = document.getElementById('loadingTips');
+  
+  const tips = [
+    'Explode',
+    'Read if cute',
+    'Have a nice day!',
+    'Starting Lightcord...',
+    'Loading 0BDFDB.plugin.js...',
+    'Installing BetterDiscord...',
+    'h',
+    'shhhhh did you know that you\'re my favourite user? But don\'t tell the others!!',
+    'Today\'s video is sponsored by Raid Shadow Legends, one of the biggest mobile role-playing games of 2019 and it\'s totally free!',
+    'Never gonna give you up, Never gonna let you down',
+    '( ͡° ͜ʖ ͡°)',
+    '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
+    'You look so pretty today!',
+    'Thinking of a funny quote...',
+    '3.141592653589793',
+    'meow',
+    'Welcome, friend',
+    'If you, or someone you love, has Ligma, please see the Ligma health line',
+    'I\'d just like to interject for a moment. What you\'re refering to as Linux, is in fact, GNU/Linux',
+    'You\'re doing good today!',
+    'Don\'t worry, it\'s nothing 9 cups of coffee couldn\'t solve!',
+    'a light amount of tomfoolery is okay',
+    'do you love?',
+    'horror',
+    'so eepy',
+    'So without further ado, let\'s just jump right into it!',
+    'Dying is absolutely safe',
+    'hey you! you\'re cute :))',
+    'heya ~',
+    'Time is gone, space is insane. Here it comes, here again.',
+    'sometimes it\'s okay to just guhhhhhhhhhhhhhh',
+    'Welcome to nginx!'
+  ];
+  
+  let tipInterval;
+  function showRandomTip() {
+    if (loadingTips) {
+      const randomTip = tips[Math.floor(Math.random() * tips.length)];
+      loadingTips.innerHTML = `<span class="loading-tip">${randomTip}</span>`;
+    }
+  }
+  
+  // Start showing random tips
+  showRandomTip();
+  tipInterval = setInterval(showRandomTip, 4000);
+  
+  // Fallback: hide loading screen after 10 seconds if something goes wrong
+  const loadingTimeout = setTimeout(() => {
+    log('⚠️ Loading timeout - forcing hide');
+    hideLoadingScreen();
+  }, 10000);
+  
+  // Allow clicking loading screen to dismiss it (emergency escape)
+  if (loadingScreen) {
+    loadingScreen.addEventListener('click', () => {
+      log('Loading screen clicked - manual dismiss');
+      hideLoadingScreen();
+    });
+  }
+  
+  function hideLoadingScreen() {
+    log('🔄 Hiding loading screen...');
+    if (tipInterval) clearInterval(tipInterval);
+    if (loadingTimeout) clearTimeout(loadingTimeout);
+    if (loadingScreen) {
+      log('Adding hidden class to loading screen');
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        log('✅ Loading screen hidden class added');
+      }, 300);
+    } else {
+      log('⚠️ Loading screen element not found');
+    }
+  }
+
   // User profiles cache
   const userProfiles = new Map();
 
@@ -331,20 +411,31 @@
     });
 
     socket.on("chatHistory", async (history) => {
-      log(`Received ${history.length} messages`);
-      const messagesContainer = document.getElementById("chat-messages");
-      messagesContainer.innerHTML = "";
-      
-      // Pre-fetch all unique user profiles in parallel
-      const uniqueUsernames = [...new Set(history.map(msg => msg.username))];
-      await Promise.all(uniqueUsernames.map(name => getUserProfile(name)));
-      
-      // Now display messages sequentially (profiles are cached)
-      for (const message of history) {
-        await displayMessage(message);
+      try {
+        log(`Received ${history.length} messages`);
+        const messagesContainer = document.getElementById("chat-messages");
+        messagesContainer.innerHTML = "";
+        
+        // Pre-fetch all unique user profiles in parallel
+        const uniqueUsernames = [...new Set(history.map(msg => msg.username))];
+        await Promise.all(uniqueUsernames.map(name => getUserProfile(name)));
+        
+        // Now display messages sequentially (profiles are cached)
+        for (const message of history) {
+          await displayMessage(message);
+        }
+        
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Hide loading screen after everything is loaded
+        log('✅ All messages loaded, hiding loading screen');
+        hideLoadingScreen();
+      } catch (error) {
+        log(`❌ Error loading messages: ${error.message}`);
+        console.error(error);
+        // Hide loading screen even on error
+        hideLoadingScreen();
       }
-      
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     });
 
     // Message deleted by admin
