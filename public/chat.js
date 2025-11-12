@@ -233,19 +233,21 @@
     // User info
     socket.on("userInfo", (data) => {
       log(`Received user info: ${data.username}, Admin: ${data.isAdmin}`);
-      document.getElementById("username").textContent = data.username;
-      if (data.isAdmin) {
-        document.getElementById("adminBadge").style.display = 'inline';
-      }
+      isCurrentUserAdmin = data.isAdmin || false;
 
       // Update user panel
       const userPanelName = document.getElementById("userPanelName");
       const userPanelAvatar = document.getElementById("userPanelAvatar");
+      const userPanelAdminBadge = document.getElementById("userPanelAdminBadge");
+      
       if (userPanelName) {
         userPanelName.textContent = data.username;
       }
       if (userPanelAvatar) {
         userPanelAvatar.textContent = data.username.charAt(0).toUpperCase();
+      }
+      if (userPanelAdminBadge && data.isAdmin) {
+        userPanelAdminBadge.style.display = 'inline-block';
       }
     });
 
@@ -266,6 +268,29 @@
       const messagesContainer = document.getElementById("chat-messages");
       messagesContainer.innerHTML = "";
       history.forEach(displayMessage);
+    });
+
+    // Message deleted by admin
+    socket.on("messageDeleted", (data) => {
+      const messageEl = document.querySelector(`[data-message-id="${data.messageId}"]`);
+      if (messageEl) {
+        messageEl.classList.add('removing');
+        setTimeout(() => messageEl.remove(), 300);
+      }
+    });
+
+    // Kicked from voice by admin
+    socket.on("kickedFromVoice", (data) => {
+      showToast('You were kicked from the voice channel by an admin', 'error', 'Kicked');
+      leaveVoiceChannel();
+    });
+
+    // Disconnected by admin
+    socket.on("disconnected", (data) => {
+      showToast('You were disconnected by an admin', 'error', 'Disconnected');
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     });
 
     // Typing indicator
@@ -610,12 +635,16 @@
     }
   }
 
+  // Track if current user is admin
+  let isCurrentUserAdmin = false;
+
   function displayMessage(data) {
     const messagesContainer = document.getElementById("chat-messages");
     const messageEl = document.createElement("div");
     messageEl.className = "message-container";
     messageEl.dataset.username = data.username;
     messageEl.dataset.timestamp = data.timestamp;
+    messageEl.dataset.messageId = data._id || data.id || '';
 
     if (data.username === username) {
       messageEl.classList.add("mine");
@@ -639,12 +668,20 @@
     // Get first letter for avatar
     const avatarLetter = data.username.charAt(0).toUpperCase();
     
-    // Check if user is admin (you can enhance this with actual admin data)
+    // Check if user is admin
     const isAdmin = data.isAdmin || false;
     const adminBadge = isAdmin ? '<span class="message-admin-badge">Admin</span>' : '';
 
     // Escape HTML in message but preserve line breaks
     const escapedMessage = escapeHtml(data.message);
+
+    // Admin delete button (show if current user is admin and it's not their message)
+    const canDelete = isCurrentUserAdmin && data.username !== username;
+    const deleteButton = canDelete ? `
+      <button class="message-action-btn message-delete-btn" title="Delete Message" data-message-id="${data._id || data.id || ''}">
+        <i class="fas fa-trash"></i>
+      </button>
+    ` : '';
 
     messageEl.innerHTML = `
       <div class="message-avatar">${avatarLetter}</div>
@@ -663,11 +700,22 @@
         <button class="message-action-btn" title="Reply">
           <i class="fas fa-reply"></i>
         </button>
+        ${deleteButton}
         <button class="message-action-btn" title="More">
           <i class="fas fa-ellipsis-h"></i>
         </button>
       </div>
     `;
+
+    // Add delete button handler
+    if (canDelete) {
+      const deleteBtn = messageEl.querySelector('.message-delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+          deleteMessage(data._id || data.id, messageEl);
+        });
+      }
+    }
 
     messagesContainer.appendChild(messageEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -678,6 +726,39 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Admin: Delete message
+  function deleteMessage(messageId, messageEl) {
+    if (!isCurrentUserAdmin || !messageId) return;
+
+    if (confirm('Are you sure you want to delete this message?')) {
+      window.wyvernSocket.emit('deleteMessage', { messageId });
+      
+      // Optimistically remove from UI
+      messageEl.classList.add('removing');
+      setTimeout(() => messageEl.remove(), 300);
+    }
+  }
+
+  // Admin: Kick user from voice
+  function kickFromVoice(targetUsername) {
+    if (!isCurrentUserAdmin) return;
+
+    if (confirm(`Kick ${targetUsername} from voice channel?`)) {
+      window.wyvernSocket.emit('kickFromVoice', { targetUsername });
+      showToast(`Kicked ${targetUsername} from voice`, 'success', 'Admin Action');
+    }
+  }
+
+  // Admin: Disconnect user
+  function disconnectUser(targetUsername) {
+    if (!isCurrentUserAdmin) return;
+
+    if (confirm(`Disconnect ${targetUsername} from the server?`)) {
+      window.wyvernSocket.emit('disconnectUser', { targetUsername });
+      showToast(`Disconnected ${targetUsername}`, 'success', 'Admin Action');
+    }
   }
 
   // Online users list functionality
@@ -715,8 +796,62 @@
         </div>
       `;
 
+      // Add admin context menu for other users
+      if (isCurrentUserAdmin && user.username !== username) {
+        userItem.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          showAdminContextMenu(e, user);
+        });
+      }
+
       usersList.appendChild(userItem);
     });
+  }
+
+  // Show admin context menu
+  function showAdminContextMenu(event, user) {
+    // Remove existing menu
+    const existingMenu = document.querySelector('.admin-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'admin-context-menu';
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+
+    menu.innerHTML = `
+      <div class="context-menu-header">Admin Actions: ${user.username}</div>
+      ${user.voiceChannel ? `
+        <div class="context-menu-item" data-action="kick-voice">
+          <i class="fas fa-volume-mute"></i>
+          <span>Kick from Voice</span>
+        </div>
+      ` : ''}
+      <div class="context-menu-item danger" data-action="disconnect">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Disconnect User</span>
+      </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    // Handle menu actions
+    menu.querySelectorAll('.context-menu-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const action = item.dataset.action;
+        if (action === 'kick-voice') {
+          kickFromVoice(user.username);
+        } else if (action === 'disconnect') {
+          disconnectUser(user.username);
+        }
+        menu.remove();
+      });
+    });
+
+    // Close menu on click outside
+    setTimeout(() => {
+      document.addEventListener('click', () => menu.remove(), { once: true });
+    }, 0);
   }
 
   // Toggle users panel

@@ -798,6 +798,87 @@ io.on('connection', async (socket) => {
     });
   });
 
+  // Admin: Delete message
+  socket.on('deleteMessage', async (data) => {
+    if (!socket.user.isAdmin) {
+      socket.emit('error', 'Only admins can delete messages');
+      return;
+    }
+
+    try {
+      const { ObjectId } = require('mongodb');
+      const result = await messagesCollection.deleteOne({ _id: new ObjectId(data.messageId) });
+      
+      if (result.deletedCount > 0) {
+        // Broadcast deletion to all users
+        io.emit('messageDeleted', { messageId: data.messageId });
+        console.log(`🗑️ Admin ${username} deleted message ${data.messageId}`);
+      }
+    } catch (err) {
+      console.error('❌ Error deleting message:', err);
+      socket.emit('error', 'Failed to delete message');
+    }
+  });
+
+  // Admin: Kick user from voice
+  socket.on('kickFromVoice', (data) => {
+    if (!socket.user.isAdmin) {
+      socket.emit('error', 'Only admins can kick users');
+      return;
+    }
+
+    // Find the target user's socket
+    const targetSocket = Array.from(io.sockets.sockets.values()).find(
+      s => s.user.username === data.targetUsername
+    );
+
+    if (targetSocket && targetSocket.voiceChannel) {
+      const channelName = targetSocket.voiceChannel;
+      
+      // Force leave voice channel
+      targetSocket.leave(`voice-${channelName}`);
+      const room = voiceRooms.get(channelName);
+      if (room) {
+        room.delete(targetSocket.id);
+        if (room.size === 0) {
+          voiceRooms.delete(channelName);
+        }
+        
+        const roomUsers = Array.from(room).map(socketId => {
+          const s = io.sockets.sockets.get(socketId);
+          return s ? s.user.username : null;
+        }).filter(Boolean);
+        
+        io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
+      }
+      
+      targetSocket.voiceChannel = null;
+      targetSocket.emit('kickedFromVoice', { reason: 'Kicked by admin' });
+      
+      console.log(`👢 Admin ${username} kicked ${data.targetUsername} from voice`);
+      broadcastOnlineUsers();
+    }
+  });
+
+  // Admin: Disconnect user
+  socket.on('disconnectUser', (data) => {
+    if (!socket.user.isAdmin) {
+      socket.emit('error', 'Only admins can disconnect users');
+      return;
+    }
+
+    // Find the target user's socket
+    const targetSocket = Array.from(io.sockets.sockets.values()).find(
+      s => s.user.username === data.targetUsername
+    );
+
+    if (targetSocket) {
+      console.log(`🔨 Admin ${username} disconnected ${data.targetUsername}`);
+      targetSocket.emit('disconnected', { reason: 'Disconnected by admin' });
+      targetSocket.disconnect(true);
+    }
+  });
+
   socket.on('createChannel', async (data) => {
     if (!socket.user.isAdmin) {
       socket.emit('error', 'Only admins can create channels');

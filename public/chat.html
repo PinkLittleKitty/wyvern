@@ -48,7 +48,10 @@
           <div class="user-panel-status" id="userPanelStatus"></div>
         </div>
         <div class="user-panel-details">
-          <div class="user-panel-name" id="userPanelName"></div>
+          <div class="user-panel-name-container">
+            <div class="user-panel-name" id="userPanelName"></div>
+            <span class="user-panel-admin-badge" id="userPanelAdminBadge" style="display: none;">ADMIN</span>
+          </div>
           <div class="user-panel-status-text" id="userPanelStatusText">Online</div>
         </div>
       </div>
@@ -70,8 +73,6 @@
     <div class="chat-header">
       <h2 id="currentChannel">general</h2>
       <div class="user-info">
-        <span id="username"></span>
-        <span class="admin-badge" id="adminBadge" style="display: none;">ADMIN</span>
         <button class="toggle-users-btn" id="toggleUsersBtn" title="Toggle User List">
           <i class="fas fa-users"></i>
         </button>

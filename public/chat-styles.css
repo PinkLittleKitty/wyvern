@@ -1373,6 +1373,30 @@
       color: var(--text);
     }
 
+    .message-delete-btn {
+      color: var(--voice-red);
+    }
+
+    .message-delete-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--voice-red);
+    }
+
+    .message-container.removing {
+      animation: messageRemove 0.3s ease forwards;
+    }
+
+    @keyframes messageRemove {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+    }
+
     .timestamp {
       font-weight: normal;
       color: var(--text-muted);
@@ -1914,6 +1938,13 @@
   min-width: 0;
 }
 
+.user-panel-name-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
 .user-panel-name {
   font-size: 14px;
   font-weight: 600;
@@ -1921,7 +1952,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
+}
+
+.user-panel-admin-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
 }
 
 .user-panel-status-text {
@@ -2664,4 +2707,56 @@ body.users-panel-hidden .users-panel {
     min-width: auto;
     max-width: 100%;
   }
+}
+
+
+/* Admin Context Menu */
+.admin-context-menu {
+  position: fixed;
+  background: var(--sidebar);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 4px 0;
+  min-width: 220px;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5), 0 0 0 1px var(--accent-glow);
+  z-index: 5001;
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+.admin-context-menu .context-menu-header {
+  padding: 10px 14px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--accent);
+  margin-bottom: 4px;
+}
+
+.admin-context-menu .context-menu-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-context-menu .context-menu-item i {
+  width: 16px;
+  text-align: center;
+}
+
+.admin-context-menu .context-menu-item:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.admin-context-menu .context-menu-item.danger {
+  color: var(--voice-red);
+}
+
+.admin-context-menu .context-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
 }
