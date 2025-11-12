@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   // Unified Toast Notification System
   const toastContainer = document.getElementById('toastContainer');
   let toastId = 0;
@@ -89,8 +89,8 @@
     'shhhhh did you know that you\'re my favourite user? But don\'t tell the others!!',
     'Today\'s video is sponsored by Raid Shadow Legends, one of the biggest mobile role-playing games of 2019 and it\'s totally free!',
     'Never gonna give you up, Never gonna let you down',
-    '( ͡° ͜ʖ ͡°)',
-    '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
+    '( Í¡Â° ÍœÊ– Í¡Â°)',
+    '(ï¾‰â—•ãƒ®â—•)ï¾‰*:ï½¥ï¾Ÿâœ§',
     'You look so pretty today!',
     'Thinking of a funny quote...',
     '3.141592653589793',
@@ -127,7 +127,7 @@
   
   // Fallback: hide loading screen after 10 seconds if something goes wrong
   const loadingTimeout = setTimeout(() => {
-    log('⚠️ Loading timeout - forcing hide');
+    log('âš ï¸ Loading timeout - forcing hide');
     hideLoadingScreen();
   }, 10000);
   
@@ -140,17 +140,17 @@
   }
   
   function hideLoadingScreen() {
-    log('🔄 Hiding loading screen...');
+    log('ðŸ”„ Hiding loading screen...');
     if (tipInterval) clearInterval(tipInterval);
     if (loadingTimeout) clearTimeout(loadingTimeout);
     if (loadingScreen) {
       log('Adding hidden class to loading screen');
       setTimeout(() => {
         loadingScreen.classList.add('hidden');
-        log('✅ Loading screen hidden class added');
+        log('âœ… Loading screen hidden class added');
       }, 300);
     } else {
-      log('⚠️ Loading screen element not found');
+      log('âš ï¸ Loading screen element not found');
     }
   }
 
@@ -267,14 +267,14 @@
     });
 
     fallbackSocket.on("connect", () => {
-      log("✅ Fallback connection successful!");
+      log("âœ… Fallback connection successful!");
       showNotification('Connected via polling fallback!', 'success');
       window.wyvernSocket = fallbackSocket;
       setupSocketHandlers(fallbackSocket);
     });
 
     fallbackSocket.on("connect_error", (error) => {
-      log(`❌ Fallback connection also failed: ${error.message}`);
+      log(`âŒ Fallback connection also failed: ${error.message}`);
       showNotification('All connection attempts failed. Please check server status.', 'error');
     });
   }
@@ -319,7 +319,7 @@
     setupSocketHandlers(socket);
 
     socket.on("connect_error", (error) => {
-      log(`❌ Connection error: ${error.message}`);
+      log(`âŒ Connection error: ${error.message}`);
       console.error('Full error:', error);
       console.error('Error type:', error.type);
       console.error('Error description:', error.description);
@@ -344,7 +344,7 @@
   function setupSocketHandlers(socket) {
     // Connection events
     socket.on("connect", () => {
-      log("✅ Connected to server successfully!");
+      log("âœ… Connected to server successfully!");
       showNotification('Connected to Wyvern!', 'success');
       
       // Load and display own profile in user panel
@@ -428,10 +428,10 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
         
         // Hide loading screen after everything is loaded
-        log('✅ All messages loaded, hiding loading screen');
+        log('âœ… All messages loaded, hiding loading screen');
         hideLoadingScreen();
       } catch (error) {
-        log(`❌ Error loading messages: ${error.message}`);
+        log(`âŒ Error loading messages: ${error.message}`);
         console.error(error);
         // Hide loading screen even on error
         hideLoadingScreen();
@@ -635,12 +635,12 @@
         const existingVideoStream = remoteVideoStreams.get(data.username);
         const hasScreenStream = remoteScreenStreams.has(data.username);
         
-        log(`📊 Screen sharing state for ${data.username}: hasVideo=${!!existingVideoStream}, hasScreen=${hasScreenStream}`);
+        log(`ðŸ“Š Screen sharing state for ${data.username}: hasVideo=${!!existingVideoStream}, hasScreen=${hasScreenStream}`);
         
         if (existingVideoStream && !hasScreenStream) {
           // We have a video stream but no screen stream - the video stream might be the screen
           // Move it from video to screen
-          log(`🔄 Re-identifying video stream as screen share for ${data.username}`);
+          log(`ðŸ”„ Re-identifying video stream as screen share for ${data.username}`);
           remoteScreenStreams.set(data.username, existingVideoStream);
           
           // Don't delete from remoteVideoStreams yet - they might have both camera and screen
@@ -681,10 +681,10 @@
 
     // WebRTC signaling events
     socket.on("webrtc-offer", async (data) => {
-      log(`📞 Received WebRTC offer from ${data.username} (${data.from})`);
+      log(`ðŸ“ž Received WebRTC offer from ${data.username} (${data.from})`);
 
       if (!localStream) {
-        log(`❌ Cannot handle offer - no local stream`);
+        log(`âŒ Cannot handle offer - no local stream`);
         return;
       }
 
@@ -694,26 +694,26 @@
       if (pc) {
         // Handle renegotiation
         if (pc.signalingState === 'stable') {
-          log(`🔄 Handling renegotiation from ${data.username}`);
+          log(`ðŸ”„ Handling renegotiation from ${data.username}`);
           try {
             await pc.setRemoteDescription(data.offer);
-            log(`✅ Set remote description for renegotiation from ${data.username}`);
+            log(`âœ… Set remote description for renegotiation from ${data.username}`);
 
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            log(`✅ Created and set local answer for renegotiation`);
+            log(`âœ… Created and set local answer for renegotiation`);
 
             socket.emit("webrtc-answer", {
               answer: answer,
               to: data.from
             });
-            log(`📤 Sent WebRTC answer to ${data.username}`);
+            log(`ðŸ“¤ Sent WebRTC answer to ${data.username}`);
           } catch (err) {
-            log(`❌ Error handling renegotiation from ${data.username}: ${err.message}`);
+            log(`âŒ Error handling renegotiation from ${data.username}: ${err.message}`);
           }
           return;
         } else {
-          log(`⚠️ Connection not stable (${pc.signalingState}), ignoring offer`);
+          log(`âš ï¸ Connection not stable (${pc.signalingState}), ignoring offer`);
           return;
         }
       }
@@ -723,50 +723,89 @@
 
       try {
         await pc.setRemoteDescription(data.offer);
-        log(`✅ Set remote description for ${data.username}`);
+        log(`âœ… Set remote description for ${data.username}`);
 
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        log(`✅ Created and set local answer for ${data.username}`);
+        log(`âœ… Created and set local answer for ${data.username}`);
 
         socket.emit("webrtc-answer", {
           answer: answer,
           to: data.from
         });
-        log(`📤 Sent WebRTC answer to ${data.username}`);
+        log(`ðŸ“¤ Sent WebRTC answer to ${data.username}`);
       } catch (err) {
-        log(`❌ Error handling WebRTC offer from ${data.username}: ${err.message}`);
+        log(`âŒ Error handling WebRTC offer from ${data.username}: ${err.message}`);
       }
     });
 
     socket.on("webrtc-answer", async (data) => {
-      log(`📞 Received WebRTC answer from ${data.username} (${data.from})`);
+      log(`ðŸ“ž Received WebRTC answer from ${data.username} (${data.from})`);
       const pc = peerConnections.get(data.from);
       if (pc) {
         try {
           await pc.setRemoteDescription(data.answer);
-          log(`✅ Set remote description from answer for ${data.username}`);
+          log(`âœ… Set remote description from answer for ${data.username}`);
         } catch (err) {
-          log(`❌ Error handling WebRTC answer from ${data.username}: ${err.message}`);
+          log(`âŒ Error handling WebRTC answer from ${data.username}: ${err.message}`);
         }
       } else {
-        log(`❌ No peer connection found for ${data.username} (${data.from})`);
+        log(`âŒ No peer connection found for ${data.username} (${data.from})`);
       }
     });
 
     socket.on("webrtc-ice-candidate", async (data) => {
-      log(`🧊 Received ICE candidate from ${data.from}`);
+      log(`ðŸ§Š Received ICE candidate from ${data.from}`);
       const pc = peerConnections.get(data.from);
       if (pc) {
         try {
           await pc.addIceCandidate(data.candidate);
-          log(`✅ Added ICE candidate from ${data.from}`);
+          log(`âœ… Added ICE candidate from ${data.from}`);
         } catch (err) {
-          log(`❌ Error adding ICE candidate from ${data.from}: ${err.message}`);
+          log(`âŒ Error adding ICE candidate from ${data.from}: ${err.message}`);
         }
       } else {
-        log(`❌ No peer connection found for ICE candidate from ${data.from}`);
+        log(`âŒ No peer connection found for ICE candidate from ${data.from}`);
       }
+    });
+
+    // Direct Message handlers
+    socket.on("directMessage", async (data) => {
+      log(`ðŸ“¨ Received DM from ${data.sender}`);
+      
+      // If we're currently viewing this DM conversation, display it
+      if (currentDMRecipient === data.sender || currentDMRecipient === data.recipient) {
+        await displayDirectMessage(data);
+      }
+      
+      // Update DM list
+      updateDMList();
+      
+      // Show notification if not from self
+      if (data.sender !== username) {
+        showToast(`New message from ${data.sender}`, 'info', 'Direct Message');
+      }
+    });
+
+    socket.on("directMessageHistory", async (data) => {
+      log(`ðŸ“¨ Received DM history with ${data.recipient}: ${data.messages.length} messages`);
+      const messagesContainer = document.getElementById("chat-messages");
+      messagesContainer.innerHTML = "";
+      
+      for (const message of data.messages) {
+        await displayDirectMessage(message);
+      }
+      
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+
+    socket.on("conversationsList", (conversations) => {
+      log(`ðŸ“¨ Received ${conversations.length} conversations`);
+      displayConversationsList(conversations);
+    });
+
+    socket.on("dmRead", (data) => {
+      log(`âœ… ${data.username} read your messages`);
     });
 
     // Basic message sending
@@ -889,6 +928,32 @@
       
       if (!text && !hasFiles) return;
 
+      // Check if we're in DM mode
+      if (isDMMode && currentDMRecipient) {
+        // Upload files first if any
+        let attachments = [];
+        if (hasFiles) {
+          attachments = await uploadFiles();
+          if (attachments.length === 0 && hasFiles) {
+            return;
+          }
+        }
+
+        log(`Sending DM to ${currentDMRecipient}: ${text}`);
+        
+        socket.emit("sendDirectMessage", { 
+          recipient: currentDMRecipient,
+          message: text || '',
+          attachments: attachments
+        });
+        
+        input.value = "";
+        selectedFiles = [];
+        updateFilePreview();
+        return;
+      }
+
+      // Regular channel message
       // Upload files first if any
       let attachments = [];
       if (hasFiles) {
@@ -987,7 +1052,7 @@
 
     function handleMentionAutocomplete(e) {
       if (!input) {
-        log('❌ Input element not found in autocomplete handler');
+        log('âŒ Input element not found in autocomplete handler');
         return;
       }
       
@@ -2268,6 +2333,12 @@
 
   // Voice chat functionality
   let currentTextChannel = 'general';
+  
+  // Direct Message functionality
+  let currentDMRecipient = null;
+  let isDMMode = false;
+  const dmConversations = new Map();
+  let currentView = 'channels'; // 'channels' or 'dms'
 
   // WebRTC configuration
   const rtcConfig = {
@@ -2278,11 +2349,11 @@
   };
 
   function createPeerConnection(socketId, username, isInitiator) {
-    log(`🔗 Creating peer connection for ${username} (${socketId}) - initiator: ${isInitiator}`);
+    log(`ðŸ”— Creating peer connection for ${username} (${socketId}) - initiator: ${isInitiator}`);
 
     if (peerConnections.has(socketId)) {
       const existingPc = peerConnections.get(socketId);
-      log(`⚠️ Peer connection already exists for ${username} in state: ${existingPc.signalingState}`);
+      log(`âš ï¸ Peer connection already exists for ${username} in state: ${existingPc.signalingState}`);
       
       // Only close if it's in a failed state or we're explicitly told to recreate
       if (existingPc.connectionState === 'failed' || existingPc.connectionState === 'closed') {
@@ -2299,36 +2370,36 @@
 
     // Add local audio stream to peer connection
     if (localStream) {
-      log(`🎤 Adding ${localStream.getTracks().length} audio tracks to peer connection for ${username}`);
+      log(`ðŸŽ¤ Adding ${localStream.getTracks().length} audio tracks to peer connection for ${username}`);
       localStream.getTracks().forEach(track => {
         pc.addTrack(track, localStream);
-        log(`✅ Added ${track.kind} track to ${username}`);
+        log(`âœ… Added ${track.kind} track to ${username}`);
       });
     } else {
-      log(`❌ No local stream to add to peer connection for ${username}`);
+      log(`âŒ No local stream to add to peer connection for ${username}`);
     }
 
     // Add local video stream if camera is on
     if (localVideoStream && isCameraOn) {
-      log(`📹 Adding video track to peer connection for ${username}`);
+      log(`ðŸ“¹ Adding video track to peer connection for ${username}`);
       localVideoStream.getTracks().forEach(track => {
         pc.addTrack(track, localVideoStream);
-        log(`✅ Added video track to ${username}`);
+        log(`âœ… Added video track to ${username}`);
       });
     }
 
     // Add local screen stream if screen sharing
     if (localScreenStream && isScreenSharing) {
-      log(`🖥️ Adding screen track to peer connection for ${username}`);
+      log(`ðŸ–¥ï¸ Adding screen track to peer connection for ${username}`);
       localScreenStream.getTracks().forEach(track => {
         pc.addTrack(track, localScreenStream);
-        log(`✅ Added screen track to ${username}`);
+        log(`âœ… Added screen track to ${username}`);
       });
     }
 
     // Handle incoming remote stream
     pc.ontrack = (event) => {
-      log(`📺 Received ${event.track.kind} track from ${username} (label: ${event.track.label}, stream: ${event.streams[0]?.id})`);
+      log(`ðŸ“º Received ${event.track.kind} track from ${username} (label: ${event.track.label}, stream: ${event.streams[0]?.id})`);
       const remoteStream = event.streams[0];
       
       if (event.track.kind === 'audio') {
@@ -2349,10 +2420,10 @@
         const userState = userVoiceStates.get(username) || {};
         
         if (isScreenTrack || (hasExistingVideo && userState.screenSharing)) {
-          log(`🖥️ Detected screen share track from ${username} - storing for PIP only`);
+          log(`ðŸ–¥ï¸ Detected screen share track from ${username} - storing for PIP only`);
           playRemoteScreen(remoteStream, username);
         } else {
-          log(`📹 Detected camera track from ${username} - displaying in UI`);
+          log(`ðŸ“¹ Detected camera track from ${username} - displaying in UI`);
           playRemoteVideo(remoteStream, username);
         }
       }
@@ -2422,7 +2493,7 @@
   }
 
   function playRemoteVideo(stream, username) {
-    log(`📹 Playing video from ${username}`);
+    log(`ðŸ“¹ Playing video from ${username}`);
     
     // Store the stream for restoration after re-renders
     remoteVideoStreams.set(username, stream);
@@ -2524,7 +2595,7 @@
   }
 
   function playRemoteScreen(stream, username) {
-    log(`🖥️ Playing screen share from ${username}`);
+    log(`ðŸ–¥ï¸ Playing screen share from ${username}`);
     
     // Store the screen stream
     remoteScreenStreams.set(username, stream);
@@ -2683,10 +2754,10 @@
         }
 
         showVoiceIndicators(channelName);
-        log(`✅ Joined voice channel: ${channelName}`);
+        log(`âœ… Joined voice channel: ${channelName}`);
       })
       .catch(err => {
-        log(`❌ Microphone access denied: ${err.message}`);
+        log(`âŒ Microphone access denied: ${err.message}`);
         showNotification('Microphone access required for voice chat', 'error');
       });
   }
@@ -2742,7 +2813,7 @@
 
     hideVoiceIndicators();
     currentVoiceChannel = null;
-    log(`✅ Left voice channel`);
+    log(`âœ… Left voice channel`);
   }
 
   function toggleMute() {
@@ -2845,7 +2916,7 @@
                     offer: offer,
                     to: socketId
                   });
-                  log(`📤 Sent renegotiation offer to ${socketId} for video track`);
+                  log(`ðŸ“¤ Sent renegotiation offer to ${socketId} for video track`);
                 }
               } catch (error) {
                 console.error('Renegotiation error:', error);
@@ -2893,7 +2964,7 @@
                   offer: offer,
                   to: socketId
                 });
-                log(`📤 Sent renegotiation offer to ${socketId} to remove video track`);
+                log(`ðŸ“¤ Sent renegotiation offer to ${socketId} to remove video track`);
               }
             } catch (error) {
               console.error('Renegotiation error:', error);
@@ -2964,7 +3035,7 @@
 
         // Add screen track to all existing peer connections
         const screenTrack = screenStream.getVideoTracks()[0];
-        log(`🖥️ Screen track label: "${screenTrack.label}", stream ID: ${screenStream.id}`);
+        log(`ðŸ–¥ï¸ Screen track label: "${screenTrack.label}", stream ID: ${screenStream.id}`);
         
         // Store our screen stream ID so we can identify it later
         if (!window.localScreenStreamId) {
@@ -2988,7 +3059,7 @@
                   offer: offer,
                   to: socketId
                 });
-                log(`📤 Sent renegotiation offer to ${socketId} for screen track`);
+                log(`ðŸ“¤ Sent renegotiation offer to ${socketId} for screen track`);
               }
             } catch (error) {
               console.error('Renegotiation error:', error);
@@ -3031,7 +3102,7 @@
                   offer: offer,
                   to: socketId
                 });
-                log(`📤 Sent renegotiation offer to ${socketId} to remove screen track`);
+                log(`ðŸ“¤ Sent renegotiation offer to ${socketId} to remove screen track`);
               }
             } catch (error) {
               console.error('Renegotiation error:', error);
@@ -3691,17 +3762,17 @@
     testMicrophone: async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        log('✅ Microphone test successful');
+        log('âœ… Microphone test successful');
         stream.getTracks().forEach(track => track.stop());
         return true;
       } catch (err) {
-        log(`❌ Microphone test failed: ${err.message}`);
+        log(`âŒ Microphone test failed: ${err.message}`);
         return false;
       }
     },
     simulateUserJoin: (username, channel) => {
       // Simulate another user joining for testing
-      log(`🧪 Simulating ${username} joining ${channel}`);
+      log(`ðŸ§ª Simulating ${username} joining ${channel}`);
       const currentUsers = voiceChannelUsers.get(channel) || [];
       if (!currentUsers.includes(username)) {
         currentUsers.push(username);
@@ -3786,6 +3857,397 @@
   // Call setup function
   setupVoiceButtonHandlers();
 
+  // ==================== DIRECT MESSAGING FUNCTIONALITY ====================
+  // NOTE: This must be inside the IIFE to access variables like username, currentView, etc.
+  
+  // View switching
+  function switchToChannelsView() {
+    currentView = 'channels';
+    isDMMode = false;
+    currentDMRecipient = null;
+    
+    document.getElementById('channelsView').style.display = 'block';
+    document.getElementById('dmView').style.display = 'none';
+    
+    document.getElementById('homeButton').classList.add('active');
+    document.getElementById('dmButton').classList.remove('active');
+    
+    // Switch to general channel
+    const socket = window.wyvernSocket;
+    if (socket) {
+      socket.emit('joinChannel', 'general');
+      currentTextChannel = 'general';
+    }
+    
+    // Update header
+    const currentChannelEl = document.getElementById('currentChannel');
+    if (currentChannelEl) {
+      currentChannelEl.textContent = 'general';
+    }
+    
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.placeholder = 'Message #general';
+    }
+    
+    // Update active channel
+    updateChannelActiveStates();
+    
+    closeMobileMenus();
+  }
+  
+  function switchToDMsView() {
+    currentView = 'dms';
+    
+    document.getElementById('channelsView').style.display = 'none';
+    document.getElementById('dmView').style.display = 'block';
+    
+    document.getElementById('homeButton').classList.remove('active');
+    document.getElementById('dmButton').classList.add('active');
+    
+    // Update header
+    const currentChannelEl = document.getElementById('currentChannel');
+    if (currentChannelEl) {
+      currentChannelEl.innerHTML = '<i class="fas fa-user"></i> Direct Messages';
+    }
+    
+    // Clear chat if no DM is selected
+    if (!currentDMRecipient) {
+      const messagesContainer = document.getElementById("chat-messages");
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '<div class="dm-welcome"><i class="fas fa-user-friends"></i><h3>Select a conversation or start a new one</h3><p>Choose from your existing conversations or click on a user to start chatting</p></div>';
+      }
+      
+      const chatInput = document.getElementById('chat-input');
+      if (chatInput) {
+        chatInput.placeholder = 'Select a conversation to start messaging';
+        chatInput.disabled = true;
+      }
+    }
+    
+    // Load conversations and online users
+    updateDMList();
+    updateDMOnlineUsers();
+    
+    closeMobileMenus();
+  }
+  
+  // Setup view switching buttons
+  const homeButton = document.getElementById('homeButton');
+  const dmButton = document.getElementById('dmButton');
+  
+  if (homeButton) {
+    homeButton.addEventListener('click', switchToChannelsView);
+    homeButton.classList.add('active'); // Start with home active
+  }
+  
+  if (dmButton) {
+    dmButton.addEventListener('click', switchToDMsView);
+  }
+  
+  // DM search functionality
+  const dmSearch = document.getElementById('dmSearch');
+  if (dmSearch) {
+    dmSearch.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      
+      // Filter DM conversations
+      document.querySelectorAll('.dm-item').forEach(item => {
+        const username = item.dataset.username.toLowerCase();
+        if (username.includes(query)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      
+      // Filter online users
+      document.querySelectorAll('.dm-user-item').forEach(item => {
+        const username = item.dataset.username.toLowerCase();
+        if (username.includes(query)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+  }
+  
+  // Display direct message in chat
+  async function displayDirectMessage(data) {
+    const messagesContainer = document.getElementById("chat-messages");
+    if (!messagesContainer) return;
+
+    const messageEl = document.createElement("div");
+    messageEl.className = "message";
+    messageEl.dataset.messageId = data._id || data.id || '';
+    
+    // Add self class if it's our message
+    if (data.sender === username) {
+      messageEl.classList.add('self');
+    }
+
+    // Get user profile for avatar
+    const profile = await getUserProfile(data.sender);
+    const avatarHTML = getAvatarHTML(data.sender, profile);
+    const profileColor = getProfileColor(profile);
+
+    // Format timestamp
+    const timestamp = new Date(data.timestamp);
+    const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // Escape HTML in message
+    let escapedMessage = escapeHtml(data.message);
+
+    // Build attachments HTML
+    let attachmentsHTML = '';
+    if (data.attachments && data.attachments.length > 0) {
+      attachmentsHTML = '<div class="message-attachments">';
+      data.attachments.forEach(attachment => {
+        const isImage = attachment.mimetype.startsWith('image/');
+        const isVideo = attachment.mimetype.startsWith('video/');
+        
+        if (isImage) {
+          attachmentsHTML += `
+            <div class="message-attachment">
+              <img src="${attachment.url}" alt="${attachment.originalName}" onclick="openLightbox('${attachment.url}')" />
+            </div>
+          `;
+        } else if (isVideo) {
+          attachmentsHTML += `
+            <div class="message-attachment">
+              <video controls>
+                <source src="${attachment.url}" type="${attachment.mimetype}">
+              </video>
+            </div>
+          `;
+        } else {
+          const fileSize = formatFileSize(attachment.size);
+          attachmentsHTML += `
+            <a href="${attachment.url}" download="${attachment.originalName}" class="message-file">
+              <div class="message-file-icon">
+                <i class="fas fa-file"></i>
+              </div>
+              <div class="message-file-info">
+                <div class="message-file-name">${attachment.originalName}</div>
+                <div class="message-file-size">${fileSize}</div>
+              </div>
+              <div class="message-file-download">
+                <i class="fas fa-download"></i>
+              </div>
+            </a>
+          `;
+        }
+      });
+      attachmentsHTML += '</div>';
+    }
+
+    messageEl.innerHTML = `
+      <div class="message-avatar" style="background: ${profileColor};">${avatarHTML}</div>
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-username">${escapeHtml(data.sender)}</span>
+          <span class="message-timestamp">${timeStr}</span>
+        </div>
+        ${escapedMessage ? `<div class="message-text">${escapedMessage}</div>` : ''}
+        ${attachmentsHTML}
+      </div>
+    `;
+
+    messagesContainer.appendChild(messageEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Open DM conversation with a user
+  function openDMConversation(targetUsername) {
+    if (targetUsername === username) {
+      showToast("You can't DM yourself!", 'error');
+      return;
+    }
+
+    log(`Opening DM with ${targetUsername}`);
+    
+    // Switch to DMs view if not already there
+    if (currentView !== 'dms') {
+      switchToDMsView();
+    }
+    
+    // Switch to DM mode
+    isDMMode = true;
+    currentDMRecipient = targetUsername;
+    currentTextChannel = null;
+    
+    // Update UI
+    const currentChannelEl = document.getElementById('currentChannel');
+    if (currentChannelEl) {
+      currentChannelEl.innerHTML = `<i class="fas fa-user"></i> @${targetUsername}`;
+    }
+    
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+      chatInput.placeholder = `Message @${targetUsername}`;
+      chatInput.disabled = false;
+    }
+    
+    // Update active states
+    document.querySelectorAll('.channel').forEach(ch => ch.classList.remove('active'));
+    document.querySelectorAll('.dm-item').forEach(dm => {
+      if (dm.dataset.username === targetUsername) {
+        dm.classList.add('active');
+      } else {
+        dm.classList.remove('active');
+      }
+    });
+    document.querySelectorAll('.dm-user-item').forEach(user => {
+      if (user.dataset.username === targetUsername) {
+        user.classList.add('active');
+      } else {
+        user.classList.remove('active');
+      }
+    });
+    
+    // Request DM history
+    window.wyvernSocket.emit('getDirectMessages', { recipient: targetUsername });
+    
+    // Mark as read
+    window.wyvernSocket.emit('markDMAsRead', { recipient: targetUsername });
+    
+    // Close mobile menus
+    closeMobileMenus();
+  }
+
+  // Update DM list
+  function updateDMList() {
+    if (window.wyvernSocket && window.wyvernSocket.connected) {
+      window.wyvernSocket.emit('getConversations');
+    }
+  }
+  
+  // Update online users in DM view
+  async function updateDMOnlineUsers() {
+    const dmOnlineUsers = document.getElementById('dmOnlineUsers');
+    const onlineCount = document.getElementById('onlineCount');
+    if (!dmOnlineUsers) return;
+    
+    // Get online users from the socket
+    const socket = window.wyvernSocket;
+    if (!socket) return;
+    
+    // We'll use the onlineUsers event data
+    // For now, let's get it from the users panel
+    const userItems = document.querySelectorAll('.user-item');
+    const users = [];
+    
+    userItems.forEach(item => {
+      const nameEl = item.querySelector('.user-item-name');
+      if (nameEl) {
+        const name = nameEl.textContent.trim().replace('ADMIN', '').trim();
+        const isAdmin = nameEl.textContent.includes('ADMIN');
+        if (name !== username) {
+          users.push({ username: name, isAdmin });
+        }
+      }
+    });
+    
+    if (onlineCount) {
+      onlineCount.textContent = users.length;
+    }
+    
+    dmOnlineUsers.innerHTML = '';
+    
+    for (const user of users) {
+      const profile = await getUserProfile(user.username);
+      const avatarHTML = getAvatarHTML(user.username, profile);
+      const profileColor = getProfileColor(profile);
+      
+      const userItem = document.createElement('div');
+      userItem.className = 'dm-user-item';
+      userItem.dataset.username = user.username;
+      
+      userItem.innerHTML = `
+        <div class="dm-user-avatar" style="background: ${profileColor};">
+          ${avatarHTML}
+          <div class="dm-user-status"></div>
+        </div>
+        <div class="dm-user-name">${escapeHtml(user.username)}</div>
+        ${user.isAdmin ? '<span class="dm-user-badge">Admin</span>' : ''}
+      `;
+      
+      userItem.addEventListener('click', () => {
+        openDMConversation(user.username);
+      });
+      
+      dmOnlineUsers.appendChild(userItem);
+    }
+  }
+
+  // Display conversations list
+  async function displayConversationsList(conversations) {
+    const dmList = document.getElementById('dmList');
+    if (!dmList) return;
+
+    dmList.innerHTML = '';
+
+    for (const conv of conversations) {
+      const lastMsg = conv.lastMessage;
+      const otherUser = lastMsg.sender === username ? lastMsg.recipient : lastMsg.sender;
+      
+      // Get user profile for avatar
+      const profile = await getUserProfile(otherUser);
+      const avatarHTML = getAvatarHTML(otherUser, profile);
+      const profileColor = getProfileColor(profile);
+
+      const dmItem = document.createElement('div');
+      dmItem.className = 'dm-item';
+      dmItem.dataset.username = otherUser;
+      
+      if (currentDMRecipient === otherUser) {
+        dmItem.classList.add('active');
+      }
+
+      const unreadBadge = conv.unreadCount > 0 ? `<span class="dm-unread-badge">${conv.unreadCount}</span>` : '';
+      const preview = lastMsg.message ? lastMsg.message.substring(0, 30) + (lastMsg.message.length > 30 ? '...' : '') : 'Attachment';
+
+      dmItem.innerHTML = `
+        <div class="dm-avatar" style="background: ${profileColor};">
+          ${avatarHTML}
+        </div>
+        <div class="dm-info">
+          <div class="dm-username">${escapeHtml(otherUser)}</div>
+          <div class="dm-preview">${escapeHtml(preview)}</div>
+        </div>
+        ${unreadBadge}
+      `;
+
+      dmItem.addEventListener('click', () => {
+        openDMConversation(otherUser);
+      });
+
+      dmList.appendChild(dmItem);
+    }
+  }
+
+  // Hook into socket events to update DM list
+  setTimeout(() => {
+    if (window.wyvernSocket) {
+      window.wyvernSocket.on('onlineUsers', (users) => {
+        // Update DM online users if in DM view
+        setTimeout(() => {
+          if (currentView === 'dms') {
+            updateDMOnlineUsers();
+          }
+        }, 100);
+      });
+      
+      // Initial load of conversations
+      setTimeout(() => {
+        if (window.wyvernSocket && window.wyvernSocket.connected) {
+          updateDMList();
+        }
+      }, 1000);
+    }
+  }, 500);
+
   // Debug info
   log('Chat.js loaded successfully');
   log(`Socket.IO available: ${typeof io !== 'undefined'}`);
@@ -3793,7 +4255,7 @@
   log(`getUserMedia available: ${typeof navigator.mediaDevices?.getUserMedia !== 'undefined'}`);
   log(`Current URL: ${window.location.href}`);
   log('Voice chat functionality initialized');
-  log('💡 Use window.debugVoice in console to debug voice chat');
+  log('ðŸ’¡ Use window.debugVoice in console to debug voice chat');
 })();
 
   // Image lightbox
@@ -3995,4 +4457,4 @@
     });
   }
 
-  console.log('✅ Mobile optimizations loaded');
+  console.log('âœ… Mobile optimizations loaded');

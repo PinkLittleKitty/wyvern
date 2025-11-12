@@ -42,12 +42,17 @@
   <div class="sidebar-container">
     <div class="sidebar-top">
       <div class="server-sidebar">
-        <div class="server-icon">
+        <button class="server-icon" id="homeButton" title="Home">
           <img src="/wyvernLogo.png" alt="Wyvern Logo" />
-        </div>
+        </button>
+        <div class="server-separator"></div>
+        <button class="server-icon dm-icon" id="dmButton" title="Direct Messages">
+          <i class="fas fa-user"></i>
+        </button>
       </div>
 
-      <div class="channel-list">
+      <!-- Channels View (default) -->
+      <div class="channel-list" id="channelsView">
         <div class="channel-section">
           <h4>
             Text Channels
@@ -62,6 +67,23 @@
             <button class="add-channel-btn" id="addVoiceChannelBtn" style="display: none;">+</button>
           </h4>
           <div id="voiceChannelsList"></div>
+        </div>
+      </div>
+
+      <!-- DMs View (hidden by default) -->
+      <div class="channel-list dm-view" id="dmView" style="display: none;">
+        <div class="dm-search-container">
+          <input type="text" class="dm-search" id="dmSearch" placeholder="Find or start a conversation" />
+        </div>
+        
+        <div class="channel-section">
+          <h4>Direct Messages</h4>
+          <div id="dmList"></div>
+        </div>
+        
+        <div class="channel-section" id="onlineUsersSection">
+          <h4>Online — <span id="onlineCount">0</span></h4>
+          <div id="dmOnlineUsers"></div>
         </div>
       </div>
     </div>

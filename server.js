@@ -238,6 +238,7 @@ let messagesCollection;
 let usersCollection;
 let channelsCollection;
 let voiceChannelsCollection;
+let directMessagesCollection;
 
 const defaultChannels = [
   { name: 'general', description: 'General discussion', type: 'text' },
@@ -1215,6 +1216,130 @@ io.on('connection', async (socket) => {
       screenSharing: data.screenSharing
     });
   });
+
+  // Direct Message handlers
+  socket.on('sendDirectMessage', async (data) => {
+    try {
+      const { recipient, message, attachments } = data;
+      
+      // Create conversation ID (sorted usernames to ensure consistency)
+      const conversationId = [username, recipient].sort().join('_');
+      
+      const dmMessage = {
+        conversationId,
+        sender: username,
+        recipient,
+        message,
+        attachments: attachments || [],
+        timestamp: new Date(),
+        read: false
+      };
+      
+      await directMessagesCollection.insertOne(dmMessage);
+      
+      // Send to recipient if online
+      const recipientSocket = Array.from(io.sockets.sockets.values()).find(
+        s => s.user.username === recipient
+      );
+      
+      if (recipientSocket) {
+        recipientSocket.emit('directMessage', dmMessage);
+      }
+      
+      // Send back to sender for confirmation
+      socket.emit('directMessage', dmMessage);
+      
+      console.log(`💬 DM from ${username} to ${recipient}`);
+    } catch (err) {
+      console.error('❌ Error sending DM:', err);
+      socket.emit('error', 'Failed to send direct message');
+    }
+  });
+
+  socket.on('getDirectMessages', async (data) => {
+    try {
+      const { recipient } = data;
+      const conversationId = [username, recipient].sort().join('_');
+      
+      const messages = await directMessagesCollection
+        .find({ conversationId })
+        .sort({ timestamp: 1 })
+        .toArray();
+      
+      socket.emit('directMessageHistory', { recipient, messages });
+      
+      // Mark messages as read
+      await directMessagesCollection.updateMany(
+        { conversationId, recipient: username, read: false },
+        { $set: { read: true } }
+      );
+    } catch (err) {
+      console.error('❌ Error fetching DMs:', err);
+      socket.emit('error', 'Failed to fetch direct messages');
+    }
+  });
+
+  socket.on('getConversations', async () => {
+    try {
+      // Get all conversations for this user
+      const conversations = await directMessagesCollection.aggregate([
+        {
+          $match: {
+            $or: [
+              { sender: username },
+              { recipient: username }
+            ]
+          }
+        },
+        {
+          $sort: { timestamp: -1 }
+        },
+        {
+          $group: {
+            _id: '$conversationId',
+            lastMessage: { $first: '$$ROOT' },
+            unreadCount: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $eq: ['$recipient', username] }, { $eq: ['$read', false] }] },
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ]).toArray();
+      
+      socket.emit('conversationsList', conversations);
+    } catch (err) {
+      console.error('❌ Error fetching conversations:', err);
+      socket.emit('error', 'Failed to fetch conversations');
+    }
+  });
+
+  socket.on('markDMAsRead', async (data) => {
+    try {
+      const { recipient } = data;
+      const conversationId = [username, recipient].sort().join('_');
+      
+      await directMessagesCollection.updateMany(
+        { conversationId, recipient: username, read: false },
+        { $set: { read: true } }
+      );
+      
+      // Notify sender that messages were read
+      const senderSocket = Array.from(io.sockets.sockets.values()).find(
+        s => s.user.username === recipient
+      );
+      
+      if (senderSocket) {
+        senderSocket.emit('dmRead', { username });
+      }
+    } catch (err) {
+      console.error('❌ Error marking DMs as read:', err);
+    }
+  });
 });
 }
 
@@ -1259,6 +1384,7 @@ connect().then(async () => {
   usersCollection = db.collection("users");
   channelsCollection = db.collection("channels");
   voiceChannelsCollection = db.collection("voiceChannels");
+  directMessagesCollection = db.collection("directMessages");
   
   const existingChannels = await channelsCollection.countDocuments();
   if (existingChannels === 0) {
