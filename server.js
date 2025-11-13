@@ -227,6 +227,44 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Beta reload endpoint (admin only)
+app.post('/api/beta/reload', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const user = await db.collection('users').findOne({ username: req.user.username });
+    
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    console.log(`🔄 Beta reload triggered by admin: ${req.user.username}`);
+    
+    // Notify beta users
+    io.sockets.sockets.forEach((socket) => {
+      if (socket.handshake.headers.referer && socket.handshake.headers.referer.includes('/b/')) {
+        socket.emit('serverRestart', 'Beta version is reloading, please refresh your page');
+      }
+    });
+    
+    // Clear require cache for beta modules
+    Object.keys(require.cache).forEach((key) => {
+      if (key.includes('/b/') || key.includes('\\b\\')) {
+        delete require.cache[key];
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Beta version reloaded successfully',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Beta reload error:', error);
+    res.status(500).json({ error: 'Failed to reload beta version' });
+  }
+});
+
 // Add this route to serve Socket.IO client
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
@@ -294,6 +332,7 @@ function displayHelp() {
   console.log('│                                                         │');
   console.log('│ 🔧 SERVER CONTROL                                       │');
   console.log('│   restart                    - Restart the server       │');
+  console.log('│   restart-beta               - Reload beta files only   │');
   console.log('│   stop                       - Stop the server          │');
   console.log('│   help                       - Show this help           │');
   console.log('└─────────────────────────────────────────────────────────┘');
@@ -625,6 +664,29 @@ function handleServerCommands() {
             process.exit(1);
           }, 5000);
         }, 2000);
+        break;
+        
+      case 'restart-beta':
+        console.log('🔄 Reloading beta version files...');
+        console.log('📢 Notifying beta users only...');
+        
+        // Notify only users on beta version
+        io.sockets.sockets.forEach((socket) => {
+          if (socket.handshake.headers.referer && socket.handshake.headers.referer.includes('/b/')) {
+            socket.emit('serverRestart', 'Beta version is reloading, please refresh your page');
+          }
+        });
+        
+        // Clear require cache for beta modules (if any server-side beta code exists)
+        Object.keys(require.cache).forEach((key) => {
+          if (key.includes('/b/') || key.includes('\\b\\')) {
+            delete require.cache[key];
+          }
+        });
+        
+        console.log('✅ Beta files cache cleared');
+        console.log('💡 Beta users should refresh their browsers');
+        console.log('✅ Stable version unaffected');
         break;
         
       case 'stop':
