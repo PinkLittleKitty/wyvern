@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wyvern Beta - Modular Version</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      color: #e4e4e7;
+      padding: 40px 20px;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      max-width: 800px;
+      background: #13131a;
+      padding: 48px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+      border: 1px solid #2a2a3c;
+    }
+    h1 {
+      color: #8b5cf6;
+      margin: 0 0 16px 0;
+      font-size: 36px;
+    }
+    .beta-badge {
+      display: inline-block;
+      background: #8b5cf6;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-left: 12px;
+    }
+    p {
+      line-height: 1.6;
+      color: #a1a1aa;
+      margin: 16px 0;
+    }
+    .features {
+      background: #0a0a0f;
+      padding: 24px;
+      border-radius: 12px;
+      margin: 24px 0;
+    }
+    .features h2 {
+      color: #8b5cf6;
+      font-size: 20px;
+      margin: 0 0 16px 0;
+    }
+    .features ul {
+      margin: 0;
+      padding-left: 24px;
+    }
+    .features li {
+      margin: 8px 0;
+      color: #d4d4d8;
+    }
+    .buttons {
+      display: flex;
+      gap: 16px;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: inline-block;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn-primary {
+      background: #8b5cf6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #7c3aed;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+    .btn-secondary {
+      background: #2a2a3c;
+      color: #e4e4e7;
+    }
+    .btn-secondary:hover {
+      background: #3a3a4c;
+    }
+    .warning {
+      background: #422006;
+      border: 1px solid #78350f;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 24px 0;
+    }
+    .warning strong {
+      color: #fbbf24;
+    }
+    code {
+      background: #0a0a0f;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #8b5cf6;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      🐉 Wyvern Chat
+      <span class="beta-badge">BETA</span>
+    </h1>
+    
+    <p>
+      Welcome to the <strong>modular version</strong> of Wyvern Chat! This is a complete rewrite 
+      using modern ES6 modules for better code organization and maintainability.
+    </p>
+
+    <div class="features">
+      <h2>✨ What's New</h2>
+      <ul>
+        <li><strong>Modular Architecture</strong> - Code split into focused, reusable modules</li>
+        <li><strong>Better Performance</strong> - Optimized loading and rendering</li>
+        <li><strong>Improved Error Handling</strong> - Graceful fallbacks and better debugging</li>
+        <li><strong>Cleaner Codebase</strong> - 150 lines vs 4600+ in the original</li>
+        <li><strong>Same Features</strong> - All the functionality you know and love</li>
+      </ul>
+    </div>
+
+    <div class="warning">
+      <strong>⚠️ Beta Version</strong><br>
+      This is a testing version. The original chat is still available at <code>/chat.html</code>
+    </div>
+
+    <div class="features">
+      <h2>📦 Module Structure</h2>
+      <ul>
+        <li><code>toast.js</code> - Notifications</li>
+        <li><code>loading.js</code> - Loading screen</li>
+        <li><code>sound.js</code> - Audio effects</li>
+        <li><code>theme.js</code> - Theme management</li>
+        <li><code>socket.js</code> - Socket.IO connection</li>
+        <li><code>messages.js</code> - Message display</li>
+        <li><code>users.js</code> - User list</li>
+        <li><code>channels.js</code> - Channel management</li>
+        <li><code>mentions.js</code> - @mention autocomplete</li>
+        <li><code>file-upload.js</code> - File uploads</li>
+      </ul>
+    </div>
+
+    <div class="buttons">
+      <a href="/b/login.html" class="btn btn-primary">
+        🚀 Try Beta Version
+      </a>
+      <a href="/chat.html" class="btn btn-secondary">
+        ← Back to Original
+      </a>
+      <a href="/debug-auth.html" class="btn btn-secondary">
+        🔍 Debug Tools
+      </a>
+    </div>
+
+    <p style="margin-top: 32px; font-size: 14px; color: #71717a;">
+      <strong>Note:</strong> Both versions share the same backend and database. 
+      Your account and messages work on both.
+    </p>
+  </div>
+</body>
+</html>

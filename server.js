@@ -207,7 +207,7 @@ app.post('/api/profile/update', authMiddleware, async (req, res) => {
 app.use('/auth', authRouter);
 
 app.get('/', (req, res) => {
-  res.redirect('/login.html');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/api/server-info', (req, res) => {

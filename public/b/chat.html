@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wyvern — Chat</title>
+  <link rel="icon" href="/wyvernLogo.png" />
+  <link rel="stylesheet" href="chat-styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <img src="/wyvernLogo.png" alt="Wyvern" class="loading-logo-img" />
+        <div class="loading-logo-glow"></div>
+      </div>
+      <div class="loading-text" id="loadingText">Connecting to Wyvern...</div>
+      <div class="loading-bar">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+      <div class="loading-tips" id="loadingTips">
+        <span class="loading-tip">Did you know? You can customize your profile with avatars and colors!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Mobile Menu Toggle -->
+  <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  
+  <div class="sidebar-container">
+    <div class="sidebar-top">
+      <div class="server-sidebar">
+        <button class="server-icon" id="homeButton" title="Home">
+          <img src="/wyvernLogo.png" alt="Wyvern Logo" />
+        </button>
+        <div class="server-separator"></div>
+        <button class="server-icon dm-icon" id="dmButton" title="Direct Messages">
+          <i class="fas fa-comment"></i>
+        </button>
+      </div>
+
+      <!-- Channels View (default) -->
+      <div class="channel-list" id="channelsView">
+        <div class="channel-section">
+          <h4>
+            Text Channels
+            <button class="add-channel-btn" id="addTextChannelBtn" style="display: none;">+</button>
+          </h4>
+          <div id="textChannelsList"></div>
+        </div>
+        
+        <div class="channel-section">
+          <h4>
+            Voice Channels
+            <button class="add-channel-btn" id="addVoiceChannelBtn" style="display: none;">+</button>
+          </h4>
+          <div id="voiceChannelsList"></div>
+        </div>
+      </div>
+
+      <!-- DMs View (hidden by default) -->
+      <div class="channel-list dm-view" id="dmView" style="display: none;">
+        <div class="dm-search-container">
+          <input type="text" class="dm-search" id="dmSearch" placeholder="Find or start a conversation" />
+        </div>
+        
+        <div class="channel-section">
+          <h4>Direct Messages</h4>
+          <div id="dmList"></div>
+        </div>
+        
+        <div class="channel-section" id="onlineUsersSection">
+          <h4>Online — <span id="onlineCount">0</span></h4>
+          <div id="dmOnlineUsers"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice Connection Bar (shows when in voice) -->
+    <div class="voice-connection-bar" id="voiceConnectionBar" style="display: none;">
+      <div class="voice-connection-info">
+        <div class="voice-connection-status">
+          <i class="fas fa-signal"></i>
+          <span class="voice-connection-label">Voice Connected</span>
+        </div>
+        <div class="voice-connection-channel" id="voiceConnectionChannel">
+          <i class="fas fa-volume-up"></i>
+          <span id="voiceConnectionChannelName">Channel</span>
+        </div>
+      </div>
+      <div class="voice-connection-controls">
+        <button class="voice-connection-btn" id="voiceScreenShare" title="Share Screen">
+          <i class="fas fa-desktop"></i>
+        </button>
+        <button class="voice-connection-btn" id="voiceCamera" title="Toggle Camera">
+          <i class="fas fa-video"></i>
+        </button>
+        <button class="voice-connection-btn disconnect-btn" id="voiceDisconnect" title="Disconnect">
+          <i class="fas fa-phone-slash"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- User Panel spanning both sidebars -->
+    <div class="user-panel">
+      <div class="user-panel-info">
+        <div class="user-panel-avatar" id="userPanelAvatar">
+          <div class="user-panel-status" id="userPanelStatus"></div>
+        </div>
+        <div class="user-panel-details">
+          <div class="user-panel-name-container">
+            <div class="user-panel-name" id="userPanelName"></div>
+            <span class="user-panel-admin-badge" id="userPanelAdminBadge" style="display: none;">ADMIN</span>
+          </div>
+          <div class="user-panel-status-text" id="userPanelStatusText">Online</div>
+        </div>
+      </div>
+      <div class="user-panel-controls">
+        <button class="user-panel-btn" id="userPanelMute" title="Mute/Unmute">
+          <i class="fas fa-microphone"></i>
+        </button>
+        <button class="user-panel-btn" id="userPanelDeafen" title="Deafen">
+          <i class="fas fa-headphones"></i>
+        </button>
+        <button class="user-panel-btn" id="userPanelSettings" title="Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="chat-header">
+      <h2 id="currentChannel">general</h2>
+      <div class="user-info">
+        <button class="toggle-users-btn" id="toggleUsersBtn" title="Toggle User List">
+          <i class="fas fa-users"></i>
+        </button>
+        <button class="logout-btn" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="typing-indicator" id="typingIndicator"></div>
+    <div class="chat-input">
+      <button id="upload-button" class="chat-input-btn" title="Upload file or image">
+        <i class="fas fa-plus"></i>
+      </button>
+      <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" multiple />
+      <div class="chat-input-wrapper">
+        <input id="chat-input" placeholder="Message #general" />
+        <div id="file-preview" class="file-preview"></div>
+      </div>
+      <button id="send-button" title="Send message">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="users-panel" id="usersPanel">
+    <div class="users-panel-header">
+      <h3>Online Users</h3>
+      <span class="users-count" id="usersCount">0</span>
+    </div>
+    <div class="users-list" id="usersList">
+      <!-- Users will be populated here -->
+    </div>
+  </div>
+
+  <div class="voice-ui" id="voiceUI">
+    <div class="voice-ui-header">
+      <div class="voice-ui-channel-info">
+        <h2 id="voiceUITitle">🔊 Voice Channel</h2>
+        <div class="voice-ui-participant-count" id="voiceUIParticipantCount">0 participants</div>
+      </div>
+      <div class="user-info">
+        <span id="voiceUsername"></span>
+        <span class="admin-badge" id="voiceAdminBadge" style="display: none;">ADMIN</span>
+        <button class="logout-btn" id="voiceLogoutBtn">Logout</button>
+      </div>
+    </div>
+    <div class="voice-ui-content">
+      <div class="voice-ui-participants" id="voiceUIParticipants">
+        <!-- Participants will be populated here -->
+      </div>
+      <div class="voice-ui-controls">
+        <button class="voice-btn unmute" id="voiceUIMuteBtn" title="Mute/Unmute">🎤</button>
+        <button class="voice-btn disconnect" id="voiceUIDisconnectBtn" title="Disconnect">📞</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="channelModal">
+    <div class="modal-content">
+      <h3>Create New Channel</h3>
+      <select id="channelType">
+        <option value="text">Text Channel</option>
+        <option value="voice">Voice Channel</option>
+      </select>
+      <input type="text" id="channelName" placeholder="Channel name" />
+      <textarea id="channelDescription" placeholder="Channel description (optional)" rows="3"></textarea>
+      <div class="modal-buttons">
+        <button class="secondary" id="cancelChannel">Cancel</button>
+        <button class="primary" id="createChannel">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <h3>Delete Channel</h3>
+      <p>Are you sure you want to delete <strong id="deleteChannelName"></strong>?</p>
+      <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">This action cannot be undone.</p>
+      <div class="modal-buttons">
+        <button class="secondary" id="cancelDelete">Cancel</button>
+        <button class="danger" id="confirmDelete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="voice-modal" id="voiceModal">
+    <div class="voice-modal-content">
+      <div class="voice-modal-header">
+        <div class="voice-modal-title" id="voiceModalTitle">🔊 Voice Channel</div>
+        <button class="voice-modal-close" id="voiceModalClose">×</button>
+      </div>
+      <div class="voice-modal-participants" id="voiceModalParticipants">
+        <!-- Participants will be populated here -->
+      </div>
+      <div class="voice-modal-controls">
+        <button class="voice-btn unmute" id="modalMuteBtn" title="Mute/Unmute">🎤</button>
+        <button class="voice-btn disconnect" id="modalDisconnectBtn" title="Disconnect">📞</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="context-menu-header" id="contextMenuHeader">User Options</div>
+    
+    <div class="context-menu-item" id="contextProfile">
+      <span>👤</span>
+      <span>View Profile</span>
+    </div>
+    
+    <div class="context-menu-separator"></div>
+    
+    <div class="context-menu-item" id="contextLocalMute">
+      <span>🔇</span>
+      <span>Mute for Me</span>
+    </div>
+    
+    <div class="context-menu-volume">
+      <label>Volume for Me</label>
+      <input type="range" id="contextVolumeSlider" min="0" max="200" value="100">
+      <div class="volume-display" id="contextVolumeDisplay">100%</div>
+    </div>
+    
+    <div class="context-menu-separator"></div>
+    
+    <!-- Admin options (hidden by default) -->
+    <div class="context-menu-item danger" id="contextServerMute" style="display: none;">
+      <span>🔇</span>
+      <span>Server Mute</span>
+    </div>
+    
+    <div class="context-menu-item danger" id="contextServerDeafen" style="display: none;">
+      <span>🔊</span>
+      <span>Server Deafen</span>
+    </div>
+    
+    <div class="context-menu-item danger" id="contextKickVoice" style="display: none;">
+      <span>👢</span>
+      <span>Kick from Voice</span>
+    </div>
+    
+    <div class="context-menu-separator" id="contextAdminSeparator" style="display: none;"></div>
+    
+    <div class="context-menu-item danger" id="contextBanUser" style="display: none;">
+      <span>🔨</span>
+      <span>Ban User</span>
+    </div>
+  </div>
+
+  <!-- Image Lightbox -->
+  <div class="image-lightbox" id="imageLightbox">
+    <button class="image-lightbox-close" id="lightboxClose">×</button>
+    <img id="lightboxImage" src="" alt="Full size image" />
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal" id="profileModal">
+    <div class="modal-content profile-modal-content">
+      <div class="profile-modal-header">
+        <h3 id="profileModalTitle">User Profile</h3>
+        <button class="modal-close-btn" id="closeProfileBtn">×</button>
+      </div>
+      
+      <div class="profile-modal-body">
+        <!-- Profile Banner -->
+        <div class="profile-banner" id="profileBanner">
+          <button class="profile-banner-edit" id="editBannerBtn" style="display: none;">
+            <i class="fas fa-camera"></i>
+          </button>
+          <input type="file" id="bannerInput" accept="image/*" style="display: none;" />
+        </div>
+        
+        <!-- Profile Avatar -->
+        <div class="profile-avatar-container">
+          <div class="profile-avatar" id="profileAvatar">
+            <span id="profileAvatarLetter">U</span>
+            <img id="profileAvatarImage" style="display: none;" />
+          </div>
+          <button class="profile-avatar-edit" id="editAvatarBtn" style="display: none;">
+            <i class="fas fa-camera"></i>
+          </button>
+          <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
+        </div>
+        
+        <!-- Profile Info -->
+        <div class="profile-info">
+          <div class="profile-username" id="profileUsername">Username</div>
+          <div class="profile-status" id="profileStatus">Online</div>
+        </div>
+        
+        <!-- Profile Sections -->
+        <div class="profile-sections">
+          <!-- About Me -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>About Me</h4>
+              <button class="profile-edit-btn" id="editAboutBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileAbout">No bio set</p>
+              <textarea id="profileAboutEdit" style="display: none;" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+              <div class="profile-edit-actions" id="aboutEditActions" style="display: none;">
+                <button class="settings-button secondary" id="cancelAboutBtn">Cancel</button>
+                <button class="settings-button" id="saveAboutBtn">Save</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Custom Status -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Custom Status</h4>
+              <button class="profile-edit-btn" id="editStatusBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileCustomStatus">No status set</p>
+              <input type="text" id="profileCustomStatusEdit" style="display: none;" maxlength="100" placeholder="What's on your mind?" />
+              <div class="profile-edit-actions" id="statusEditActions" style="display: none;">
+                <button class="settings-button secondary" id="cancelStatusBtn">Cancel</button>
+                <button class="settings-button" id="saveStatusBtn">Save</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Profile Color -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Profile Color</h4>
+              <button class="profile-edit-btn" id="editColorBtn" style="display: none;">
+                <i class="fas fa-edit"></i>
+              </button>
+            </div>
+            <div class="profile-section-content">
+              <div class="profile-color-preview" id="profileColorPreview"></div>
+              <div id="profileColorEdit" style="display: none;">
+                <input type="color" id="profileColorPicker" value="#8b5cf6" />
+                <div class="profile-edit-actions">
+                  <button class="settings-button secondary" id="cancelColorBtn">Cancel</button>
+                  <button class="settings-button" id="saveColorBtn">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Member Since -->
+          <div class="profile-section">
+            <div class="profile-section-header">
+              <h4>Member Since</h4>
+            </div>
+            <div class="profile-section-content">
+              <p id="profileMemberSince">Unknown</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-content settings-modal-content">
+      <div class="settings-modal-header">
+        <h3>Settings</h3>
+        <button class="modal-close-btn" id="closeSettingsBtn">×</button>
+      </div>
+      
+      <div class="settings-modal-body">
+        <div class="settings-sidebar">
+          <div class="settings-nav-item active" data-tab="appearance">
+            <i class="fas fa-palette"></i>
+            <span>Appearance</span>
+          </div>
+          <div class="settings-nav-item" data-tab="notifications">
+            <i class="fas fa-bell"></i>
+            <span>Notifications</span>
+          </div>
+          <div class="settings-nav-item" data-tab="voice">
+            <i class="fas fa-microphone"></i>
+            <span>Voice & Video</span>
+          </div>
+          <div class="settings-nav-item" data-tab="privacy">
+            <i class="fas fa-shield-alt"></i>
+            <span>Privacy</span>
+          </div>
+        </div>
+        
+        <div class="settings-content">
+          <!-- Appearance Tab -->
+          <div class="settings-tab active" id="appearance-tab">
+            <h4>Appearance</h4>
+            <p class="settings-description">Customize how Wyvern looks on your device</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Theme</label>
+              <div class="theme-selector">
+                <div class="theme-option" data-theme="wyvern">
+                  <div class="theme-preview wyvern-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="wyvern-light">
+                  <div class="theme-preview wyvern-light-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern Light</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="wyvern-amoled">
+                  <div class="theme-preview wyvern-amoled-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Wyvern AMOLED</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="discord">
+                  <div class="theme-preview discord-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Discord</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="d4rk">
+                  <div class="theme-preview d4rk-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">D4rk</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="theme-option" data-theme="custom">
+                  <div class="theme-preview custom-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Custom</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Custom Theme Builder -->
+            <div class="settings-section custom-theme-builder" id="customThemeBuilder" style="display: none;">
+              <label class="settings-label">Custom Theme Builder</label>
+              <p class="settings-hint">Create your own theme by customizing colors</p>
+              
+              <div class="custom-theme-base">
+                <label>Base Theme</label>
+                <select id="customThemeBase" class="settings-select">
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="amoled">AMOLED</option>
+                </select>
+              </div>
+              
+              <div class="custom-theme-colors">
+                <div class="color-picker-group">
+                  <label>Accent Color</label>
+                  <input type="color" id="customAccent" value="#8b5cf6" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Background Color</label>
+                  <input type="color" id="customBg" value="#0a0a0f" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Sidebar Color</label>
+                  <input type="color" id="customSidebar" value="#13131a" />
+                </div>
+                
+                <div class="color-picker-group">
+                  <label>Text Color</label>
+                  <input type="color" id="customText" value="#e4e4e7" />
+                </div>
+              </div>
+              
+              <button class="settings-button" id="applyCustomTheme">Apply Custom Theme</button>
+              <button class="settings-button secondary" id="resetCustomTheme">Reset to Base</button>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Message Display</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="compactMode" />
+                <label for="compactMode">Compact Mode</label>
+              </div>
+              <p class="settings-hint">Show more messages at once</p>
+            </div>
+          </div>
+          
+          <!-- Notifications Tab -->
+          <div class="settings-tab" id="notifications-tab">
+            <h4>Notifications</h4>
+            <p class="settings-description">Control when and how you receive notifications</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Desktop Notifications</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="desktopNotifications" checked />
+                <label for="desktopNotifications">Enable desktop notifications</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Notification Sounds</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="notificationSounds" checked />
+                <label for="notificationSounds">Play sound for mentions</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Mention Notifications</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="mentionNotifications" checked />
+                <label for="mentionNotifications">Notify when mentioned</label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Voice & Video Tab -->
+          <div class="settings-tab" id="voice-tab">
+            <h4>Voice & Video</h4>
+            <p class="settings-description">Manage your voice and video settings</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Input Device</label>
+              <select id="inputDevice" class="settings-select">
+                <option>Default Microphone</option>
+              </select>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Output Device</label>
+              <select id="outputDevice" class="settings-select">
+                <option>Default Speakers</option>
+              </select>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Input Volume</label>
+              <input type="range" id="inputVolume" min="0" max="100" value="100" class="settings-slider" />
+              <span class="settings-slider-value" id="inputVolumeValue">100%</span>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Sound Effects</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="soundEffects" checked />
+                <label for="soundEffects">Enable sound effects</label>
+              </div>
+              <p class="settings-hint">Play sounds for messages, DMs, and voice events</p>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Sound Volume</label>
+              <input type="range" id="soundVolume" min="0" max="100" value="50" class="settings-slider" />
+              <span class="settings-slider-value" id="soundVolumeValue">50%</span>
+              <button class="settings-button secondary" id="testSound" style="margin-top: 8px;">
+                <i class="fas fa-volume-up"></i> Test Sound
+              </button>
+            </div>
+          </div>
+          
+          <!-- Privacy Tab -->
+          <div class="settings-tab" id="privacy-tab">
+            <h4>Privacy & Safety</h4>
+            <p class="settings-description">Control your privacy settings</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Direct Messages</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="allowDMs" checked />
+                <label for="allowDMs">Allow direct messages from server members</label>
+              </div>
+            </div>
+            
+            <div class="settings-section">
+              <label class="settings-label">Activity Status</label>
+              <div class="settings-toggle">
+                <input type="checkbox" id="showActivity" checked />
+                <label for="showActivity">Display current activity</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Use modular version -->
+  <script type="module" src="chat-main.js"></script>
+  <script src="chat-fallback.js" defer></script>
+  <script src="mobile-debug.js" defer></script>
+</body>
+</html>

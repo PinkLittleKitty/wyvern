@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wyvern</title>
+  <link rel="icon" href="/wyvernLogo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a0f;
+      color: #e4e4e7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 32px;
+    }
+    h1 {
+      font-size: 36px;
+      color: #8b5cf6;
+      margin-bottom: 48px;
+    }
+    .versions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .version-btn {
+      background: #13131a;
+      border: 2px solid #2a2a3c;
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-decoration: none;
+      color: #e4e4e7;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .version-btn:hover {
+      border-color: #8b5cf6;
+      background: #1a1a2e;
+      transform: translateX(4px);
+    }
+    .version-info {
+      text-align: left;
+    }
+    .version-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .version-desc {
+      font-size: 13px;
+      color: #a1a1aa;
+    }
+    .version-arrow {
+      font-size: 20px;
+      color: #8b5cf6;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #71717a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="/wyvernLogo.png" alt="Wyvern" class="logo" />
+    <h1>Wyvern</h1>
+
+    <div class="versions">
+      <a href="/login.html" class="version-btn">
+        <div class="version-info">
+          <div class="version-title">Stable Version</div>
+          <div class="version-desc">Production-ready</div>
+        </div>
+        <div class="version-arrow">→</div>
+      </a>
+
+      <a href="/b/login.html" class="version-btn">
+        <div class="version-info">
+          <div class="version-title">Beta Version</div>
+          <div class="version-desc">Modular rewrite</div>
+        </div>
+        <div class="version-arrow">→</div>
+      </a>
+    </div>
+
+    <div class="footer">
+      Both versions share the same data
+    </div>
+  </div>
+</body>
+</html>

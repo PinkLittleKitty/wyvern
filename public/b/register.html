@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wyvern — Register</title>
+  <style>
+    :root {
+      --bg: #101016;
+      --accent: #7c3aed;
+      --accent-soft: #5b21b6;
+      --text: #f0f0f0;
+      --text-muted: #888;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      background: #181820;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 24px 20px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      input {
+        font-size: 16px !important;
+      }
+      button {
+        font-size: 16px !important;
+        padding: 14px !important;
+      }
+    }
+    h1 {
+      margin-bottom: 24px;
+      color: var(--accent);
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #2a2a3c;
+      border-radius: 8px;
+      background: #101016;
+      color: var(--text);
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: var(--accent-soft);
+    }
+    .link {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .error {
+      color: #ff6b6b;
+      margin-bottom: 16px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Wyvern Register</h1>
+    <div class="error" id="error"></div>
+    <input type="text" id="username" placeholder="Choose a username" autocomplete="username" />
+    <input type="password" id="password" placeholder="Choose a password" autocomplete="new-password" />
+    <button id="registerBtn">Register</button>
+    <div class="link" id="toLogin">Already have an account? Login</div>
+  </div>
+
+  <script>
+    const registerBtn = document.getElementById("registerBtn");
+    const errorDiv = document.getElementById("error");
+    const toLogin = document.getElementById("toLogin");
+
+    registerBtn.onclick = async () => {
+      errorDiv.textContent = "";
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+      if (!username || !password) {
+        errorDiv.textContent = "Please enter username and password.";
+        return;
+      }
+
+      const res = await fetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem("wyvernUsername", username);
+        window.location.href = "/b/chat.html";
+      } else {
+        errorDiv.textContent = data.error || "Registration failed.";
+      }
+    };
+
+    toLogin.onclick = () => {
+      window.location.href = "/b/login.html";
+    };
+
+    // Autofocus username
+    document.getElementById("username").focus();
+  </script>
+</body>
+</html>
