@@ -14,6 +14,7 @@ import { ChannelManager } from './modules/channels.js';
 import { SettingsManager } from './modules/settings.js';
 import { ProfileModalManager } from './modules/profile-modal.js';
 import { UIManager } from './modules/ui.js';
+import { SidebarManager } from './modules/sidebar.js';
 
 (async function initChat() {
   try {
@@ -51,6 +52,7 @@ import { UIManager } from './modules/ui.js';
     let channels = null;
     let settings = null;
     let profileModal = null;
+    let sidebar = null;
 
     // Make managers globally accessible
     window.soundManager = sound;
@@ -88,6 +90,7 @@ import { UIManager } from './modules/ui.js';
       channels = new ChannelManager(socket);
       settings = new SettingsManager(theme, sound);
       profileModal = new ProfileModalManager(profile, username);
+      sidebar = new SidebarManager(socket, profile, username);
       
       const typing = new TypingManager(socket);
       
@@ -120,14 +123,24 @@ import { UIManager } from './modules/ui.js';
             }
           }
           
-          const extractedMentions = MentionManager.extract(text);
-          
-          socket.emit("chatMessage", { 
-            username, 
-            message: text || '',
-            mentions: extractedMentions,
-            attachments: attachments
-          });
+          // Check if we're in DM mode
+          if (sidebar && sidebar.isDM() && sidebar.getDMRecipient()) {
+            socket.emit("sendDirectMessage", { 
+              recipient: sidebar.getDMRecipient(),
+              message: text || '',
+              attachments: attachments
+            });
+          } else {
+            // Regular channel message
+            const extractedMentions = MentionManager.extract(text);
+            
+            socket.emit("chatMessage", { 
+              username, 
+              message: text || '',
+              mentions: extractedMentions,
+              attachments: attachments
+            });
+          }
           
           input.value = "";
           typing.stop(username);
@@ -229,6 +242,43 @@ import { UIManager } from './modules/ui.js';
         if (channels) {
           channels.currentChannel = channelName;
         }
+      });
+      
+      // Direct message handlers
+      socket.on('directMessage', async (data) => {
+        console.log('Received DM:', data);
+        if (sidebar && (sidebar.getDMRecipient() === data.sender || sidebar.getDMRecipient() === data.recipient)) {
+          await sidebar.displayDirectMessage(data);
+        }
+        sidebar.updateDMList();
+        
+        if (data.sender !== username) {
+          sound.play('message');
+          toast.show(`New message from ${data.sender}`, 'info', 'Direct Message');
+        }
+      });
+      
+      socket.on('directMessageHistory', async (data) => {
+        console.log('Received DM history:', data.messages.length);
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer) {
+          messagesContainer.innerHTML = '';
+        }
+        
+        for (const msg of data.messages) {
+          await sidebar.displayDirectMessage(msg);
+        }
+      });
+      
+      socket.on('conversationsList', (conversations) => {
+        console.log('Received conversations:', conversations.length);
+        if (sidebar) {
+          sidebar.displayConversationsList(conversations);
+        }
+      });
+      
+      socket.on('dmRead', (data) => {
+        console.log(`${data.username} read your messages`);
       });
       
       // Settings button handler
