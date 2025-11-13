@@ -686,7 +686,6 @@ function handleServerCommands() {
         
         console.log('✅ Beta files cache cleared');
         console.log('💡 Beta users should refresh their browsers');
-        console.log('✅ Stable version unaffected');
         break;
         
       case 'stop':

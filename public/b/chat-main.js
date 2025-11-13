@@ -11,6 +11,9 @@ import { ToastManager } from './modules/toast.js';
 import { MessageManager } from './modules/messages.js';
 import { UserListManager } from './modules/users.js';
 import { ChannelManager } from './modules/channels.js';
+import { SettingsManager } from './modules/settings.js';
+import { ProfileModalManager } from './modules/profile-modal.js';
+import { UIManager } from './modules/ui.js';
 
 (async function initChat() {
   try {
@@ -40,14 +43,18 @@ import { ChannelManager } from './modules/channels.js';
     const theme = new ThemeManager();
     const profile = new ProfileManager();
     const fileUpload = new FileUploadManager();
+    const ui = new UIManager();
     
     let isAdmin = false; // Will be set by userInfo event
     let messages = null; // Will be initialized after socket connects
     let users = null;
     let channels = null;
+    let settings = null;
+    let profileModal = null;
 
-    // Make sound manager globally accessible
+    // Make managers globally accessible
     window.soundManager = sound;
+    window.openProfileModal = null; // Will be set after initialization
 
     // Start loading screen
     loading.start();
@@ -79,8 +86,13 @@ import { ChannelManager } from './modules/channels.js';
       messages = new MessageManager(profile, username, isAdmin);
       users = new UserListManager(profile);
       channels = new ChannelManager(socket);
+      settings = new SettingsManager(theme, sound);
+      profileModal = new ProfileModalManager(profile, username);
       
       const typing = new TypingManager(socket);
+      
+      // Make profile modal globally accessible
+      window.openProfileModal = (user) => profileModal.open(user);
       
       // Initialize mention manager
       const input = document.getElementById('chat-input');
@@ -218,6 +230,12 @@ import { ChannelManager } from './modules/channels.js';
           channels.currentChannel = channelName;
         }
       });
+      
+      // Settings button handler
+      const settingsBtn = document.getElementById('userPanelSettings');
+      if (settingsBtn && settings) {
+        settingsBtn.addEventListener('click', () => settings.open());
+      }
       
       // Logout handler
       const logoutBtn = document.getElementById('logoutBtn');
