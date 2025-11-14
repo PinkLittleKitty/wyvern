@@ -1,7 +1,8 @@
 // Channel Management
 export class ChannelManager {
-  constructor(socket) {
+  constructor(socket, adminManager = null) {
     this.socket = socket;
+    this.admin = adminManager;
     this.currentChannel = 'general';
     this.textChannelsList = document.getElementById('textChannelsList');
     this.voiceChannelsList = document.getElementById('voiceChannelsList');
@@ -10,6 +11,10 @@ export class ChannelManager {
     console.log('📝 ChannelManager initialized');
     console.log('  textChannelsList:', this.textChannelsList ? '✅ Found' : '❌ Not found');
     console.log('  voiceChannelsList:', this.voiceChannelsList ? '✅ Found' : '❌ Not found');
+  }
+
+  setAdminManager(adminManager) {
+    this.admin = adminManager;
   }
 
   updateList(channels, type = 'text') {
@@ -43,6 +48,11 @@ export class ChannelManager {
         channelEl.addEventListener('click', () => {
           this.switchChannel(channel.name);
         });
+
+        // Add delete button if admin
+        if (this.admin) {
+          this.admin.addDeleteButton(channelEl, channel.name, 'text');
+        }
 
         list.appendChild(channelEl);
       });
@@ -83,6 +93,11 @@ export class ChannelManager {
         headerEl.addEventListener('click', () => {
           this.joinVoiceChannel(channel.name);
         });
+
+        // Add delete button if admin
+        if (this.admin) {
+          this.admin.addDeleteButton(channelEl, channel.name, 'voice');
+        }
 
         list.appendChild(channelEl);
         console.log(`  ✅ Added ${type} channel:`, channel.name);

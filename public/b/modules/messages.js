@@ -1,10 +1,31 @@
 // Message Display and Management
 export class MessageManager {
-  constructor(profileManager, currentUsername, isAdmin = false) {
+  constructor(profileManager, currentUsername, isAdmin = false, adminManager = null) {
     this.profile = profileManager;
     this.currentUsername = currentUsername;
     this.isAdmin = isAdmin;
+    this.admin = adminManager;
     this.container = document.getElementById('chat-messages');
+    this.setupDeleteHandler();
+  }
+
+  setAdminManager(adminManager) {
+    this.admin = adminManager;
+  }
+
+  setupDeleteHandler() {
+    if (this.container) {
+      this.container.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.message-delete-btn');
+        if (deleteBtn) {
+          const messageId = deleteBtn.dataset.messageId;
+          const messageEl = deleteBtn.closest('.message-container');
+          if (this.admin) {
+            this.admin.deleteMessage(messageId, messageEl);
+          }
+        }
+      });
+    }
   }
 
   async display(data, isHistoryLoad = false) {

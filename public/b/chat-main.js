@@ -15,6 +15,7 @@ import { SettingsManager } from './modules/settings.js';
 import { ProfileModalManager } from './modules/profile-modal.js';
 import { UIManager } from './modules/ui.js';
 import { SidebarManager } from './modules/sidebar.js';
+import { AdminManager } from './modules/admin.js';
 
 (async function initChat() {
   try {
@@ -53,6 +54,7 @@ import { SidebarManager } from './modules/sidebar.js';
     let settings = null;
     let profileModal = null;
     let sidebar = null;
+    let admin = null;
 
     // Make managers globally accessible
     window.soundManager = sound;
@@ -86,10 +88,13 @@ import { SidebarManager } from './modules/sidebar.js';
 
     // Connect to server
     socketManager.connect().then(socket => {
+      // Initialize admin manager first
+      admin = new AdminManager(socket, toast);
+      
       // Initialize managers that need socket
-      messages = new MessageManager(profile, username, isAdmin);
-      users = new UserListManager(profile);
-      channels = new ChannelManager(socket);
+      messages = new MessageManager(profile, username, isAdmin, admin);
+      users = new UserListManager(profile, admin, username);
+      channels = new ChannelManager(socket, admin);
       settings = new SettingsManager(theme, sound);
       profileModal = new ProfileModalManager(profile, username);
       sidebar = new SidebarManager(socket, profile, username);
@@ -170,8 +175,13 @@ import { SidebarManager } from './modules/sidebar.js';
       socket.on('userInfo', async (data) => {
         console.log('User info:', data);
         isAdmin = data.isAdmin || false;
+        
+        // Update admin status in all managers
         if (messages) {
           messages.isAdmin = isAdmin;
+        }
+        if (admin) {
+          admin.setAdmin(isAdmin);
         }
         
         // Update user panel
@@ -250,6 +260,21 @@ import { SidebarManager } from './modules/sidebar.js';
         if (channels) {
           channels.currentChannel = channelName;
         }
+      });
+      
+      // Channel deletion handlers
+      socket.on('channelDeleted', (channelName) => {
+        console.log('Channel deleted:', channelName);
+        if (channels && channels.currentChannel === channelName) {
+          // Switch to general if current channel was deleted
+          socket.emit('joinChannel', 'general');
+          channels.switchChannel('general');
+        }
+      });
+      
+      socket.on('voiceChannelDeleted', (channelName) => {
+        console.log('Voice channel deleted:', channelName);
+        // Voice disconnect will be handled by voice module when implemented
       });
       
       // Direct message handlers

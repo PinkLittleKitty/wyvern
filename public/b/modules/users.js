@@ -1,13 +1,23 @@
 // User List Manager
 export class UserListManager {
-  constructor(profileManager) {
+  constructor(profileManager, adminManager = null, currentUsername = null) {
     this.profile = profileManager;
+    this.admin = adminManager;
+    this.currentUsername = currentUsername;
     this.usersList = document.getElementById('usersList');
     this.usersCount = document.getElementById('usersCount');
     
     console.log('👥 UserListManager initialized');
     console.log('  usersList:', this.usersList ? '✅ Found' : '❌ Not found');
     console.log('  usersCount:', this.usersCount ? '✅ Found' : '❌ Not found');
+  }
+
+  setAdminManager(adminManager) {
+    this.admin = adminManager;
+  }
+
+  setCurrentUsername(username) {
+    this.currentUsername = username;
   }
 
   update(users) {
@@ -60,6 +70,13 @@ export class UserListManager {
             window.openProfileModal(user.username);
           }
         });
+
+        // Add admin context menu for other users
+        if (this.admin && this.admin.isAdmin && user.username !== this.currentUsername) {
+          userEl.addEventListener('contextmenu', (e) => {
+            this.admin.showUserContextMenu(e, user, this.currentUsername);
+          });
+        }
 
         this.usersList.appendChild(userEl);
         console.log('  ✅ Added user to DOM:', user.username);
