@@ -35,19 +35,23 @@ export class UserListManager {
         userEl.dataset.username = user.username;
 
         // Use default values first, load profile async
-        const statusClass = user.status || 'online';
-        const adminBadge = user.isAdmin ? '<span class="user-admin-badge">ADMIN</span>' : '';
+        const statusClass = user.voiceChannel ? 'in-voice' : 'online';
+        const statusText = user.voiceChannel ? `<i class="fas fa-volume-up"></i> ${user.voiceChannel}` : 'Online';
+        const adminBadge = user.isAdmin ? '<span class="user-item-badge">ADMIN</span>' : '';
         const defaultColor = '#8b5cf6';
         const defaultAvatar = user.username.charAt(0).toUpperCase();
 
         userEl.innerHTML = `
-          <div class="user-avatar" style="background: ${defaultColor};">
+          <div class="user-item-avatar" style="background: ${defaultColor};">
             ${defaultAvatar}
-            <div class="user-status ${statusClass}"></div>
+            <div class="user-item-status ${statusClass}"></div>
           </div>
-          <div class="user-info">
-            <div class="user-name">${this.escapeHtml(user.username)}</div>
-            ${adminBadge}
+          <div class="user-item-info">
+            <div class="user-item-name">
+              ${this.escapeHtml(user.username)}
+              ${adminBadge}
+            </div>
+            <div class="user-item-status-text">${statusText}</div>
           </div>
         `;
 
@@ -63,11 +67,11 @@ export class UserListManager {
         // Load profile async and update avatar/color
         this.profile.get(user.username).then(profile => {
           if (profile) {
-            const avatar = userEl.querySelector('.user-avatar');
+            const avatar = userEl.querySelector('.user-item-avatar');
             if (avatar) {
               avatar.style.background = this.profile.getColor(profile);
               avatar.innerHTML = this.profile.getAvatarHTML(user.username, profile) + 
-                                `<div class="user-status ${statusClass}"></div>`;
+                                `<div class="user-item-status ${statusClass}"></div>`;
             }
           }
         }).catch(err => console.error('Profile load error:', err));

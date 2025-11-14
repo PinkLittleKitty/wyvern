@@ -31,12 +31,13 @@ export class ChannelManager {
       channels.forEach(channel => {
         const channelEl = document.createElement('div');
         channelEl.className = 'channel';
+        if (channel.name === this.currentChannel) {
+          channelEl.classList.add('active');
+        }
         channelEl.dataset.channel = channel.name;
         
-        const isActive = channel.name === this.currentChannel;
-        
         channelEl.innerHTML = `
-          <div class="channel-name ${isActive ? 'active' : ''}"># ${this.escapeHtml(channel.name)}</div>
+          <div class="channel-name text">${this.escapeHtml(channel.name)}</div>
         `;
 
         channelEl.addEventListener('click', () => {
@@ -69,9 +70,10 @@ export class ChannelManager {
           </div>
           <div class="voice-channel-users" style="display: ${users.length > 0 ? 'block' : 'none'}">
             ${users.map(user => `
-              <div class="voice-user" data-username="${user}">
-                <i class="fas fa-user"></i>
+              <div class="voice-user" data-username="${this.escapeHtml(user)}">
+                <div class="voice-user-avatar">${user.charAt(0).toUpperCase()}</div>
                 <span class="voice-user-name">${this.escapeHtml(user)}</span>
+                <span class="voice-user-status"><i class="fas fa-microphone"></i></span>
               </div>
             `).join('')}
           </div>
@@ -91,6 +93,7 @@ export class ChannelManager {
   }
 
   switchChannel(channelName) {
+    console.log('Switching to channel:', channelName);
     this.currentChannel = channelName;
     this.socket.emit('joinChannel', channelName);
     
@@ -98,15 +101,20 @@ export class ChannelManager {
       this.currentChannelHeader.textContent = channelName;
     }
 
-    // Update active state
-    document.querySelectorAll('.channel-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.channel === channelName);
+    // Update active state for all text channels
+    document.querySelectorAll('.channel').forEach(el => {
+      if (el.dataset.channel === channelName) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
     });
 
     // Update input placeholder
     const input = document.getElementById('chat-input');
     if (input) {
       input.placeholder = `Message #${channelName}`;
+      input.disabled = false;
     }
   }
 
