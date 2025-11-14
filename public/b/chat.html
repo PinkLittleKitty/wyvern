@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
 </head>
+
 <body>
   <!-- Loading Screen -->
   <div class="loading-screen" id="loadingScreen">
@@ -38,7 +40,7 @@
 
   <!-- Mobile Overlay -->
   <div class="mobile-overlay" id="mobileOverlay"></div>
-  
+
   <div class="sidebar-container">
     <div class="sidebar-top">
       <div class="server-sidebar">
@@ -60,7 +62,7 @@
           </h4>
           <div id="textChannelsList"></div>
         </div>
-        
+
         <div class="channel-section">
           <h4>
             Voice Channels
@@ -75,12 +77,12 @@
         <div class="dm-search-container">
           <input type="text" class="dm-search" id="dmSearch" placeholder="Find or start a conversation" />
         </div>
-        
+
         <div class="channel-section">
           <h4>Direct Messages</h4>
           <div id="dmList"></div>
         </div>
-        
+
         <div class="channel-section" id="onlineUsersSection">
           <h4>Online — <span id="onlineCount">0</span></h4>
           <div id="dmOnlineUsers"></div>
@@ -160,7 +162,8 @@
       <button id="upload-button" class="chat-input-btn" title="Upload file or image">
         <i class="fas fa-plus"></i>
       </button>
-      <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar" multiple />
+      <input type="file" id="file-input" style="display: none;" accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+        multiple />
       <div class="chat-input-wrapper">
         <input id="chat-input" placeholder="Message #general" />
         <div id="file-preview" class="file-preview"></div>
@@ -251,45 +254,45 @@
   <!-- Context Menu -->
   <div class="context-menu" id="contextMenu">
     <div class="context-menu-header" id="contextMenuHeader">User Options</div>
-    
+
     <div class="context-menu-item" id="contextProfile">
       <span>👤</span>
       <span>View Profile</span>
     </div>
-    
+
     <div class="context-menu-separator"></div>
-    
+
     <div class="context-menu-item" id="contextLocalMute">
       <span>🔇</span>
       <span>Mute for Me</span>
     </div>
-    
+
     <div class="context-menu-volume">
       <label>Volume for Me</label>
       <input type="range" id="contextVolumeSlider" min="0" max="200" value="100">
       <div class="volume-display" id="contextVolumeDisplay">100%</div>
     </div>
-    
+
     <div class="context-menu-separator"></div>
-    
+
     <!-- Admin options (hidden by default) -->
     <div class="context-menu-item danger" id="contextServerMute" style="display: none;">
       <span>🔇</span>
       <span>Server Mute</span>
     </div>
-    
+
     <div class="context-menu-item danger" id="contextServerDeafen" style="display: none;">
       <span>🔊</span>
       <span>Server Deafen</span>
     </div>
-    
+
     <div class="context-menu-item danger" id="contextKickVoice" style="display: none;">
       <span>👢</span>
       <span>Kick from Voice</span>
     </div>
-    
+
     <div class="context-menu-separator" id="contextAdminSeparator" style="display: none;"></div>
-    
+
     <div class="context-menu-item danger" id="contextBanUser" style="display: none;">
       <span>🔨</span>
       <span>Ban User</span>
@@ -309,7 +312,7 @@
         <h3 id="profileModalTitle">User Profile</h3>
         <button class="modal-close-btn" id="closeProfileBtn">×</button>
       </div>
-      
+
       <div class="profile-modal-body">
         <!-- Profile Banner -->
         <div class="profile-banner" id="profileBanner">
@@ -318,7 +321,7 @@
           </button>
           <input type="file" id="bannerInput" accept="image/*" style="display: none;" />
         </div>
-        
+
         <!-- Profile Avatar -->
         <div class="profile-avatar-container">
           <div class="profile-avatar" id="profileAvatar">
@@ -330,13 +333,13 @@
           </button>
           <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
         </div>
-        
+
         <!-- Profile Info -->
         <div class="profile-info">
           <div class="profile-username" id="profileUsername">Username</div>
           <div class="profile-status" id="profileStatus">Online</div>
         </div>
-        
+
         <!-- Profile Sections -->
         <div class="profile-sections">
           <!-- About Me -->
@@ -349,14 +352,15 @@
             </div>
             <div class="profile-section-content">
               <p id="profileAbout">No bio set</p>
-              <textarea id="profileAboutEdit" style="display: none;" maxlength="500" placeholder="Tell us about yourself..."></textarea>
+              <textarea id="profileAboutEdit" style="display: none;" maxlength="500"
+                placeholder="Tell us about yourself..."></textarea>
               <div class="profile-edit-actions" id="aboutEditActions" style="display: none;">
                 <button class="settings-button secondary" id="cancelAboutBtn">Cancel</button>
                 <button class="settings-button" id="saveAboutBtn">Save</button>
               </div>
             </div>
           </div>
-          
+
           <!-- Custom Status -->
           <div class="profile-section">
             <div class="profile-section-header">
@@ -367,14 +371,15 @@
             </div>
             <div class="profile-section-content">
               <p id="profileCustomStatus">No status set</p>
-              <input type="text" id="profileCustomStatusEdit" style="display: none;" maxlength="100" placeholder="What's on your mind?" />
+              <input type="text" id="profileCustomStatusEdit" style="display: none;" maxlength="100"
+                placeholder="What's on your mind?" />
               <div class="profile-edit-actions" id="statusEditActions" style="display: none;">
                 <button class="settings-button secondary" id="cancelStatusBtn">Cancel</button>
                 <button class="settings-button" id="saveStatusBtn">Save</button>
               </div>
             </div>
           </div>
-          
+
           <!-- Profile Color -->
           <div class="profile-section">
             <div class="profile-section-header">
@@ -394,7 +399,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Member Since -->
           <div class="profile-section">
             <div class="profile-section-header">
@@ -416,7 +421,7 @@
         <h3>Settings</h3>
         <button class="modal-close-btn" id="closeSettingsBtn">×</button>
       </div>
-      
+
       <div class="settings-modal-body">
         <div class="settings-sidebar">
           <div class="settings-nav-item active" data-tab="appearance">
@@ -436,13 +441,13 @@
             <span>Privacy</span>
           </div>
         </div>
-        
+
         <div class="settings-content">
           <!-- Appearance Tab -->
           <div class="settings-tab active" id="appearance-tab">
             <h4>Appearance</h4>
             <p class="settings-description">Customize how Wyvern looks on your device</p>
-            
+
             <div class="settings-section">
               <label class="settings-label">Theme</label>
               <div class="theme-selector">
@@ -458,7 +463,7 @@
                   <div class="theme-option-label">Wyvern</div>
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
-                
+
                 <div class="theme-option" data-theme="wyvern-light">
                   <div class="theme-preview wyvern-light-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -471,7 +476,7 @@
                   <div class="theme-option-label">Wyvern Light</div>
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
-                
+
                 <div class="theme-option" data-theme="wyvern-amoled">
                   <div class="theme-preview wyvern-amoled-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -484,7 +489,7 @@
                   <div class="theme-option-label">Wyvern AMOLED</div>
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
-                
+
                 <div class="theme-option" data-theme="discord">
                   <div class="theme-preview discord-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -497,7 +502,7 @@
                   <div class="theme-option-label">Discord</div>
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
-                
+
                 <div class="theme-option" data-theme="d4rk">
                   <div class="theme-preview d4rk-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -510,7 +515,7 @@
                   <div class="theme-option-label">D4rk</div>
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
-                
+
                 <div class="theme-option" data-theme="custom">
                   <div class="theme-preview custom-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -525,12 +530,12 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- Custom Theme Builder -->
             <div class="settings-section custom-theme-builder" id="customThemeBuilder" style="display: none;">
               <label class="settings-label">Custom Theme Builder</label>
               <p class="settings-hint">Create your own theme by customizing colors</p>
-              
+
               <div class="custom-theme-base">
                 <label>Base Theme</label>
                 <select id="customThemeBase" class="settings-select">
@@ -539,33 +544,33 @@
                   <option value="amoled">AMOLED</option>
                 </select>
               </div>
-              
+
               <div class="custom-theme-colors">
                 <div class="color-picker-group">
                   <label>Accent Color</label>
                   <input type="color" id="customAccent" value="#8b5cf6" />
                 </div>
-                
+
                 <div class="color-picker-group">
                   <label>Background Color</label>
                   <input type="color" id="customBg" value="#0a0a0f" />
                 </div>
-                
+
                 <div class="color-picker-group">
                   <label>Sidebar Color</label>
                   <input type="color" id="customSidebar" value="#13131a" />
                 </div>
-                
+
                 <div class="color-picker-group">
                   <label>Text Color</label>
                   <input type="color" id="customText" value="#e4e4e7" />
                 </div>
               </div>
-              
+
               <button class="settings-button" id="applyCustomTheme">Apply Custom Theme</button>
               <button class="settings-button secondary" id="resetCustomTheme">Reset to Base</button>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Message Display</label>
               <div class="settings-toggle">
@@ -575,12 +580,12 @@
               <p class="settings-hint">Show more messages at once</p>
             </div>
           </div>
-          
+
           <!-- Notifications Tab -->
           <div class="settings-tab" id="notifications-tab">
             <h4>Notifications</h4>
             <p class="settings-description">Control when and how you receive notifications</p>
-            
+
             <div class="settings-section">
               <label class="settings-label">Desktop Notifications</label>
               <div class="settings-toggle">
@@ -588,7 +593,7 @@
                 <label for="desktopNotifications">Enable desktop notifications</label>
               </div>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Notification Sounds</label>
               <div class="settings-toggle">
@@ -596,7 +601,7 @@
                 <label for="notificationSounds">Play sound for mentions</label>
               </div>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Mention Notifications</label>
               <div class="settings-toggle">
@@ -605,32 +610,32 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Voice & Video Tab -->
           <div class="settings-tab" id="voice-tab">
             <h4>Voice & Video</h4>
             <p class="settings-description">Manage your voice and video settings</p>
-            
+
             <div class="settings-section">
               <label class="settings-label">Input Device</label>
               <select id="inputDevice" class="settings-select">
                 <option>Default Microphone</option>
               </select>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Output Device</label>
               <select id="outputDevice" class="settings-select">
                 <option>Default Speakers</option>
               </select>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Input Volume</label>
               <input type="range" id="inputVolume" min="0" max="100" value="100" class="settings-slider" />
               <span class="settings-slider-value" id="inputVolumeValue">100%</span>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Sound Effects</label>
               <div class="settings-toggle">
@@ -639,7 +644,7 @@
               </div>
               <p class="settings-hint">Play sounds for messages, DMs, and voice events</p>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Sound Volume</label>
               <input type="range" id="soundVolume" min="0" max="100" value="50" class="settings-slider" />
@@ -649,12 +654,12 @@
               </button>
             </div>
           </div>
-          
+
           <!-- Privacy Tab -->
           <div class="settings-tab" id="privacy-tab">
             <h4>Privacy & Safety</h4>
             <p class="settings-description">Control your privacy settings</p>
-            
+
             <div class="settings-section">
               <label class="settings-label">Direct Messages</label>
               <div class="settings-toggle">
@@ -662,7 +667,7 @@
                 <label for="allowDMs">Allow direct messages from server members</label>
               </div>
             </div>
-            
+
             <div class="settings-section">
               <label class="settings-label">Activity Status</label>
               <div class="settings-toggle">
@@ -681,4 +686,5 @@
   <script src="chat-fallback.js" defer></script>
   <script src="../mobile-debug.js" defer></script>
 </body>
+
 </html>

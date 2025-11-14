@@ -6864,7 +6864,7 @@ body[data-dm-mode="true"] .chat-header h2 {
 }
 
 body[data-dm-mode="true"] .chat-header h2::before {
-  content: '@';
+  content: '';
   color: var(--accent);
   font-weight: 700;
 }
