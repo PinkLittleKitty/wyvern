@@ -286,10 +286,8 @@ import { VoiceManager } from './modules/voice.js';
       // Voice channel users update
       socket.on('voiceChannelUsers', (data) => {
         console.log(`Voice channel ${data.channel} has ${data.users.length} users`);
-        // Update voice channel UI to show users
-        if (channels) {
-          // Re-render voice channels to update user counts
-          // This will be triggered by the next voiceChannelUpdate event
+        if (voice) {
+          voice.updateVoiceChannelUsers(data.channel, data.users);
         }
       });
       
