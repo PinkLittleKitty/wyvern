@@ -66,6 +66,7 @@ import { SidebarManager } from './modules/sidebar.js';
     // Initialize socket connection
     const socketManager = new SocketManager(token, {
       onConnect: () => {
+        console.log('✅ Socket connected, requesting initial data...');
         toast.show('Connected to Wyvern!', 'success');
         // Join default channel
         socketManager.emit('joinChannel', 'general');
@@ -216,24 +217,30 @@ import { SidebarManager } from './modules/sidebar.js';
         }
       });
       
-      socket.on('onlineUsers', async (userList) => {
-        console.log('Online users:', userList.length);
+      socket.on('onlineUsers', (userList) => {
+        console.log('👥 Online users received:', userList);
         if (users) {
-          await users.update(userList);
+          users.update(userList);
+        } else {
+          console.error('Users manager not initialized');
         }
       });
       
       socket.on('channelUpdate', (channelList) => {
-        console.log('Text channels:', channelList.length);
+        console.log('📝 Text channels received:', channelList);
         if (channels) {
           channels.updateList(channelList, 'text');
+        } else {
+          console.error('Channels manager not initialized');
         }
       });
       
       socket.on('voiceChannelUpdate', (channelList) => {
-        console.log('Voice channels:', channelList.length);
+        console.log('🔊 Voice channels received:', channelList);
         if (channels) {
           channels.updateList(channelList, 'voice');
+        } else {
+          console.error('Channels manager not initialized');
         }
       });
       

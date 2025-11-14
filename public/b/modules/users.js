@@ -4,48 +4,80 @@ export class UserListManager {
     this.profile = profileManager;
     this.usersList = document.getElementById('usersList');
     this.usersCount = document.getElementById('usersCount');
+    
+    console.log('👥 UserListManager initialized');
+    console.log('  usersList:', this.usersList ? '✅ Found' : '❌ Not found');
+    console.log('  usersCount:', this.usersCount ? '✅ Found' : '❌ Not found');
   }
 
-  async update(users) {
-    if (!this.usersList) return;
+  update(users) {
+    console.log('👥 UserListManager.update called with', users.length, 'users');
+    
+    if (!this.usersList) {
+      console.error('❌ usersList element not found!');
+      return;
+    }
 
+    console.log('✅ usersList element found, updating...');
     this.usersList.innerHTML = '';
     
     if (this.usersCount) {
       this.usersCount.textContent = users.length;
     }
 
-    for (const user of users) {
-      const profile = await this.profile.get(user.username);
-      const userEl = document.createElement('div');
-      userEl.className = 'user-item';
-      userEl.dataset.username = user.username;
+    // Render users immediately without waiting for profiles
+    users.forEach(user => {
+      try {
+        console.log('  📝 Adding user:', user.username);
+        
+        const userEl = document.createElement('div');
+        userEl.className = 'user-item';
+        userEl.dataset.username = user.username;
 
-      const avatarHTML = this.profile.getAvatarHTML(user.username, profile);
-      const profileColor = this.profile.getColor(profile);
-      
-      const statusClass = user.status || 'online';
-      const adminBadge = user.isAdmin ? '<span class="user-admin-badge">ADMIN</span>' : '';
+        // Use default values first, load profile async
+        const statusClass = user.status || 'online';
+        const adminBadge = user.isAdmin ? '<span class="user-admin-badge">ADMIN</span>' : '';
+        const defaultColor = '#8b5cf6';
+        const defaultAvatar = user.username.charAt(0).toUpperCase();
 
-      userEl.innerHTML = `
-        <div class="user-avatar" style="background: ${profileColor};">
-          ${avatarHTML}
-          <div class="user-status ${statusClass}"></div>
-        </div>
-        <div class="user-info">
-          <div class="user-name">${this.escapeHtml(user.username)}</div>
-          ${adminBadge}
-        </div>
-      `;
+        userEl.innerHTML = `
+          <div class="user-avatar" style="background: ${defaultColor};">
+            ${defaultAvatar}
+            <div class="user-status ${statusClass}"></div>
+          </div>
+          <div class="user-info">
+            <div class="user-name">${this.escapeHtml(user.username)}</div>
+            ${adminBadge}
+          </div>
+        `;
 
-      userEl.addEventListener('click', () => {
-        if (window.openProfileModal) {
-          window.openProfileModal(user.username);
-        }
-      });
+        userEl.addEventListener('click', () => {
+          if (window.openProfileModal) {
+            window.openProfileModal(user.username);
+          }
+        });
 
-      this.usersList.appendChild(userEl);
-    }
+        this.usersList.appendChild(userEl);
+        console.log('  ✅ Added user to DOM:', user.username);
+        
+        // Load profile async and update avatar/color
+        this.profile.get(user.username).then(profile => {
+          if (profile) {
+            const avatar = userEl.querySelector('.user-avatar');
+            if (avatar) {
+              avatar.style.background = this.profile.getColor(profile);
+              avatar.innerHTML = this.profile.getAvatarHTML(user.username, profile) + 
+                                `<div class="user-status ${statusClass}"></div>`;
+            }
+          }
+        }).catch(err => console.error('Profile load error:', err));
+        
+      } catch (error) {
+        console.error('  ❌ Error adding user:', user.username, error);
+      }
+    });
+    
+    console.log('✅ UserList update complete. Total users in DOM:', this.usersList.children.length);
   }
 
   escapeHtml(text) {

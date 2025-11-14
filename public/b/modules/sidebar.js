@@ -11,16 +11,24 @@ export class SidebarManager {
   }
 
   init() {
+    console.log('🔧 SidebarManager initializing...');
+    
     // Home button - switch to channels view
     const homeBtn = document.getElementById('homeButton');
     if (homeBtn) {
       homeBtn.addEventListener('click', () => this.switchToChannels());
+      console.log('  ✅ Home button found');
+    } else {
+      console.warn('  ❌ Home button not found');
     }
 
     // DM button - switch to DMs view
     const dmBtn = document.getElementById('dmButton');
     if (dmBtn) {
       dmBtn.addEventListener('click', () => this.switchToDMs());
+      console.log('  ✅ DM button found');
+    } else {
+      console.warn('  ❌ DM button not found');
     }
 
     // DM search
@@ -30,20 +38,42 @@ export class SidebarManager {
     }
 
     // Start in channels view
+    console.log('🔧 Switching to channels view...');
     this.switchToChannels();
   }
 
   switchToChannels() {
+    console.log('🏠 Switching to channels view');
     this.currentView = 'channels';
     this.isDMMode = false;
     this.currentDMRecipient = null;
 
     // Update UI
     document.body.removeAttribute('data-dm-mode');
-    document.getElementById('channelsView').style.display = 'block';
-    document.getElementById('dmView').style.display = 'none';
-    document.getElementById('homeButton').classList.add('active');
-    document.getElementById('dmButton').classList.remove('active');
+    
+    const channelsView = document.getElementById('channelsView');
+    const dmView = document.getElementById('dmView');
+    const homeBtn = document.getElementById('homeButton');
+    const dmBtn = document.getElementById('dmButton');
+    
+    if (channelsView) {
+      channelsView.style.display = 'block';
+      console.log('  ✅ channelsView shown');
+    } else {
+      console.error('  ❌ channelsView not found!');
+    }
+    
+    if (dmView) {
+      dmView.style.display = 'none';
+    }
+    
+    if (homeBtn) {
+      homeBtn.classList.add('active');
+    }
+    
+    if (dmBtn) {
+      dmBtn.classList.remove('active');
+    }
 
     // Switch to general channel
     this.socket.emit('joinChannel', 'general');
