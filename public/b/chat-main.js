@@ -16,6 +16,7 @@ import { ProfileModalManager } from './modules/profile-modal.js';
 import { UIManager } from './modules/ui.js';
 import { SidebarManager } from './modules/sidebar.js';
 import { AdminManager } from './modules/admin.js';
+import { VoiceManager } from './modules/voice.js';
 
 (async function initChat() {
   try {
@@ -55,6 +56,7 @@ import { AdminManager } from './modules/admin.js';
     let profileModal = null;
     let sidebar = null;
     let admin = null;
+    let voice = null;
 
     // Make managers globally accessible
     window.soundManager = sound;
@@ -91,10 +93,14 @@ import { AdminManager } from './modules/admin.js';
       // Initialize admin manager first
       admin = new AdminManager(socket, toast);
       
+      // Initialize voice manager
+      voice = new VoiceManager(socket, toast, sound);
+      
       // Initialize managers that need socket
       messages = new MessageManager(profile, username, isAdmin, admin);
       users = new UserListManager(profile, admin, username);
       channels = new ChannelManager(socket, admin);
+      channels.setVoiceManager(voice);
       settings = new SettingsManager(theme, sound);
       profileModal = new ProfileModalManager(profile, username);
       sidebar = new SidebarManager(socket, profile, username);
@@ -274,7 +280,17 @@ import { AdminManager } from './modules/admin.js';
       
       socket.on('voiceChannelDeleted', (channelName) => {
         console.log('Voice channel deleted:', channelName);
-        // Voice disconnect will be handled by voice module when implemented
+        // Voice disconnect is handled by voice module
+      });
+      
+      // Voice channel users update
+      socket.on('voiceChannelUsers', (data) => {
+        console.log(`Voice channel ${data.channel} has ${data.users.length} users`);
+        // Update voice channel UI to show users
+        if (channels) {
+          // Re-render voice channels to update user counts
+          // This will be triggered by the next voiceChannelUpdate event
+        }
       });
       
       // Direct message handlers

@@ -133,9 +133,17 @@ export class ChannelManager {
     }
   }
 
+  setVoiceManager(voiceManager) {
+    this.voice = voiceManager;
+  }
+
   joinVoiceChannel(channelName) {
     console.log('Joining voice channel:', channelName);
-    // TODO: Implement voice channel joining
+    if (this.voice) {
+      this.voice.join(channelName);
+    } else {
+      console.error('Voice manager not initialized');
+    }
   }
 
   getCurrentChannel() {
