@@ -56,6 +56,7 @@ import { SidebarManager } from './modules/sidebar.js';
 
     // Make managers globally accessible
     window.soundManager = sound;
+    window.toastManager = toast;
     window.openProfileModal = null; // Will be set after initialization
 
     // Start loading screen

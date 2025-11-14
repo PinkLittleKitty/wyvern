@@ -4,6 +4,19 @@ export class UIManager {
     this.initMobileMenu();
     this.initUsersPanelToggle();
     this.initImageLightbox();
+    this.initUserPanelClick();
+  }
+
+  initUserPanelClick() {
+    const userPanelInfo = document.querySelector('.user-panel-info');
+    if (userPanelInfo) {
+      userPanelInfo.addEventListener('click', () => {
+        const username = sessionStorage.getItem('wyvernUsername');
+        if (window.openProfileModal && username) {
+          window.openProfileModal(username);
+        }
+      });
+    }
   }
 
   initMobileMenu() {
@@ -18,19 +31,59 @@ export class UIManager {
 
     if (overlay) {
       overlay.addEventListener('click', () => {
-        document.body.classList.remove('sidebar-visible');
+        this.closeMobileMenus();
       });
+    }
+  }
+
+  closeMobileMenus() {
+    document.body.classList.remove('sidebar-visible');
+    document.body.classList.remove('users-panel-visible');
+    
+    const toggleUsersBtn = document.getElementById('toggleUsersBtn');
+    if (toggleUsersBtn && window.innerWidth <= 800) {
+      toggleUsersBtn.classList.remove('active');
     }
   }
 
   initUsersPanelToggle() {
     const toggleBtn = document.getElementById('toggleUsersBtn');
-    const usersPanel = document.getElementById('usersPanel');
 
-    if (toggleBtn && usersPanel) {
-      toggleBtn.addEventListener('click', () => {
-        usersPanel.classList.toggle('hidden');
-        toggleBtn.classList.toggle('active');
+    if (toggleBtn) {
+      // Check localStorage for saved state
+      const usersPanelHidden = localStorage.getItem('usersPanelHidden') === 'true';
+      if (usersPanelHidden) {
+        document.body.classList.add('users-panel-hidden');
+      } else {
+        toggleBtn.classList.add('active');
+      }
+
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        // Check if mobile or desktop
+        const isMobile = window.innerWidth <= 800;
+        
+        if (isMobile) {
+          // Mobile: toggle users-panel-visible
+          const isVisible = document.body.classList.contains('users-panel-visible');
+          if (isVisible) {
+            document.body.classList.remove('users-panel-visible');
+            toggleBtn.classList.remove('active');
+          } else {
+            document.body.classList.add('users-panel-visible');
+            document.body.classList.remove('sidebar-visible');
+            toggleBtn.classList.add('active');
+          }
+        } else {
+          // Desktop: toggle users-panel-hidden
+          document.body.classList.toggle('users-panel-hidden');
+          toggleBtn.classList.toggle('active');
+          
+          // Save state to localStorage
+          const isHidden = document.body.classList.contains('users-panel-hidden');
+          localStorage.setItem('usersPanelHidden', isHidden);
+        }
       });
     }
   }
