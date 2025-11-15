@@ -330,13 +330,68 @@ export class SidebarManager {
 
   filterDMs(query) {
     const dmItems = document.querySelectorAll('.dm-item, .dm-user-item');
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = query.toLowerCase().trim();
+
+    // If query is empty, show all
+    if (!lowerQuery) {
+      dmItems.forEach(item => {
+        item.style.display = 'flex';
+      });
+      return;
+    }
+
+    let visibleCount = 0;
 
     dmItems.forEach(item => {
-      const username = item.dataset.username.toLowerCase();
-      const matches = username.includes(lowerQuery);
-      item.style.display = matches ? 'flex' : 'none';
+      const username = item.dataset.username?.toLowerCase() || '';
+      
+      // For DM items, also check message preview
+      let messagePreview = '';
+      if (item.classList.contains('dm-item')) {
+        const previewEl = item.querySelector('.dm-preview');
+        messagePreview = previewEl?.textContent?.toLowerCase() || '';
+      }
+
+      // Match if username or message preview contains query
+      const matches = username.includes(lowerQuery) || messagePreview.includes(lowerQuery);
+      
+      if (matches) {
+        item.style.display = 'flex';
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+      }
     });
+
+    // Show "no results" message if nothing matches
+    this.updateDMSearchResults(visibleCount, lowerQuery);
+  }
+
+  updateDMSearchResults(count, query) {
+    const dmList = document.getElementById('dmList');
+    const dmOnlineUsers = document.getElementById('dmOnlineUsers');
+    
+    // Remove existing "no results" message
+    const existingMsg = document.querySelector('.dm-no-results');
+    if (existingMsg) existingMsg.remove();
+
+    // If no results and there's a query, show message
+    if (count === 0 && query) {
+      const noResults = document.createElement('div');
+      noResults.className = 'dm-no-results';
+      noResults.innerHTML = `
+        <div class="dm-no-results-icon">🔍</div>
+        <div class="dm-no-results-text">No matches found for "${this.escapeHtml(query)}"</div>
+        <div class="dm-no-results-hint">Try a different search term</div>
+      `;
+      
+      // Add to DM list if it exists
+      if (dmList && dmList.children.length > 0) {
+        dmList.appendChild(noResults);
+      } else if (dmOnlineUsers) {
+        dmOnlineUsers.appendChild(noResults);
+      }
+    }
   }
 
   closeMobileMenus() {

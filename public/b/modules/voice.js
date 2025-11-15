@@ -639,25 +639,65 @@ export class VoiceManager {
                 this.playRemoteAudio(remoteStream, username);
             } else if (event.track.kind === 'video') {
                 const trackLabel = event.track.label.toLowerCase();
+
+                // Enhanced screen detection - check multiple indicators
                 const isScreenTrack = trackLabel.includes('screen') ||
                     trackLabel.includes('monitor') ||
                     trackLabel.includes('window') ||
                     trackLabel.includes('display') ||
-                    trackLabel.includes('tab');
+                    trackLabel.includes('tab') ||
+                    trackLabel.includes('chrome') ||
+                    trackLabel.includes('firefox') ||
+                    trackLabel.includes('web contents') ||
+                    trackLabel.includes('entire screen');
 
-                // Also check user state to determine if this is screen or camera
+                // Check user state
                 const userState = this.userVoiceStates.get(username) || {};
                 const hasExistingVideo = this.remoteVideoStreams.has(username);
+                const hasExistingScreen = this.remoteScreenStreams.has(username);
 
+                console.log(`   Track label: "${event.track.label}"`);
                 console.log(`   Is screen track (by label): ${isScreenTrack}`);
                 console.log(`   User state screenSharing: ${userState.screenSharing}`);
                 console.log(`   Has existing video: ${hasExistingVideo}`);
+                console.log(`   Has existing screen: ${hasExistingScreen}`);
 
-                if (isScreenTrack || (hasExistingVideo && userState.screenSharing)) {
-                    console.log(`🖥️ Detected screen share track from ${username}`);
+                // Decision logic:
+                // 1. If label clearly indicates screen -> screen
+                // 2. If user state says screenSharing and we already have camera -> screen
+                // 3. If we already have a screen stream -> this is camera
+                // 4. Otherwise -> camera
+
+                let isScreen = false;
+
+                if (isScreenTrack) {
+                    // Label clearly indicates screen
+                    isScreen = true;
+                    console.log(`   ✅ Identified as SCREEN (by label)`);
+                } else if (userState.screenSharing && hasExistingVideo && !hasExistingScreen) {
+                    // User is screen sharing, we have camera, but no screen yet
+                    isScreen = true;
+                    console.log(`   ✅ Identified as SCREEN (user state + has camera)`);
+                } else if (hasExistingScreen && !hasExistingVideo) {
+                    // We have screen but no camera, this must be camera
+                    isScreen = false;
+                    console.log(`   ✅ Identified as CAMERA (already have screen)`);
+                } else if (userState.camera && !hasExistingVideo) {
+                    // User has camera on and we don't have video yet
+                    isScreen = false;
+                    console.log(`   ✅ Identified as CAMERA (user state)`);
+                } else {
+                    // Default: if we don't have video yet, assume camera
+                    // If we already have video, assume screen
+                    isScreen = hasExistingVideo;
+                    console.log(`   ⚠️ Guessing: ${isScreen ? 'SCREEN' : 'CAMERA'} (has existing video: ${hasExistingVideo})`);
+                }
+
+                if (isScreen) {
+                    console.log(`🖥️ Playing as SCREEN SHARE from ${username}`);
                     this.playRemoteScreen(remoteStream, username);
                 } else {
-                    console.log(`📹 Detected camera track from ${username}`);
+                    console.log(`📹 Playing as CAMERA from ${username}`);
                     this.playRemoteVideo(remoteStream, username);
                 }
             }
@@ -738,11 +778,34 @@ export class VoiceManager {
 
     playRemoteScreen(stream, username) {
         this.remoteScreenStreams.set(username, stream);
-        console.log(`Stored screen stream for ${username}`);
+        console.log(`✅ Stored screen stream for ${username}`);
+
+        // Only update state if we don't already have it set
+        // (to avoid overriding server state)
+        const state = this.userVoiceStates.get(username) || {};
+        if (!state.screenSharing) {
+            state.screenSharing = true;
+            this.userVoiceStates.set(username, state);
+
+            // Show toast notification only on first detection
+            this.toast.show(`${username} is sharing their screen`, 'info');
+        }
+
+        // Update UI to show screen share button
+        this.updateParticipantStatus(username);
     }
 
     removeRemoteScreen(username) {
         this.remoteScreenStreams.delete(username);
+        console.log(`🗑️ Removed screen stream for ${username}`);
+
+        // Update user state
+        const state = this.userVoiceStates.get(username) || {};
+        state.screenSharing = false;
+        this.userVoiceStates.set(username, state);
+
+        // Update UI to remove screen share button
+        this.updateParticipantStatus(username);
     }
 
     toggleMute() {
@@ -1137,13 +1200,6 @@ export class VoiceManager {
         });
     }
 
-    updateParticipantStatus(username) {
-        const state = this.userVoiceStates.get(username) || {};
-        // Update UI based on state (muted, deafened, camera, screenSharing)
-        // This will be called when state changes
-        console.log(`Updated status for ${username}:`, state);
-    }
-
     isInVoice() {
         return this.currentChannel !== null;
     }
@@ -1185,8 +1241,12 @@ export class VoiceManager {
             }
 
             // Add/remove screen sharing button
+            // IMPORTANT: Only show button if we actually have a screen stream
+            const hasScreenStream = this.remoteScreenStreams.has(username);
             let screenBtn = userEl.querySelector('.screen-share-btn');
-            if (state.screenSharing) {
+
+            if (state.screenSharing && hasScreenStream) {
+                // User is sharing AND we have their stream
                 if (!screenBtn) {
                     screenBtn = document.createElement('button');
                     screenBtn.className = 'screen-share-btn';
@@ -1197,13 +1257,16 @@ export class VoiceManager {
                         this.openScreenSharePIP(username);
                     };
                     userEl.appendChild(screenBtn);
+                    console.log(`✅ Added screen share button for ${username}`);
                 }
             } else if (screenBtn) {
+                // Remove button if they stopped sharing or we don't have stream
                 screenBtn.remove();
+                console.log(`🗑️ Removed screen share button for ${username}`);
             }
         });
 
-        console.log(`Updated status for ${username}:`, state);
+        console.log(`Updated status for ${username}:`, state, `hasStream: ${this.remoteScreenStreams.has(username)}`);
     }
 
     openScreenSharePIP(username) {
@@ -1213,6 +1276,16 @@ export class VoiceManager {
             return;
         }
 
+        // Check if PIP is supported
+        if (document.pictureInPictureEnabled) {
+            this.openPIPMode(username, stream);
+        } else {
+            // Fallback to modal view
+            this.openScreenShareModal(username, stream);
+        }
+    }
+
+    openPIPMode(username, stream) {
         // Create a video element for PIP
         let pipVideo = document.getElementById(`pip-${username}`);
         if (!pipVideo) {
@@ -1229,21 +1302,129 @@ export class VoiceManager {
 
         // Wait for video to be ready, then try PIP
         pipVideo.onloadedmetadata = () => {
-            if (document.pictureInPictureEnabled && pipVideo.requestPictureInPicture) {
+            if (pipVideo.requestPictureInPicture) {
                 pipVideo
                     .requestPictureInPicture()
                     .then(() => {
-                        console.log(`Opened PIP for ${username}'s screen share`);
-                        this.toast.show(`Viewing ${username}'s screen`, 'success');
+                        console.log(`✅ Opened PIP for ${username}'s screen share`);
+                        this.toast.show(`Viewing ${username}'s screen in PIP`, 'success');
                     })
                     .catch((err) => {
                         console.error('PIP error:', err);
-                        this.toast.show('Picture-in-Picture not available', 'error');
+                        // Fallback to modal if PIP fails
+                        this.openScreenShareModal(username, stream);
                     });
             } else {
-                this.toast.show('Picture-in-Picture not supported', 'error');
+                this.openScreenShareModal(username, stream);
             }
         };
+
+        // Handle errors
+        pipVideo.onerror = (err) => {
+            console.error('Video error:', err);
+            this.toast.show('Failed to load screen share', 'error');
+        };
+    }
+
+    openScreenShareModal(username, stream) {
+        console.log(`📺 Opening screen share modal for ${username}`);
+
+        // Create or get modal
+        let modal = document.getElementById('screenShareModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'screenShareModal';
+            modal.className = 'screen-share-modal';
+            modal.innerHTML = `
+                <div class="screen-share-modal-content">
+                    <div class="screen-share-modal-header">
+                        <div class="screen-share-modal-title">
+                            <i class="fas fa-desktop"></i>
+                            <span id="screenShareUsername">Screen Share</span>
+                        </div>
+                        <div class="screen-share-modal-controls">
+                            <button class="screen-share-modal-btn" id="screenSharePIPBtn" title="Picture-in-Picture">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                            <button class="screen-share-modal-btn" id="screenShareFullscreenBtn" title="Fullscreen">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="screen-share-modal-btn close" id="screenShareCloseBtn" title="Close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="screen-share-modal-body">
+                        <video id="screenShareVideo" autoplay playsinline controls></video>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Setup event listeners
+            const closeBtn = modal.querySelector('#screenShareCloseBtn');
+            closeBtn.addEventListener('click', () => this.closeScreenShareModal());
+
+            const pipBtn = modal.querySelector('#screenSharePIPBtn');
+            pipBtn.addEventListener('click', () => {
+                const video = modal.querySelector('#screenShareVideo');
+                if (video && video.srcObject) {
+                    this.openPIPMode(username, video.srcObject);
+                }
+            });
+
+            const fullscreenBtn = modal.querySelector('#screenShareFullscreenBtn');
+            fullscreenBtn.addEventListener('click', () => {
+                const video = modal.querySelector('#screenShareVideo');
+                if (video.requestFullscreen) {
+                    video.requestFullscreen();
+                } else if (video.webkitRequestFullscreen) {
+                    video.webkitRequestFullscreen();
+                } else if (video.mozRequestFullScreen) {
+                    video.mozRequestFullScreen();
+                }
+            });
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.closeScreenShareModal();
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    this.closeScreenShareModal();
+                }
+            });
+        }
+
+        // Update content
+        const video = modal.querySelector('#screenShareVideo');
+        const usernameEl = modal.querySelector('#screenShareUsername');
+
+        if (video) {
+            video.srcObject = stream;
+        }
+        if (usernameEl) {
+            usernameEl.textContent = `${username}'s Screen`;
+        }
+
+        // Show modal
+        modal.classList.add('show');
+        this.toast.show(`Viewing ${username}'s screen`, 'success');
+    }
+
+    closeScreenShareModal() {
+        const modal = document.getElementById('screenShareModal');
+        if (modal) {
+            modal.classList.remove('show');
+            const video = modal.querySelector('#screenShareVideo');
+            if (video) {
+                video.srcObject = null;
+            }
+        }
     }
 
     updateVoiceChannelUsers(channelName, users) {
