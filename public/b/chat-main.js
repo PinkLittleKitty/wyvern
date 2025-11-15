@@ -17,6 +17,7 @@ import { UIManager } from './modules/ui.js';
 import { SidebarManager } from './modules/sidebar.js';
 import { AdminManager } from './modules/admin.js';
 import { VoiceManager } from './modules/voice.js';
+import { ShortcutsManager } from './modules/shortcuts.js';
 
 (async function initChat() {
   try {
@@ -107,6 +108,10 @@ import { VoiceManager } from './modules/voice.js';
       settings = new SettingsManager(theme, sound);
       profileModal = new ProfileModalManager(profile, username);
       sidebar = new SidebarManager(socket, profile, username);
+      
+      // Initialize keyboard shortcuts
+      const shortcuts = new ShortcutsManager();
+      window.shortcuts = shortcuts; // Make globally accessible
       
       const typing = new TypingManager(socket);
       
