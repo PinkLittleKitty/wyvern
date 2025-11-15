@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const readline = require('readline');
 const multer = require('multer');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const { connect, getDb } = require('./database');
 const { router: authRouter, authMiddleware } = require('./auth');
@@ -269,6 +270,197 @@ app.post('/api/beta/reload', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Beta reload error:', error);
     res.status(500).json({ error: 'Failed to reload beta version' });
+  }
+});
+
+// Admin: Reset user password
+app.post('/api/admin/reset-password', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const adminUser = await db.collection('users').findOne({ username: req.user.username });
+    
+    if (!adminUser || !adminUser.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { username } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+    
+    const targetUser = await db.collection('users').findOne({ username });
+    
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Generate temporary password (8 characters, alphanumeric)
+    const tempPassword = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    
+    await db.collection('users').updateOne(
+      { username },
+      { 
+        $set: { 
+          password: hashedPassword,
+          passwordResetAt: new Date()
+        } 
+      }
+    );
+    
+    console.log(`🔑 Password reset for user "${username}" by admin "${req.user.username}"`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Password reset successfully',
+      tempPassword: tempPassword
+    });
+    
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+});
+
+// Admin: Get all users
+app.get('/api/admin/users', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const adminUser = await db.collection('users').findOne({ username: req.user.username });
+    
+    if (!adminUser || !adminUser.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const users = await db.collection('users')
+      .find({}, { projection: { password: 0 } })
+      .sort({ createdAt: -1 })
+      .toArray();
+    
+    res.json({ 
+      success: true, 
+      users: users.map(user => ({
+        username: user.username,
+        isAdmin: user.isAdmin || false,
+        createdAt: user.createdAt || new Date(),
+        passwordResetAt: user.passwordResetAt || null
+      }))
+    });
+    
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Admin: Delete user
+app.delete('/api/admin/users/:username', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const adminUser = await db.collection('users').findOne({ username: req.user.username });
+    
+    if (!adminUser || !adminUser.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { username } = req.params;
+    
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+    
+    // Prevent deleting yourself
+    if (username === req.user.username) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+    
+    const targetUser = await db.collection('users').findOne({ username });
+    
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Prevent deleting other admins
+    if (targetUser.isAdmin) {
+      return res.status(403).json({ error: 'Cannot delete admin users' });
+    }
+    
+    // Delete user from database
+    await db.collection('users').deleteOne({ username });
+    
+    // Disconnect user if they're online
+    io.sockets.sockets.forEach((socket) => {
+      if (socket.user && socket.user.username === username) {
+        socket.emit('accountDeleted', 'Your account has been deleted by an administrator');
+        socket.disconnect(true);
+      }
+    });
+    
+    console.log(`🗑️ User "${username}" deleted by admin "${req.user.username}"`);
+    
+    res.json({ 
+      success: true, 
+      message: 'User deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// User: Change password
+app.post('/api/user/change-password', authMiddleware, async (req, res) => {
+  try {
+    const db = getDb();
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+    
+    if (newPassword.length < 3) {
+      return res.status(400).json({ error: 'New password must be at least 3 characters long' });
+    }
+    
+    const user = await db.collection('users').findOne({ username: req.user.username });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Verify current password
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await db.collection('users').updateOne(
+      { username: req.user.username },
+      { 
+        $set: { 
+          password: hashedPassword,
+          passwordChangedAt: new Date()
+        } 
+      }
+    );
+    
+    console.log(`🔑 Password changed for user "${req.user.username}"`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Password changed successfully'
+    });
+    
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
   }
 });
 

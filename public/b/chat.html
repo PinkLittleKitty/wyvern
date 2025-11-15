@@ -440,6 +440,10 @@
             <i class="fas fa-shield-alt"></i>
             <span>Privacy</span>
           </div>
+          <div class="settings-nav-item" data-tab="account">
+            <i class="fas fa-user-cog"></i>
+            <span>Account</span>
+          </div>
         </div>
 
         <div class="settings-content">
@@ -946,6 +950,25 @@
               <div class="settings-toggle">
                 <input type="checkbox" id="showActivity" checked />
                 <label for="showActivity">Display current activity</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Tab -->
+          <div class="settings-tab" id="account-tab">
+            <h4>Account Settings</h4>
+            <p class="settings-description">Manage your account security</p>
+            
+            <div class="settings-section">
+              <label class="settings-label">Change Password</label>
+              <p class="settings-hint" style="margin-bottom: 12px;">Update your password to keep your account secure</p>
+              
+              <div style="max-width: 400px;">
+                <input type="password" id="currentPassword" placeholder="Current Password" class="settings-input" style="margin-bottom: 8px;" />
+                <input type="password" id="newPassword" placeholder="New Password" class="settings-input" style="margin-bottom: 8px;" />
+                <input type="password" id="confirmPassword" placeholder="Confirm New Password" class="settings-input" style="margin-bottom: 12px;" />
+                <button class="settings-button" id="changePasswordBtn">Change Password</button>
+                <div id="passwordChangeStatus" style="margin-top: 12px;"></div>
               </div>
             </div>
           </div>

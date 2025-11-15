@@ -85,6 +85,7 @@ export class SettingsManager {
     this.initNotificationSettings();
     this.initVoiceSettings();
     this.initPrivacySettings();
+    this.initAccountSettings();
   }
 
   open() {
@@ -482,6 +483,77 @@ export class SettingsManager {
       showActivity.checked = localStorage.getItem('wyvernShowActivity') !== 'false';
       showActivity.addEventListener('change', () => {
         localStorage.setItem('wyvernShowActivity', showActivity.checked);
+      });
+    }
+  }
+
+  initAccountSettings() {
+    const changePasswordBtn = document.getElementById('changePasswordBtn');
+    if (changePasswordBtn) {
+      changePasswordBtn.addEventListener('click', async () => {
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const statusDiv = document.getElementById('passwordChangeStatus');
+        
+        // Clear previous status
+        statusDiv.innerHTML = '';
+        
+        // Validation
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          statusDiv.innerHTML = '<div class="password-status error">❌ Please fill in all fields</div>';
+          return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+          statusDiv.innerHTML = '<div class="password-status error">❌ New passwords do not match</div>';
+          return;
+        }
+        
+        if (newPassword.length < 3) {
+          statusDiv.innerHTML = '<div class="password-status error">❌ Password must be at least 3 characters long</div>';
+          return;
+        }
+        
+        // Disable button
+        changePasswordBtn.disabled = true;
+        changePasswordBtn.textContent = 'Changing...';
+        
+        try {
+          const token = localStorage.getItem('wyvernToken') || sessionStorage.getItem('wyvernToken');
+          
+          const response = await fetch('/api/user/change-password', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ currentPassword, newPassword })
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            statusDiv.innerHTML = '<div class="password-status success">✅ Password changed successfully!</div>';
+            // Clear inputs
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            if (window.toastManager) {
+              window.toastManager.show('Password changed successfully', 'success');
+            }
+          } else {
+            statusDiv.innerHTML = `<div class="password-status error">❌ ${data.error || 'Failed to change password'}</div>`;
+          }
+          
+        } catch (error) {
+          console.error('Password change error:', error);
+          statusDiv.innerHTML = '<div class="password-status error">❌ Network error. Please try again.</div>';
+        }
+        
+        // Re-enable button
+        changePasswordBtn.disabled = false;
+        changePasswordBtn.textContent = 'Change Password';
       });
     }
   }
