@@ -1,6 +1,7 @@
 :root {
       --bg: #0a0a0f;
       --sidebar: #13131a;
+      --sidebar-light: #2a2a35;
       --sidebar-dark: #0d0d12;
       --chat-bg: #16161f;
       --chat-bg-hover: #1a1a26;
@@ -120,7 +121,7 @@
     }
 
     .server-sidebar {
-      background: var(--sidebar-dark);
+      background: var(--sidebar);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -136,7 +137,7 @@
       width: 48px;
       height: 48px;
       border-radius: 15%;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      background: var(--sidebar-light) !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -147,7 +148,11 @@
       overflow: hidden;
       cursor: pointer;
       position: relative;
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .server-icon i {
+      color: #ffffff;
     }
 
     .server-icon::before {
@@ -8462,4 +8467,105 @@ body[data-dm-mode="true"] #send-button:hover {
 .user-panel-btn.deafened {
   background: var(--voice-red);
   color: white;
+}
+
+
+/* ==================== THEME DEFINITIONS ==================== */
+
+/* Wyvern Light Theme */
+body[data-theme="wyvern-light"] {
+  --bg: #f5f5f7;
+  --sidebar: #e8e8ec;
+  --sidebar-light: #ffffff;
+  --sidebar-dark: #d8d8dc;
+  --chat-bg: #ffffff;
+  --chat-bg-hover: #f0f0f4;
+  --accent: #8b5cf6;
+  --accent-soft: #7c3aed;
+  --accent-dark: #6d28d9;
+  --accent-glow: rgba(139, 92, 246, 0.3);
+  --text: #1a1a1f;
+  --text-bright: #000000;
+  --text-muted: #6b6b70;
+  --hover-bg: #e0e0e6;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #3b82f6;
+  --border: rgba(139, 92, 246, 0.2);
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Wyvern AMOLED Theme */
+body[data-theme="wyvern-amoled"] {
+  --bg: #000000;
+  --sidebar: #000000;
+  --sidebar-light: #1a1a1a;
+  --sidebar-dark: #000000;
+  --chat-bg: #000000;
+  --chat-bg-hover: #0a0a0a;
+  --accent: #8b5cf6;
+  --accent-soft: #7c3aed;
+  --accent-dark: #6d28d9;
+  --accent-glow: rgba(139, 92, 246, 0.3);
+  --text: #ffffff;
+  --text-bright: #ffffff;
+  --text-muted: #a1a1aa;
+  --hover-bg: #0a0a0a;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #60a5fa;
+  --border: rgba(139, 92, 246, 0.2);
+  --shadow: rgba(0, 0, 0, 0.8);
+}
+
+/* Discord Theme */
+body[data-theme="discord"] {
+  --bg: #36393f;
+  --sidebar: #2f3136;
+  --sidebar-light: #4f545c;
+  --sidebar-dark: #202225;
+  --chat-bg: #36393f;
+  --chat-bg-hover: #32353b;
+  --accent: #5865f2;
+  --accent-soft: #4752c4;
+  --accent-dark: #3c45a5;
+  --accent-glow: rgba(88, 101, 242, 0.3);
+  --text: #dcddde;
+  --text-bright: #ffffff;
+  --text-muted: #96989d;
+  --hover-bg: #3c3f45;
+  --voice-green: #3ba55d;
+  --voice-red: #ed4245;
+  --link-color: #00aff4;
+  --border: rgba(88, 101, 242, 0.1);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* D4rk Theme */
+body[data-theme="d4rk"] {
+  --bg: #0d0d0d;
+  --sidebar: #1a1a1a;
+  --sidebar-light: #2f2f2f;
+  --sidebar-dark: #0a0a0a;
+  --chat-bg: #121212;
+  --chat-bg-hover: #1a1a1a;
+  --accent: #ff0080;
+  --accent-soft: #e6006f;
+  --accent-dark: #cc005f;
+  --accent-glow: rgba(255, 0, 128, 0.3);
+  --text: #e0e0e0;
+  --text-bright: #ffffff;
+  --text-muted: #909090;
+  --hover-bg: #1f1f1f;
+  --voice-green: #00ff88;
+  --voice-red: #ff0044;
+  --link-color: #00d9ff;
+  --border: rgba(255, 0, 128, 0.1);
+  --shadow: rgba(0, 0, 0, 0.7);
+}
+
+
+/* Hide DM search container */
+.dm-search-container {
+  display: none !important;
 }
