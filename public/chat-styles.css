@@ -7262,34 +7262,21 @@ body.users-panel-visible .mobile-overlay {
 }
 
 .dm-search-container {
-  padding: 16px 12px;
+  padding: 12px;
   margin-bottom: 8px;
-  background: linear-gradient(180deg, var(--sidebar-dark) 0%, var(--sidebar) 100%);
-  border-bottom: 1px solid var(--border);
   position: relative;
-}
-
-.dm-search-container::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 12px;
-  right: 12px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, var(--accent-glow) 50%, transparent 100%);
 }
 
 .dm-search {
   width: 100%;
-  padding: 12px 16px 12px 40px;
-  background: var(--bg);
-  border: 2px solid transparent;
-  border-radius: 10px;
+  padding: 10px 16px 10px 36px;
+  background: var(--sidebar-dark);
+  border: 1px solid transparent;
+  border-radius: 6px;
   color: var(--text);
   font-size: 14px;
   outline: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
   position: relative;
 }
 
@@ -7298,24 +7285,22 @@ body.users-panel-visible .mobile-overlay {
   font-family: 'Font Awesome 6 Free';
   font-weight: 900;
   position: absolute;
-  left: 28px;
+  left: 24px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   pointer-events: none;
   z-index: 1;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .dm-search:focus {
   border-color: var(--accent);
-  background: var(--chat-bg);
-  box-shadow: 0 0 0 4px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
+  background: var(--hover-bg);
 }
 
-.dm-search:focus + .dm-search-container::before {
+.dm-search:focus ~ .dm-search-container::before {
   color: var(--accent);
 }
 
@@ -8564,8 +8549,3 @@ body[data-theme="d4rk"] {
   --shadow: rgba(0, 0, 0, 0.7);
 }
 
-
-/* Hide DM search container */
-.dm-search-container {
-  display: none !important;
-}
