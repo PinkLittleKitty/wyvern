@@ -908,8 +908,8 @@
 
     .voice-ui-header {
       padding: 18px 24px;
-      background: #16161f;
-      border-bottom: 1px solid #222;
+      background: var(--chat-bg);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
       display: flex;
       justify-content: space-between;
@@ -1785,9 +1785,9 @@
       width: 100%;
       padding: 10px;
       margin-bottom: 12px;
-      border: 1px solid #2a2a3c;
+      border: 1px solid var(--border);
       border-radius: 6px;
-      background: #101016;
+      background: var(--sidebar-dark);
       color: var(--text);
       font-size: 14px;
     }
@@ -3191,9 +3191,9 @@
   width: 100%;
   max-width: 400px;
   padding: 10px;
-  border: 1px solid #2a2a3c;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  background: #101016;
+  background: var(--sidebar-dark);
   color: var(--text);
   font-size: 14px;
 }
@@ -3539,8 +3539,8 @@
 /* Users
  Panel */
 .users-panel {
-  background: #13131a;
-  border-left: 1px solid #222;
+  background: var(--sidebar);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -3554,8 +3554,8 @@ body.users-panel-hidden .users-panel {
 
 .users-panel-header {
   padding: 18px 20px;
-  background: #16161f;
-  border-bottom: 1px solid #222;
+  background: var(--sidebar-dark);
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3626,8 +3626,8 @@ body.users-panel-hidden .users-panel {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #16a34a;
-  border: 2px solid #13131a;
+  background: var(--voice-green);
+  border: 2px solid var(--sidebar);
 }
 
 .user-item-status.in-voice {
@@ -4506,6 +4506,226 @@ body[data-theme="d4rk"] {
   --shadow: rgba(0, 0, 0, 0.6);
 }
 
+/* Midnight Blue - Deep blue with cyan accents */
+body[data-theme="midnight"] {
+  --bg: #0a0e1a;
+  --sidebar: #0f1420;
+  --sidebar-dark: #080b14;
+  --chat-bg: #131829;
+  --chat-bg-hover: #1a2035;
+  --accent: #06b6d4;
+  --accent-soft: #0891b2;
+  --accent-dark: #0e7490;
+  --accent-glow: rgba(6, 182, 212, 0.3);
+  --text: #e0f2fe;
+  --text-bright: #f0f9ff;
+  --text-muted: #94a3b8;
+  --hover-bg: #1e293b;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #22d3ee;
+  --border: rgba(6, 182, 212, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Forest - Green nature theme */
+body[data-theme="forest"] {
+  --bg: #0a1409;
+  --sidebar: #0f1e0d;
+  --sidebar-dark: #071007;
+  --chat-bg: #132812;
+  --chat-bg-hover: #1a3518;
+  --accent: #22c55e;
+  --accent-soft: #16a34a;
+  --accent-dark: #15803d;
+  --accent-glow: rgba(34, 197, 94, 0.3);
+  --text: #dcfce7;
+  --text-bright: #f0fdf4;
+  --text-muted: #86efac;
+  --hover-bg: #1f3d1c;
+  --voice-green: #22c55e;
+  --voice-red: #ef4444;
+  --link-color: #4ade80;
+  --border: rgba(34, 197, 94, 0.15);
+  --shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Sunset - Warm orange/pink theme */
+body[data-theme="sunset"] {
+  --bg: #1a0a0a;
+  --sidebar: #2a1414;
+  --sidebar-dark: #140808;
+  --chat-bg: #2d1515;
+  --chat-bg-hover: #3d1f1f;
+  --accent: #f97316;
+  --accent-soft: #ea580c;
+  --accent-dark: #c2410c;
+  --accent-glow: rgba(249, 115, 22, 0.3);
+  --text: #fed7aa;
+  --text-bright: #ffedd5;
+  --text-muted: #fdba74;
+  --hover-bg: #4a2626;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #fb923c;
+  --border: rgba(249, 115, 22, 0.15);
+  --shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Ocean - Blue/teal theme */
+body[data-theme="ocean"] {
+  --bg: #0a1420;
+  --sidebar: #0f1e2e;
+  --sidebar-dark: #081018;
+  --chat-bg: #132838;
+  --chat-bg-hover: #1a3548;
+  --accent: #0ea5e9;
+  --accent-soft: #0284c7;
+  --accent-dark: #0369a1;
+  --accent-glow: rgba(14, 165, 233, 0.3);
+  --text: #dbeafe;
+  --text-bright: #eff6ff;
+  --text-muted: #93c5fd;
+  --hover-bg: #1e3a52;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #38bdf8;
+  --border: rgba(14, 165, 233, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Rose - Pink/magenta theme */
+body[data-theme="rose"] {
+  --bg: #1a0a14;
+  --sidebar: #2a1420;
+  --sidebar-dark: #140810;
+  --chat-bg: #2d1528;
+  --chat-bg-hover: #3d1f35;
+  --accent: #ec4899;
+  --accent-soft: #db2777;
+  --accent-dark: #be185d;
+  --accent-glow: rgba(236, 72, 153, 0.3);
+  --text: #fce7f3;
+  --text-bright: #fdf2f8;
+  --text-muted: #f9a8d4;
+  --hover-bg: #4a2640;
+  --voice-green: #10b981;
+  --voice-red: #ef4444;
+  --link-color: #f472b6;
+  --border: rgba(236, 72, 153, 0.15);
+  --shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Dracula - Popular dark theme */
+body[data-theme="dracula"] {
+  --bg: #282a36;
+  --sidebar: #21222c;
+  --sidebar-dark: #191a21;
+  --chat-bg: #282a36;
+  --chat-bg-hover: #313341;
+  --accent: #bd93f9;
+  --accent-soft: #a87fe8;
+  --accent-dark: #9370db;
+  --accent-glow: rgba(189, 147, 249, 0.3);
+  --text: #f8f8f2;
+  --text-bright: #ffffff;
+  --text-muted: #6272a4;
+  --hover-bg: #44475a;
+  --voice-green: #50fa7b;
+  --voice-red: #ff5555;
+  --link-color: #8be9fd;
+  --border: rgba(189, 147, 249, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Nord - Cool blue/grey theme */
+body[data-theme="nord"] {
+  --bg: #2e3440;
+  --sidebar: #3b4252;
+  --sidebar-dark: #2a2f3a;
+  --chat-bg: #2e3440;
+  --chat-bg-hover: #3b4252;
+  --accent: #88c0d0;
+  --accent-soft: #81a1c1;
+  --accent-dark: #5e81ac;
+  --accent-glow: rgba(136, 192, 208, 0.3);
+  --text: #eceff4;
+  --text-bright: #eceff4;
+  --text-muted: #d8dee9;
+  --hover-bg: #434c5e;
+  --voice-green: #a3be8c;
+  --voice-red: #bf616a;
+  --link-color: #8fbcbb;
+  --border: rgba(136, 192, 208, 0.15);
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* Monokai - Classic code editor theme */
+body[data-theme="monokai"] {
+  --bg: #272822;
+  --sidebar: #1e1f1c;
+  --sidebar-dark: #1a1b17;
+  --chat-bg: #272822;
+  --chat-bg-hover: #2f3129;
+  --accent: #a6e22e;
+  --accent-soft: #8fc929;
+  --accent-dark: #7ab023;
+  --accent-glow: rgba(166, 226, 46, 0.3);
+  --text: #f8f8f2;
+  --text-bright: #ffffff;
+  --text-muted: #75715e;
+  --hover-bg: #3e3d32;
+  --voice-green: #a6e22e;
+  --voice-red: #f92672;
+  --link-color: #66d9ef;
+  --border: rgba(166, 226, 46, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Gruvbox - Retro warm theme */
+body[data-theme="gruvbox"] {
+  --bg: #282828;
+  --sidebar: #1d2021;
+  --sidebar-dark: #181919;
+  --chat-bg: #282828;
+  --chat-bg-hover: #3c3836;
+  --accent: #fabd2f;
+  --accent-soft: #d79921;
+  --accent-dark: #b57614;
+  --accent-glow: rgba(250, 189, 47, 0.3);
+  --text: #ebdbb2;
+  --text-bright: #fbf1c7;
+  --text-muted: #a89984;
+  --hover-bg: #504945;
+  --voice-green: #b8bb26;
+  --voice-red: #fb4934;
+  --link-color: #83a598;
+  --border: rgba(250, 189, 47, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Tokyo Night - Modern dark theme */
+body[data-theme="tokyo-night"] {
+  --bg: #1a1b26;
+  --sidebar: #16161e;
+  --sidebar-dark: #101014;
+  --chat-bg: #1a1b26;
+  --chat-bg-hover: #24283b;
+  --accent: #7aa2f7;
+  --accent-soft: #7dcfff;
+  --accent-dark: #3d59a1;
+  --accent-glow: rgba(122, 162, 247, 0.3);
+  --text: #c0caf5;
+  --text-bright: #ffffff;
+  --text-muted: #565f89;
+  --hover-bg: #292e42;
+  --voice-green: #9ece6a;
+  --voice-red: #f7768e;
+  --link-color: #7dcfff;
+  --border: rgba(122, 162, 247, 0.15);
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
 /* Settings Modal */
 .settings-modal-content {
   max-width: 900px;
@@ -4858,6 +5078,146 @@ body[data-theme="d4rk"] {
 .d4rk-preview .theme-preview-bar,
 .d4rk-preview .theme-preview-message {
   background: #ef4444;
+}
+
+/* Midnight Blue Preview */
+.midnight-preview {
+  background: #131829;
+}
+
+.midnight-preview .theme-preview-sidebar {
+  background: #0f1420;
+}
+
+.midnight-preview .theme-preview-bar,
+.midnight-preview .theme-preview-message {
+  background: #06b6d4;
+}
+
+/* Forest Preview */
+.forest-preview {
+  background: #132812;
+}
+
+.forest-preview .theme-preview-sidebar {
+  background: #0f1e0d;
+}
+
+.forest-preview .theme-preview-bar,
+.forest-preview .theme-preview-message {
+  background: #22c55e;
+}
+
+/* Sunset Preview */
+.sunset-preview {
+  background: #2d1515;
+}
+
+.sunset-preview .theme-preview-sidebar {
+  background: #2a1414;
+}
+
+.sunset-preview .theme-preview-bar,
+.sunset-preview .theme-preview-message {
+  background: #f97316;
+}
+
+/* Ocean Preview */
+.ocean-preview {
+  background: #132838;
+}
+
+.ocean-preview .theme-preview-sidebar {
+  background: #0f1e2e;
+}
+
+.ocean-preview .theme-preview-bar,
+.ocean-preview .theme-preview-message {
+  background: #0ea5e9;
+}
+
+/* Rose Preview */
+.rose-preview {
+  background: #2d1528;
+}
+
+.rose-preview .theme-preview-sidebar {
+  background: #2a1420;
+}
+
+.rose-preview .theme-preview-bar,
+.rose-preview .theme-preview-message {
+  background: #ec4899;
+}
+
+/* Dracula Preview */
+.dracula-preview {
+  background: #282a36;
+}
+
+.dracula-preview .theme-preview-sidebar {
+  background: #21222c;
+}
+
+.dracula-preview .theme-preview-bar,
+.dracula-preview .theme-preview-message {
+  background: #bd93f9;
+}
+
+/* Nord Preview */
+.nord-preview {
+  background: #2e3440;
+}
+
+.nord-preview .theme-preview-sidebar {
+  background: #3b4252;
+}
+
+.nord-preview .theme-preview-bar,
+.nord-preview .theme-preview-message {
+  background: #88c0d0;
+}
+
+/* Monokai Preview */
+.monokai-preview {
+  background: #272822;
+}
+
+.monokai-preview .theme-preview-sidebar {
+  background: #1e1f1c;
+}
+
+.monokai-preview .theme-preview-bar,
+.monokai-preview .theme-preview-message {
+  background: #a6e22e;
+}
+
+/* Gruvbox Preview */
+.gruvbox-preview {
+  background: #282828;
+}
+
+.gruvbox-preview .theme-preview-sidebar {
+  background: #1d2021;
+}
+
+.gruvbox-preview .theme-preview-bar,
+.gruvbox-preview .theme-preview-message {
+  background: #fabd2f;
+}
+
+/* Tokyo Night Preview */
+.tokyo-night-preview {
+  background: #1a1b26;
+}
+
+.tokyo-night-preview .theme-preview-sidebar {
+  background: #16161e;
+}
+
+.tokyo-night-preview .theme-preview-bar,
+.tokyo-night-preview .theme-preview-message {
+  background: #7aa2f7;
 }
 
 /* Custom Theme Preview */

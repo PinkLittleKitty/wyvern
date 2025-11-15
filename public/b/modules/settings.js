@@ -4,7 +4,58 @@ export class SettingsManager {
     this.theme = themeManager;
     this.sound = soundManager;
     this.modal = document.getElementById('settingsModal');
+    this.voiceManager = null; // Will be set externally
     this.init();
+  }
+
+  setVoiceManager(voiceManager) {
+    this.voiceManager = voiceManager;
+    this.loadVoicePreferences();
+  }
+
+  loadVoicePreferences() {
+    // Load saved volume preferences
+    const savedVolumes = localStorage.getItem('wyvernUserVolumes');
+    if (savedVolumes && this.voiceManager) {
+      try {
+        const volumes = JSON.parse(savedVolumes);
+        Object.entries(volumes).forEach(([username, volume]) => {
+          this.voiceManager.userVolumes.set(username, volume);
+        });
+        console.log('✅ Loaded saved volume preferences');
+      } catch (e) {
+        console.error('Failed to load volume preferences:', e);
+      }
+    }
+
+    // Load saved local mutes
+    const savedMutes = localStorage.getItem('wyvernLocalMutes');
+    if (savedMutes && this.voiceManager) {
+      try {
+        const mutes = JSON.parse(savedMutes);
+        mutes.forEach(username => {
+          this.voiceManager.localMutedUsers.add(username);
+        });
+        console.log('✅ Loaded saved local mutes');
+      } catch (e) {
+        console.error('Failed to load local mutes:', e);
+      }
+    }
+  }
+
+  saveVoicePreferences() {
+    if (!this.voiceManager) return;
+
+    // Save volume preferences
+    const volumes = {};
+    this.voiceManager.userVolumes.forEach((volume, username) => {
+      volumes[username] = volume;
+    });
+    localStorage.setItem('wyvernUserVolumes', JSON.stringify(volumes));
+
+    // Save local mutes
+    const mutes = Array.from(this.voiceManager.localMutedUsers);
+    localStorage.setItem('wyvernLocalMutes', JSON.stringify(mutes));
   }
 
   init() {

@@ -41,6 +41,7 @@ export class VoiceManager {
         this.setupSocketHandlers();
         this.setupUIHandlers();
         this.setupContextMenu();
+        this.loadPreferences();
     }
 
     setupSocketHandlers() {
@@ -452,6 +453,9 @@ export class VoiceManager {
 
         // Update visual indicator
         this.updateParticipantStatus(username);
+
+        // Save preferences
+        this.savePreferences();
     }
 
     setUserVolume(username, volume) {
@@ -463,6 +467,52 @@ export class VoiceManager {
         const audio = document.getElementById(`audio-${username}`);
         if (audio) {
             audio.volume = volume;
+        }
+
+        // Save preferences
+        this.savePreferences();
+    }
+
+    savePreferences() {
+        // Save volume preferences
+        const volumes = {};
+        this.userVolumes.forEach((volume, username) => {
+            volumes[username] = volume;
+        });
+        localStorage.setItem('wyvernUserVolumes', JSON.stringify(volumes));
+
+        // Save local mutes
+        const mutes = Array.from(this.localMutedUsers);
+        localStorage.setItem('wyvernLocalMutes', JSON.stringify(mutes));
+    }
+
+    loadPreferences() {
+        // Load saved volume preferences
+        const savedVolumes = localStorage.getItem('wyvernUserVolumes');
+        if (savedVolumes) {
+            try {
+                const volumes = JSON.parse(savedVolumes);
+                Object.entries(volumes).forEach(([username, volume]) => {
+                    this.userVolumes.set(username, volume);
+                });
+                console.log('✅ Loaded saved volume preferences');
+            } catch (e) {
+                console.error('Failed to load volume preferences:', e);
+            }
+        }
+
+        // Load saved local mutes
+        const savedMutes = localStorage.getItem('wyvernLocalMutes');
+        if (savedMutes) {
+            try {
+                const mutes = JSON.parse(savedMutes);
+                mutes.forEach(username => {
+                    this.localMutedUsers.add(username);
+                });
+                console.log('✅ Loaded saved local mutes');
+            } catch (e) {
+                console.error('Failed to load local mutes:', e);
+            }
         }
     }
 
