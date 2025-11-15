@@ -79,6 +79,8 @@
       overflow: hidden;
       position: relative;
     }
+    
+    /* Default grid order matches HTML: sidebar, chat, users */
 
     body::before {
       content: '';
@@ -107,12 +109,14 @@
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
+      min-width: 0;
     }
 
     .sidebar-top {
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 0;
     }
 
     .server-sidebar {
@@ -198,6 +202,8 @@
       font-size: 14px;
       flex: 1;
       overflow-y: auto;
+      min-height: 0;
+      min-width: 0;
     }
 
     .channel-section h4 {
@@ -1096,6 +1102,8 @@
       flex-direction: column;
       background: var(--chat-bg);
       height: 100vh;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .chat-header {
@@ -3545,6 +3553,8 @@
   flex-direction: column;
   overflow: hidden;
   transition: width 0.3s ease;
+  min-width: 0;
+  min-height: 0;
 }
 
 body.users-panel-hidden .users-panel {
@@ -3587,6 +3597,7 @@ body.users-panel-hidden .users-panel {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 0;
 }
 
 .user-item {
@@ -5258,6 +5269,613 @@ body[data-theme="tokyo-night"] {
 
 .theme-option.selected .theme-option-check {
   display: flex;
+}
+
+/* Layout Selector */
+.layout-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.layout-option {
+  position: relative;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
+  background: var(--hover-bg);
+}
+
+.layout-option:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.layout-option.selected {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.layout-preview {
+  width: 100%;
+  height: 60px;
+  border-radius: 4px;
+  background: var(--bg);
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+
+.layout-preview-left,
+.layout-preview-center,
+.layout-preview-right {
+  background: var(--accent);
+  opacity: 0.6;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.layout-preview-left {
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.layout-preview-left.stacked {
+  width: 70px;
+  background: linear-gradient(to bottom, var(--accent) 0%, var(--accent) 48%, transparent 48%, transparent 52%, rgba(139, 92, 246, 0.5) 52%, rgba(139, 92, 246, 0.5) 100%);
+}
+
+.layout-preview-left.narrow {
+  width: 35px;
+}
+
+.layout-preview-center {
+  flex: 1;
+  order: 2;
+}
+
+.layout-preview-center.wide {
+  flex: 2;
+}
+
+.layout-preview-center.full {
+  flex: 1;
+  width: 100%;
+}
+
+.layout-preview-right {
+  width: 45px;
+  flex-shrink: 0;
+  order: 3;
+}
+
+.layout-preview-right.narrow {
+  width: 30px;
+}
+
+/* IRC layout preview - reorder elements */
+.layout-option[data-layout="irc"] .layout-preview-left {
+  order: 1;
+}
+
+.layout-option[data-layout="irc"] .layout-preview-right {
+  order: 2;
+}
+
+.layout-option[data-layout="irc"] .layout-preview-center {
+  order: 3;
+}
+
+.layout-option-label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.layout-option-desc {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.layout-option-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+}
+
+.layout-option.selected .layout-option-check {
+  display: flex;
+}
+
+/* Custom Layout Editor */
+.custom-layout-editor {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--hover-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.layout-editor-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.layout-editor-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.layout-editor-control label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-container input[type="range"] {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+  transition: all 0.2s;
+}
+
+.slider-container input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+}
+
+.slider-container input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+  transition: all 0.2s;
+}
+
+.slider-container input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
+}
+
+.slider-value {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: right;
+}
+
+.layout-editor-preview {
+  margin-top: 12px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.layout-preview-live {
+  width: 100%;
+  height: 80px;
+  border-radius: 4px;
+  background: var(--sidebar-dark);
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  transition: all 0.3s ease;
+}
+
+.layout-preview-live .layout-preview-left,
+.layout-preview-live .layout-preview-center,
+.layout-preview-live .layout-preview-right {
+  background: var(--accent);
+  opacity: 0.7;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Panel Arrangement Editor */
+.layout-editor-arrangement {
+  margin-bottom: 24px;
+}
+
+.layout-editor-arrangement label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.panel-arrangement-container {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 2px dashed var(--border);
+}
+
+.panel-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--hover-bg);
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  transition: all 0.2s;
+}
+
+.panel-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.panel-icon {
+  font-size: 32px;
+}
+
+.panel-name {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.panel-move-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.panel-move-btn:hover {
+  background: var(--accent-soft);
+  transform: scale(1.1);
+}
+
+.panel-move-btn:disabled {
+  background: var(--text-muted);
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.layout-preview-live {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+}
+
+.layout-preview-panel {
+  background: var(--accent);
+  opacity: 0.7;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  min-height: 60px;
+}
+
+.layout-preview-panel[data-panel="sidebar"] {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.layout-preview-panel[data-panel="chat"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.layout-preview-panel[data-panel="users"] {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* Layout Styles */
+
+/* Discord Layout - Standard (Sidebar | Chat | Users) */
+/* HTML order: sidebar-container, chat-area, users-panel */
+body[data-layout="discord"] {
+  grid-template-columns: 330px 1fr 250px;
+}
+
+body[data-layout="discord"].users-panel-hidden {
+  grid-template-columns: 330px 1fr 0;
+}
+
+body[data-layout="discord"] .sidebar-container {
+  position: static;
+  width: auto;
+  max-width: none;
+}
+
+body[data-layout="discord"] .chat-area {
+  position: static;
+}
+
+body[data-layout="discord"] .users-panel {
+  position: static;
+  width: auto;
+}
+
+/* TeamSpeak Layout - (Channels & Users Stacked | Chat Full Width) */
+body[data-layout="teamspeak"] {
+  grid-template-columns: 330px 1fr;
+  position: relative;
+}
+
+body[data-layout="teamspeak"] .sidebar-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 330px;
+  max-width: 330px;
+}
+
+body[data-layout="teamspeak"] .sidebar-top {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin-bottom: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+body[data-layout="teamspeak"] .server-sidebar {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+body[data-layout="teamspeak"] .channel-list {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body[data-layout="teamspeak"] .user-panel {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+body[data-layout="teamspeak"] .chat-area {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-layout="teamspeak"] .users-panel {
+  position: fixed;
+  bottom: 70px;
+  left: 0;
+  width: 330px;
+  height: calc(35vh - 70px);
+  max-height: 350px;
+  border-left: none;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  z-index: 2;
+}
+
+body[data-layout="teamspeak"] .users-panel-header {
+  padding: 12px 16px;
+  background: var(--sidebar-dark);
+}
+
+body[data-layout="teamspeak"] .toggle-users-btn {
+  display: none;
+}
+
+/* Compact Layout - (Minimal Sidebar | Wide Chat | Users) */
+body[data-layout="compact"] {
+  grid-template-columns: 180px 1fr 240px;
+}
+
+body[data-layout="compact"].users-panel-hidden {
+  grid-template-columns: 180px 1fr 0;
+}
+
+body[data-layout="compact"] .sidebar-container {
+  width: 180px;
+  position: static;
+  max-width: none;
+}
+
+body[data-layout="compact"] .chat-area {
+  position: static;
+}
+
+body[data-layout="compact"] .server-sidebar {
+  width: 60px;
+  padding: 8px 0;
+}
+
+body[data-layout="compact"] .server-icon {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+}
+
+body[data-layout="compact"] .channel-list {
+  padding: 12px 6px;
+  font-size: 13px;
+  gap: 8px;
+}
+
+body[data-layout="compact"] .channel {
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+body[data-layout="compact"] .channel-section h4 {
+  font-size: 11px;
+  padding: 0 6px;
+}
+
+body[data-layout="compact"] .user-panel {
+  padding: 8px;
+  gap: 8px;
+}
+
+body[data-layout="compact"] .user-panel-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+body[data-layout="compact"] .user-panel-name {
+  font-size: 13px;
+}
+
+body[data-layout="compact"] .user-panel-status-text {
+  font-size: 11px;
+}
+
+body[data-layout="compact"] .users-panel {
+  width: 240px;
+  position: static;
+}
+
+/* Slack Layout - (Narrow Sidebar | Full Width Chat, No Users) */
+body[data-layout="slack"] {
+  grid-template-columns: 260px 1fr;
+}
+
+body[data-layout="slack"] .sidebar-container {
+  width: 260px;
+  position: static;
+  max-width: none;
+}
+
+body[data-layout="slack"] .chat-area {
+  position: static;
+}
+
+body[data-layout="slack"] .server-sidebar {
+  width: 70px;
+}
+
+body[data-layout="slack"] .users-panel {
+  display: none;
+}
+
+body[data-layout="slack"] .toggle-users-btn {
+  display: none;
+}
+
+/* IRC Classic Layout - (Channels | Users | Chat) */
+/* Need to reorder: sidebar stays 1st, users moves to 2nd, chat to 3rd */
+body[data-layout="irc"] {
+  grid-template-columns: 240px 200px 1fr;
+  grid-template-areas: "sidebar users chat";
+}
+
+body[data-layout="irc"].users-panel-hidden {
+  grid-template-columns: 240px 0 1fr;
+}
+
+body[data-layout="irc"] .sidebar-container {
+  grid-area: sidebar;
+  width: 240px;
+  position: static;
+  max-width: none;
+}
+
+body[data-layout="irc"] .chat-area {
+  grid-area: chat;
+  position: static;
+}
+
+body[data-layout="irc"] .users-panel {
+  grid-area: users;
+  width: 200px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  position: static;
+}
+
+body[data-layout="irc"] .server-sidebar {
+  width: 60px;
+}
+
+body[data-layout="irc"] .channel-list {
+  padding: 16px 8px;
+  font-size: 13px;
+}
+
+/* Custom Layout - User-defined widths and order */
+body[data-layout="custom"] .sidebar-container {
+  position: static;
+  width: auto;
+  max-width: none;
+}
+
+body[data-layout="custom"] .chat-area {
+  position: static;
+}
+
+body[data-layout="custom"] .users-panel {
+  position: static;
+  width: auto;
 }
 
 /* Compact Mode */

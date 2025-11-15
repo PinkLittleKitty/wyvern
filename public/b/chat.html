@@ -702,10 +702,153 @@
             </div>
 
             <div class="settings-section">
+              <label class="settings-label">Layout</label>
+              <p class="settings-hint">Choose your preferred layout style</p>
+              <div class="layout-selector">
+                <div class="layout-option" data-layout="discord">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left"></div>
+                    <div class="layout-preview-center"></div>
+                    <div class="layout-preview-right"></div>
+                  </div>
+                  <div class="layout-option-label">Discord</div>
+                  <div class="layout-option-desc">Sidebar • Chat • Users</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
+                <div class="layout-option" data-layout="teamspeak">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left stacked"></div>
+                    <div class="layout-preview-center wide"></div>
+                  </div>
+                  <div class="layout-option-label">TeamSpeak</div>
+                  <div class="layout-option-desc">Channels & Users • Chat</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
+                <div class="layout-option" data-layout="compact">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left narrow"></div>
+                    <div class="layout-preview-center wide"></div>
+                    <div class="layout-preview-right"></div>
+                  </div>
+                  <div class="layout-option-label">Compact</div>
+                  <div class="layout-option-desc">Channels • Chat • Users</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
+                <div class="layout-option" data-layout="slack">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left narrow"></div>
+                    <div class="layout-preview-center full"></div>
+                  </div>
+                  <div class="layout-option-label">Slack</div>
+                  <div class="layout-option-desc">Sidebar • Chat (Full)</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
+                <div class="layout-option" data-layout="irc">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left narrow"></div>
+                    <div class="layout-preview-right narrow"></div>
+                    <div class="layout-preview-center"></div>
+                  </div>
+                  <div class="layout-option-label">IRC Classic</div>
+                  <div class="layout-option-desc">Channels • Users • Chat</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
+                <div class="layout-option" data-layout="custom">
+                  <div class="layout-preview">
+                    <div class="layout-preview-left"></div>
+                    <div class="layout-preview-center"></div>
+                    <div class="layout-preview-right"></div>
+                  </div>
+                  <div class="layout-option-label">Custom</div>
+                  <div class="layout-option-desc">Customize widths</div>
+                  <div class="layout-option-check"><i class="fas fa-check"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section custom-layout-editor" id="customLayoutEditor" style="display: none;">
+              <label class="settings-label">Custom Layout Editor</label>
+              <p class="settings-hint">Arrange panels and adjust their widths</p>
+
+              <div class="layout-editor-controls">
+                <div class="layout-editor-arrangement">
+                  <label>Panel Arrangement</label>
+                  <p class="settings-hint">Click arrows to reorder panels</p>
+                  <div class="panel-arrangement-container" id="panelArrangement">
+                    <div class="panel-item" data-panel="sidebar">
+                      <span class="panel-icon">📁</span>
+                      <span class="panel-name">Sidebar</span>
+                      <div class="panel-controls">
+                        <button class="panel-move-btn" data-direction="left" title="Move left">←</button>
+                        <button class="panel-move-btn" data-direction="right" title="Move right">→</button>
+                      </div>
+                    </div>
+                    <div class="panel-item" data-panel="chat">
+                      <span class="panel-icon">💬</span>
+                      <span class="panel-name">Chat</span>
+                      <div class="panel-controls">
+                        <button class="panel-move-btn" data-direction="left" title="Move left">←</button>
+                        <button class="panel-move-btn" data-direction="right" title="Move right">→</button>
+                      </div>
+                    </div>
+                    <div class="panel-item" data-panel="users">
+                      <span class="panel-icon">👥</span>
+                      <span class="panel-name">Users</span>
+                      <div class="panel-controls">
+                        <button class="panel-move-btn" data-direction="left" title="Move left">←</button>
+                        <button class="panel-move-btn" data-direction="right" title="Move right">→</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="layout-editor-control">
+                  <label>Sidebar Width</label>
+                  <div class="slider-container">
+                    <input type="range" id="customSidebarWidth" min="180" max="400" value="330" step="10" />
+                    <span class="slider-value" id="customSidebarValue">330px</span>
+                  </div>
+                </div>
+
+                <div class="layout-editor-control">
+                  <label>Users Panel Width</label>
+                  <div class="slider-container">
+                    <input type="range" id="customUsersWidth" min="0" max="350" value="250" step="10" />
+                    <span class="slider-value" id="customUsersValue">250px</span>
+                  </div>
+                  <p class="settings-hint">Set to 0 to hide users panel</p>
+                </div>
+
+                <div class="layout-editor-preview">
+                  <label>Preview</label>
+                  <div class="layout-preview-live" id="livePreview">
+                    <div class="layout-preview-panel" data-panel="sidebar" id="previewSidebar">
+                      <span>📁</span>
+                    </div>
+                    <div class="layout-preview-panel" data-panel="chat" id="previewChat">
+                      <span>💬</span>
+                    </div>
+                    <div class="layout-preview-panel" data-panel="users" id="previewUsers">
+                      <span>👥</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button class="settings-button" id="applyCustomLayout">Apply Custom Layout</button>
+                <button class="settings-button secondary" id="resetCustomLayout">Reset to Discord</button>
+              </div>
+            </div>
+
+            <div class="settings-section">
               <label class="settings-label">Message Display</label>
               <div class="settings-toggle">
                 <input type="checkbox" id="compactMode" />
-                <label for="compactMode">Compact Mode</label>
+                <label for="compactMode">Compact Messages</label>
               </div>
               <p class="settings-hint">Show more messages at once</p>
             </div>
