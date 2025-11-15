@@ -21,6 +21,11 @@ export class VoiceManager {
         this.isCameraOn = false;
         this.isScreenSharing = false;
 
+        // Context menu state
+        this.contextMenuTarget = null;
+        this.localMutedUsers = new Set(); // Users muted locally
+        this.userVolumes = new Map(); // Per-user volume settings
+
         // WebRTC configuration
         this.rtcConfig = {
             iceServers: [
@@ -35,6 +40,7 @@ export class VoiceManager {
     init() {
         this.setupSocketHandlers();
         this.setupUIHandlers();
+        this.setupContextMenu();
     }
 
     setupSocketHandlers() {
@@ -108,13 +114,13 @@ export class VoiceManager {
             const state = this.userVoiceStates.get(data.username) || {};
             state.camera = data.camera;
             this.userVoiceStates.set(data.username, state);
-            
+
             // Remove video display if camera is turned off
             if (!data.camera) {
                 this.removeVideoFromChannelList(data.username);
                 this.remoteVideoStreams.delete(data.username);
             }
-            
+
             this.updateParticipantStatus(data.username);
         });
 
@@ -239,6 +245,255 @@ export class VoiceManager {
         const voiceScreenShare = document.getElementById('voiceScreenShare');
         if (voiceScreenShare) {
             voiceScreenShare.addEventListener('click', () => this.toggleScreenShare());
+        }
+    }
+
+    setupContextMenu() {
+        const contextMenu = document.getElementById('contextMenu');
+        if (!contextMenu) return;
+
+        // Hide context menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!contextMenu.contains(e.target)) {
+                this.hideContextMenu();
+            }
+        });
+
+        // Context menu actions
+        const contextProfile = document.getElementById('contextProfile');
+        if (contextProfile) {
+            contextProfile.addEventListener('click', () => {
+                if (this.contextMenuTarget && window.openProfileModal) {
+                    window.openProfileModal(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+
+        const contextLocalMute = document.getElementById('contextLocalMute');
+        if (contextLocalMute) {
+            contextLocalMute.addEventListener('click', () => {
+                if (this.contextMenuTarget) {
+                    this.toggleLocalMute(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+
+        // Volume slider
+        const volumeSlider = document.getElementById('contextVolumeSlider');
+        const volumeDisplay = document.getElementById('contextVolumeDisplay');
+        if (volumeSlider && volumeDisplay) {
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value);
+                volumeDisplay.textContent = `${volume}%`;
+
+                if (this.contextMenuTarget) {
+                    this.setUserVolume(this.contextMenuTarget, volume / 100);
+                }
+            });
+        }
+
+        // Admin actions (will be shown/hidden based on admin status)
+        const contextServerMute = document.getElementById('contextServerMute');
+        if (contextServerMute) {
+            contextServerMute.addEventListener('click', () => {
+                if (this.contextMenuTarget) {
+                    this.serverMuteUser(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+
+        const contextServerDeafen = document.getElementById('contextServerDeafen');
+        if (contextServerDeafen) {
+            contextServerDeafen.addEventListener('click', () => {
+                if (this.contextMenuTarget) {
+                    this.serverDeafenUser(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+
+        const contextKickVoice = document.getElementById('contextKickVoice');
+        if (contextKickVoice) {
+            contextKickVoice.addEventListener('click', () => {
+                if (this.contextMenuTarget) {
+                    this.kickFromVoice(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+
+        const contextBanUser = document.getElementById('contextBanUser');
+        if (contextBanUser) {
+            contextBanUser.addEventListener('click', () => {
+                if (this.contextMenuTarget) {
+                    this.banUser(this.contextMenuTarget);
+                }
+                this.hideContextMenu();
+            });
+        }
+    }
+
+    showContextMenu(event, username, isAdmin) {
+        console.log(`📋 showContextMenu called for ${username}, isAdmin: ${isAdmin}`);
+        event.preventDefault();
+        event.stopPropagation();
+
+        const myUsername = this.socket.auth?.username || sessionStorage.getItem('wyvernUsername');
+
+        // Don't show context menu for self
+        if (username === myUsername) {
+            console.log(`⏭️ Not showing context menu for self`);
+            return;
+        }
+
+        this.contextMenuTarget = username;
+
+        const contextMenu = document.getElementById('contextMenu');
+        if (!contextMenu) {
+            console.error('❌ Context menu element not found!');
+            return;
+        }
+
+        console.log(`✅ Context menu element found, positioning at (${event.clientX}, ${event.clientY})`);
+
+        // Position the menu
+        const x = event.clientX;
+        const y = event.clientY;
+
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+
+        // Update header
+        const header = document.getElementById('contextMenuHeader');
+        if (header) {
+            header.textContent = username;
+        }
+
+        // Update local mute button text
+        const localMuteBtn = document.getElementById('contextLocalMute');
+        if (localMuteBtn) {
+            const isMuted = this.localMutedUsers.has(username);
+            const muteText = localMuteBtn.querySelector('span:last-child');
+            if (muteText) {
+                muteText.textContent = isMuted ? 'Unmute for Me' : 'Mute for Me';
+            }
+        }
+
+        // Update volume slider
+        const volumeSlider = document.getElementById('contextVolumeSlider');
+        const volumeDisplay = document.getElementById('contextVolumeDisplay');
+        if (volumeSlider && volumeDisplay) {
+            const currentVolume = this.userVolumes.get(username) || 1.0;
+            const volumePercent = Math.round(currentVolume * 100);
+            volumeSlider.value = volumePercent;
+            volumeDisplay.textContent = `${volumePercent}%`;
+        }
+
+        // Show/hide admin options
+        const adminItems = [
+            'contextServerMute',
+            'contextServerDeafen',
+            'contextKickVoice',
+            'contextBanUser',
+            'contextAdminSeparator'
+        ];
+
+        adminItems.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.display = isAdmin ? '' : 'none';
+            }
+        });
+
+        // Show the menu
+        contextMenu.classList.add('show');
+
+        // Adjust position if menu goes off screen
+        setTimeout(() => {
+            const rect = contextMenu.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                contextMenu.style.left = `${window.innerWidth - rect.width - 10}px`;
+            }
+            if (rect.bottom > window.innerHeight) {
+                contextMenu.style.top = `${window.innerHeight - rect.height - 10}px`;
+            }
+        }, 0);
+    }
+
+    hideContextMenu() {
+        const contextMenu = document.getElementById('contextMenu');
+        if (contextMenu) {
+            contextMenu.classList.remove('show');
+        }
+        this.contextMenuTarget = null;
+    }
+
+    toggleLocalMute(username) {
+        const audio = document.getElementById(`audio-${username}`);
+
+        if (this.localMutedUsers.has(username)) {
+            // Unmute
+            this.localMutedUsers.delete(username);
+            if (audio) {
+                audio.muted = false;
+            }
+            this.toast.show(`Unmuted ${username} for you`, 'success');
+        } else {
+            // Mute
+            this.localMutedUsers.add(username);
+            if (audio) {
+                audio.muted = true;
+            }
+            this.toast.show(`Muted ${username} for you`, 'success');
+        }
+
+        // Update visual indicator
+        this.updateParticipantStatus(username);
+    }
+
+    setUserVolume(username, volume) {
+        // Clamp volume between 0 and 2 (0-200%)
+        volume = Math.max(0, Math.min(2, volume));
+
+        this.userVolumes.set(username, volume);
+
+        const audio = document.getElementById(`audio-${username}`);
+        if (audio) {
+            audio.volume = volume;
+        }
+    }
+
+    // Admin actions
+    serverMuteUser(username) {
+        if (!this.currentChannel) return;
+
+        this.socket.emit('adminServerMute', { username });
+        this.toast.show(`Server muted ${username}`, 'success');
+    }
+
+    serverDeafenUser(username) {
+        if (!this.currentChannel) return;
+
+        this.socket.emit('adminServerDeafen', { username });
+        this.toast.show(`Server deafened ${username}`, 'success');
+    }
+
+    kickFromVoice(username) {
+        if (!this.currentChannel) return;
+
+        if (confirm(`Kick ${username} from voice channel?`)) {
+            this.socket.emit('adminKickFromVoice', { username });
+            this.toast.show(`Kicked ${username} from voice`, 'success');
+        }
+    }
+
+    banUser(username) {
+        if (confirm(`Ban ${username} from the server? This action cannot be undone.`)) {
+            this.socket.emit('adminBanUser', { username });
+            this.toast.show(`Banned ${username}`, 'success');
         }
     }
 
@@ -450,11 +705,20 @@ export class VoiceManager {
         audio.id = `audio-${username}`;
         audio.srcObject = stream;
         audio.autoplay = true;
-        audio.volume = 1.0;
+
+        // Apply saved volume or default to 1.0
+        const savedVolume = this.userVolumes.get(username) || 1.0;
+        audio.volume = savedVolume;
+
+        // Apply local mute if set
+        if (this.localMutedUsers.has(username)) {
+            audio.muted = true;
+        }
+
         audio.style.display = 'none';
         document.body.appendChild(audio);
 
-        console.log(`Playing audio from ${username}`);
+        console.log(`Playing audio from ${username} (volume: ${savedVolume}, muted: ${audio.muted})`);
     }
 
     removeRemoteAudio(username) {
@@ -483,7 +747,7 @@ export class VoiceManager {
 
     toggleMute() {
         this.isMuted = !this.isMuted;
-        
+
         // Apply mute to local stream if we have one
         if (this.localStream) {
             this.localStream.getAudioTracks().forEach(track => {
@@ -514,7 +778,7 @@ export class VoiceManager {
         const state = this.userVoiceStates.get(myUsername) || {};
         state.muted = this.isMuted;
         this.userVoiceStates.set(myUsername, state);
-        
+
         if (this.currentChannel) {
             this.updateParticipantStatus(myUsername);
             this.socket.emit('userMuted', { muted: this.isMuted });
@@ -546,11 +810,11 @@ export class VoiceManager {
                 // Add animation class
                 icon.classList.add('icon-change');
                 setTimeout(() => icon.classList.remove('icon-change'), 300);
-                
+
                 icon.className = this.isDeafened ? 'fas fa-volume-mute' : 'fas fa-headphones';
             }
             userPanelDeafen.classList.toggle('deafened', this.isDeafened);
-            
+
             // Add pulse animation
             userPanelDeafen.classList.add('button-pulse');
             setTimeout(() => userPanelDeafen.classList.remove('button-pulse'), 300);
@@ -559,7 +823,7 @@ export class VoiceManager {
         if (this.currentChannel) {
             this.socket.emit('userDeafened', { deafened: this.isDeafened });
         }
-        
+
         console.log(`${this.isDeafened ? 'Deafened' : 'Undeafened'}${!this.currentChannel ? ' (will apply when joining voice)' : ''}`);
     }
 
@@ -671,21 +935,21 @@ export class VoiceManager {
             // Update own voice state BEFORE displaying video
             const myUsername = this.socket.auth?.username || sessionStorage.getItem('wyvernUsername');
             console.log(`My username: ${myUsername}, Camera on: ${this.isCameraOn}`);
-            
+
             const state = this.userVoiceStates.get(myUsername) || {};
             state.camera = this.isCameraOn;
             this.userVoiceStates.set(myUsername, state);
 
             // Display or remove own video
-            
+
             if (this.isCameraOn && this.localVideoStream) {
                 console.log(`Displaying own video for ${myUsername}`);
                 // Store own video stream
                 this.remoteVideoStreams.set(myUsername, this.localVideoStream);
-                
+
                 // Try to display immediately
                 this.displayVideoInChannelList(myUsername, this.localVideoStream);
-                
+
                 // Also retry after a short delay in case the user list hasn't loaded yet
                 setTimeout(() => {
                     console.log('Retrying video display after delay...');
@@ -757,19 +1021,19 @@ export class VoiceManager {
                 // Stop sharing when user stops via browser UI
                 screenTrack.onended = () => {
                     this.isScreenSharing = false;
-                    
+
                     // Update button state
                     const screenBtn = document.getElementById('voiceScreenShare');
                     if (screenBtn) {
                         screenBtn.classList.remove('active');
                     }
-                    
+
                     // Update voice state
                     const state = this.userVoiceStates.get(this.socket.auth?.username) || {};
                     state.screenSharing = false;
                     this.userVoiceStates.set(this.socket.auth?.username, state);
                     this.updateParticipantStatus(this.socket.auth?.username);
-                    
+
                     this.socket.emit('userScreenSharing', { screenSharing: false });
                     this.toast.show('Screen sharing stopped', 'info');
                 };
@@ -791,13 +1055,13 @@ export class VoiceManager {
                     const screenSenders = senders.filter(sender => {
                         if (!sender.track || sender.track.kind !== 'video') return false;
                         const label = sender.track.label.toLowerCase();
-                        return label.includes('screen') || 
-                               label.includes('monitor') || 
-                               label.includes('window') ||
-                               label.includes('display') ||
-                               label.includes('tab');
+                        return label.includes('screen') ||
+                            label.includes('monitor') ||
+                            label.includes('window') ||
+                            label.includes('display') ||
+                            label.includes('tab');
                     });
-                    
+
                     screenSenders.forEach(sender => {
                         console.log(`Removing screen track: ${sender.track.label}`);
                         pc.removeTrack(sender);
@@ -911,6 +1175,15 @@ export class VoiceManager {
                 statusEl.className = `fas ${statusIcon} voice-user-status ${statusClass}`;
             }
 
+            // Add visual indicator if locally muted
+            if (this.localMutedUsers.has(username)) {
+                userEl.style.opacity = '0.5';
+                userEl.title = `${username} (Muted for you)`;
+            } else {
+                userEl.style.opacity = '';
+                userEl.title = '';
+            }
+
             // Add/remove screen sharing button
             let screenBtn = userEl.querySelector('.screen-share-btn');
             if (state.screenSharing) {
@@ -1018,6 +1291,32 @@ export class VoiceManager {
                     })
                     .join('');
 
+                // Add context menu event listeners to voice users
+                const myUsername = this.socket.auth?.username || sessionStorage.getItem('wyvernUsername');
+                const voiceUserEls = usersEl.querySelectorAll('.voice-user');
+                console.log(`🎯 Adding context menu to ${voiceUserEls.length} voice users (myUsername: ${myUsername})`);
+
+                voiceUserEls.forEach((userEl) => {
+                    const username = userEl.dataset.username;
+
+                    // Don't add context menu to self
+                    if (username !== myUsername) {
+                        console.log(`✅ Adding context menu listener to ${username}`);
+                        userEl.addEventListener('contextmenu', (e) => {
+                            console.log(`🖱️ Right-clicked on ${username}`);
+                            // Check if user is admin (will be set by main app)
+                            const isAdmin = window.wyvernIsAdmin || false;
+                            console.log(`Admin status: ${isAdmin}`);
+                            this.showContextMenu(e, username, isAdmin);
+                        });
+
+                        // Add hover effect
+                        userEl.style.cursor = 'context-menu';
+                    } else {
+                        console.log(`⏭️ Skipping context menu for self (${username})`);
+                    }
+                });
+
                 // Restore video elements for users with camera on
                 users.forEach((user) => {
                     const state = this.userVoiceStates.get(user) || {};
@@ -1050,7 +1349,7 @@ export class VoiceManager {
         console.log(`displayVideoInChannelList called for ${username}`);
         const voiceUsers = document.querySelectorAll(`.voice-user[data-username="${username}"]`);
         console.log(`Found ${voiceUsers.length} voice-user elements for ${username}`);
-        
+
         voiceUsers.forEach((userEl) => {
             // Create video container if it doesn't exist
             let videoContainer = userEl.querySelector('.voice-user-video-container');
@@ -1104,27 +1403,27 @@ export class VoiceManager {
             if (videoContainer) {
                 // Get status icon before removing container
                 const status = videoContainer.querySelector('.voice-user-status');
-                
+
                 // Remove video container
                 videoContainer.remove();
-                
+
                 // Restore original structure
                 const avatar = document.createElement('div');
                 avatar.className = 'voice-user-avatar';
                 avatar.textContent = username.charAt(0).toUpperCase();
-                
+
                 const name = document.createElement('span');
                 name.className = 'voice-user-name';
                 name.textContent = username;
-                
+
                 userEl.insertBefore(avatar, userEl.firstChild);
                 userEl.insertBefore(name, userEl.children[1]);
-                
+
                 // Re-add status icon
                 if (status) {
                     userEl.appendChild(status);
                 }
-                
+
                 userEl.classList.remove('has-video-expanded');
             }
         });

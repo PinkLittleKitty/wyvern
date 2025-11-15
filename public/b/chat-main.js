@@ -96,6 +96,9 @@ import { VoiceManager } from './modules/voice.js';
       // Initialize voice manager
       voice = new VoiceManager(socket, toast, sound);
       
+      // Expose voice manager globally for debugging
+      window.wyvernVoiceManager = voice;
+      
       // Initialize managers that need socket
       messages = new MessageManager(profile, username, isAdmin, admin);
       users = new UserListManager(profile, admin, username);
@@ -181,6 +184,9 @@ import { VoiceManager } from './modules/voice.js';
       socket.on('userInfo', async (data) => {
         console.log('User info:', data);
         isAdmin = data.isAdmin || false;
+        
+        // Make admin status globally accessible for context menus
+        window.wyvernIsAdmin = isAdmin;
         
         // Update admin status in all managers
         if (messages) {
