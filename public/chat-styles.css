@@ -1484,6 +1484,7 @@
       align-items: flex-end;
       gap: 12px;
       flex-shrink: 0;
+      position: relative;
     }
 
     .chat-input input {
@@ -8721,4 +8722,184 @@ body[data-theme="d4rk"] {
 
 button:hover .shortcut-hint {
   opacity: 1;
+}
+
+
+/* Mention Autocomplete Styles */
+.mention-autocomplete {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: var(--sidebar);
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 100;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mention-autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.mention-autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.mention-autocomplete-item:hover {
+  background: var(--hover-bg);
+}
+
+.mention-autocomplete-item.selected {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-left: 3px solid var(--accent);
+  padding-left: 11px;
+}
+
+.mention-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.mention-avatar-special {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--voice-green) 0%, #059669 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.mention-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mention-name {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mention-admin-badge {
+  font-size: 12px;
+}
+
+.mention-description {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mention-autocomplete-item.selected .mention-name {
+  color: var(--accent);
+}
+
+.mention-autocomplete-item.selected .mention-avatar {
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.5);
+  transform: scale(1.05);
+}
+
+/* Scrollbar for mention autocomplete */
+.mention-autocomplete::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mention-autocomplete::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.mention-autocomplete::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Mention highlighting in messages */
+.mention {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mention:hover {
+  background: rgba(139, 92, 246, 0.25);
+  text-decoration: underline;
+}
+
+.mention.mention-everyone {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--voice-green);
+}
+
+.mention.mention-everyone:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+/* Mention notification badge */
+.mention-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.5);
+  animation: mentionPulse 2s ease-in-out infinite;
+}
+
+@keyframes mentionPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
