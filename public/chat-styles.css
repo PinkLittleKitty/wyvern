@@ -1425,6 +1425,28 @@
       }
     }
 
+    /* Loading older messages indicator */
+    .loading-older-messages {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 14px;
+      gap: 8px;
+      background: var(--chat-bg);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .loading-older-messages i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
     .timestamp {
       font-weight: normal;
       color: var(--text-muted);
@@ -8901,5 +8923,94 @@ button:hover .shortcut-hint {
   }
   50% {
     transform: scale(1.1);
+  }
+}
+
+
+/* ==================== VERSION INDICATOR ==================== */
+.version-indicator {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--sidebar-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 999;
+  user-select: none;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.version-indicator:hover {
+  background: var(--chat-bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.version-indicator i {
+  font-size: 14px;
+}
+
+.version-build {
+  opacity: 0.6;
+  font-family: 'Courier New', monospace;
+}
+
+/* Update available state */
+.version-indicator.update-available {
+  background: linear-gradient(135deg, rgba(250, 166, 26, 0.2), rgba(250, 166, 26, 0.1));
+  border-color: rgba(250, 166, 26, 0.5);
+  color: #fab61a;
+  animation: updatePulse 2s ease-in-out infinite;
+}
+
+.version-indicator.update-available:hover {
+  background: linear-gradient(135deg, rgba(250, 166, 26, 0.3), rgba(250, 166, 26, 0.15));
+  border-color: #fab61a;
+  transform: translateY(-2px) scale(1.05);
+}
+
+@keyframes updatePulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(250, 166, 26, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 16px rgba(250, 166, 26, 0.4);
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .version-indicator {
+    bottom: 80px; /* Above mobile nav if present */
+    right: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .version-indicator i {
+    font-size: 12px;
+  }
+}
+
+/* Hide on very small screens */
+@media (max-width: 480px) {
+  .version-indicator {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  
+  .version-indicator span:not(.version-build) {
+    display: none;
   }
 }

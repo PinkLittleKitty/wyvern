@@ -6,7 +6,32 @@ export class MessageManager {
     this.isAdmin = isAdmin;
     this.admin = adminManager;
     this.container = document.getElementById('chat-messages');
+    this.socket = null;
+    this.currentChannel = null;
+    this.isLoadingOlder = false;
+    this.hasMoreMessages = true;
     this.setupDeleteHandler();
+    this.setupInfiniteScroll();
+  }
+
+  setSocket(socket) {
+    this.socket = socket;
+  }
+
+  setCurrentChannel(channel) {
+    this.currentChannel = channel;
+    this.hasMoreMessages = true;
+  }
+
+  setupInfiniteScroll() {
+    if (!this.container) return;
+
+    this.container.addEventListener('scroll', () => {
+      // Check if scrolled to top (with 100px threshold)
+      if (this.container.scrollTop < 100 && !this.isLoadingOlder && this.hasMoreMessages) {
+        this.loadOlderMessages();
+      }
+    });
   }
 
   setAdminManager(adminManager) {
@@ -28,9 +53,7 @@ export class MessageManager {
     }
   }
 
-  async display(data, isHistoryLoad = false) {
-    if (!this.container) return;
-
+  async createMessageElement(data, checkGrouping = true) {
     const messageEl = document.createElement("div");
     messageEl.className = "message-container";
     messageEl.dataset.username = data.username;
@@ -45,15 +68,17 @@ export class MessageManager {
       ? new Date(data.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";
 
-    // Check if we should group with previous message
-    const lastMessage = this.container.lastElementChild;
-    const shouldGroup = lastMessage && 
-                       lastMessage.dataset.username === data.username &&
-                       data.timestamp && lastMessage.dataset.timestamp &&
-                       (new Date(data.timestamp) - new Date(lastMessage.dataset.timestamp)) < 300000;
+    // Check if we should group with previous message (only when appending)
+    if (checkGrouping) {
+      const lastMessage = this.container.lastElementChild;
+      const shouldGroup = lastMessage && 
+                         lastMessage.dataset.username === data.username &&
+                         data.timestamp && lastMessage.dataset.timestamp &&
+                         (new Date(data.timestamp) - new Date(lastMessage.dataset.timestamp)) < 300000;
 
-    if (shouldGroup) {
-      messageEl.classList.add("grouped");
+      if (shouldGroup) {
+        messageEl.classList.add("grouped");
+      }
     }
 
     // Get user profile
@@ -141,13 +166,98 @@ export class MessageManager {
       </div>
     `;
 
+    return messageEl;
+  }
+
+  async display(data, isHistoryLoad = false) {
+    if (!this.container) return;
+
+    const messageEl = await this.createMessageElement(data, true);
     this.container.appendChild(messageEl);
-    this.container.scrollTop = this.container.scrollHeight;
+    
+    if (!isHistoryLoad) {
+      this.container.scrollTop = this.container.scrollHeight;
+    }
   }
 
   clear() {
     if (this.container) {
       this.container.innerHTML = '';
+    }
+    this.hasMoreMessages = true;
+  }
+
+  scrollToBottom() {
+    if (this.container) {
+      this.container.scrollTop = this.container.scrollHeight;
+    }
+  }
+
+  async loadOlderMessages() {
+    if (!this.socket || !this.currentChannel || this.isLoadingOlder || !this.hasMoreMessages) {
+      return;
+    }
+
+    this.isLoadingOlder = true;
+
+    // Show loading indicator
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'loading-older-messages';
+    loadingEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading older messages...';
+    this.container.insertBefore(loadingEl, this.container.firstChild);
+
+    // Get timestamp of oldest message
+    const firstMessage = this.container.querySelector('.message-container[data-timestamp]');
+    const beforeTimestamp = firstMessage ? firstMessage.dataset.timestamp : null;
+
+    // Save scroll position
+    const scrollHeight = this.container.scrollHeight;
+    const scrollTop = this.container.scrollTop;
+
+    // Request older messages
+    this.socket.emit('loadOlderMessages', {
+      channel: this.currentChannel,
+      before: beforeTimestamp,
+      limit: 50
+    });
+
+    // Listen for response (one-time listener)
+    const handleOlderMessages = async (data) => {
+      loadingEl.remove();
+      
+      if (data.messages && data.messages.length > 0) {
+        // Prepend messages
+        for (const msg of data.messages) {
+          await this.displayPrepend(msg);
+        }
+
+        // Restore scroll position (maintain user's view)
+        const newScrollHeight = this.container.scrollHeight;
+        this.container.scrollTop = scrollTop + (newScrollHeight - scrollHeight);
+      }
+
+      this.hasMoreMessages = data.hasMore;
+      this.isLoadingOlder = false;
+
+      // Remove listener
+      this.socket.off('olderMessages', handleOlderMessages);
+    };
+
+    this.socket.on('olderMessages', handleOlderMessages);
+  }
+
+  async displayPrepend(data) {
+    // Similar to display() but prepends instead of appends
+    if (!this.container) return;
+
+    const messageEl = await this.createMessageElement(data, false);
+    
+    // Find first message container (skip loading indicators)
+    const firstMessage = this.container.querySelector('.message-container');
+    if (firstMessage) {
+      this.container.insertBefore(messageEl, firstMessage);
+    } else {
+      this.container.appendChild(messageEl);
     }
   }
 

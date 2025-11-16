@@ -102,6 +102,8 @@ import { ShortcutsManager } from './modules/shortcuts.js';
       
       // Initialize managers that need socket
       messages = new MessageManager(profile, username, isAdmin, admin);
+      messages.setSocket(socket);
+      messages.setCurrentChannel('general');
       users = new UserListManager(profile, admin, username);
       channels = new ChannelManager(socket, admin);
       channels.setVoiceManager(voice);
@@ -242,6 +244,8 @@ import { ShortcutsManager } from './modules/shortcuts.js';
           for (const msg of history) {
             await messages.display(msg, true);
           }
+          // Scroll to bottom after loading initial messages
+          messages.scrollToBottom();
         }
       });
       
@@ -276,6 +280,9 @@ import { ShortcutsManager } from './modules/shortcuts.js';
         console.log('Joined channel:', channelName);
         if (channels) {
           channels.currentChannel = channelName;
+        }
+        if (messages) {
+          messages.setCurrentChannel(channelName);
         }
       });
       

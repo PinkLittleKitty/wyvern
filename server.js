@@ -1010,13 +1010,46 @@ io.on('connection', async (socket) => {
     socket.currentChannel = channelName;
     
     try {
+      // Load most recent 50 messages
       const history = await messagesCollection
         .find({ channel: channelName })
-        .sort({ timestamp: 1 })
+        .sort({ timestamp: -1 })
+        .limit(50)
         .toArray();
+      
+      // Reverse to show oldest first (within the batch)
+      history.reverse();
+      
       socket.emit("chatHistory", history);
     } catch (err) {
       console.error("❌ Error fetching chat history:", err);
+    }
+  });
+
+  // New endpoint for loading older messages
+  socket.on('loadOlderMessages', async ({ channel, before, limit = 50 }) => {
+    try {
+      const query = { channel };
+      if (before) {
+        query.timestamp = { $lt: new Date(before) };
+      }
+      
+      const messages = await messagesCollection
+        .find(query)
+        .sort({ timestamp: -1 })
+        .limit(limit)
+        .toArray();
+      
+      // Reverse to show oldest first
+      messages.reverse();
+      
+      socket.emit('olderMessages', {
+        messages,
+        hasMore: messages.length === limit
+      });
+    } catch (err) {
+      console.error("❌ Error loading older messages:", err);
+      socket.emit('olderMessages', { messages: [], hasMore: false });
     }
   });
 
