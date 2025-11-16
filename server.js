@@ -17,6 +17,28 @@ const { router: authRouter, authMiddleware } = require('./auth');
 
 const app = express();
 
+// Version tracking - increments on file changes
+let currentVersion = {
+  version: '1.0.0',
+  build: Date.now(),
+  timestamp: new Date().toISOString()
+};
+
+// Watch for file changes and increment version
+const watchPaths = ['public', 'server.js', 'database.js'];
+watchPaths.forEach(watchPath => {
+  const fullPath = path.join(__dirname, watchPath);
+  if (fs.existsSync(fullPath)) {
+    fs.watch(fullPath, { recursive: true }, (eventType, filename) => {
+      if (filename && !filename.includes('node_modules')) {
+        currentVersion.build = Date.now();
+        currentVersion.timestamp = new Date().toISOString();
+        console.log(`📦 Version updated: ${currentVersion.build} (${filename} changed)`);
+      }
+    });
+  }
+});
+
 let server;
 let isHttps = false;
 
@@ -233,6 +255,11 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
+});
+
+// Version endpoint
+app.get('/api/version', (req, res) => {
+  res.json(currentVersion);
 });
 
 // Beta reload endpoint (admin only)

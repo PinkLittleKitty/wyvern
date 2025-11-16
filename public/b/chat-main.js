@@ -18,6 +18,7 @@ import { SidebarManager } from './modules/sidebar.js';
 import { AdminManager } from './modules/admin.js';
 import { VoiceManager } from './modules/voice.js';
 import { ShortcutsManager } from './modules/shortcuts.js';
+import { VersionManager } from './modules/version.js';
 
 (async function initChat() {
   try {
@@ -68,6 +69,9 @@ import { ShortcutsManager } from './modules/shortcuts.js';
     loading.start();
     sound.init();
     theme.apply(theme.getCurrent());
+    
+    // Initialize version manager
+    const version = new VersionManager(toast);
 
     // Initialize socket connection
     const socketManager = new SocketManager(token, {
