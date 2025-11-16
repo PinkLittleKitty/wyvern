@@ -112,6 +112,7 @@ import { VersionManager } from './modules/version.js';
       channels = new ChannelManager(socket, admin);
       channels.setVoiceManager(voice);
       settings = new SettingsManager(theme, sound);
+      settings.setSocket(socket);
       profileModal = new ProfileModalManager(profile, username);
       sidebar = new SidebarManager(socket, profile, username);
       
@@ -123,6 +124,13 @@ import { VersionManager } from './modules/version.js';
       
       // Make profile modal globally accessible
       window.openProfileModal = (user) => profileModal.open(user);
+      
+      // Make admin functions globally accessible
+      window.adminKickUser = (targetUsername) => {
+        if (isAdmin && confirm(`Kick ${targetUsername} from the server?`)) {
+          socket.emit('disconnectUser', { username: targetUsername });
+        }
+      };
       
       // Initialize mention manager
       const input = document.getElementById('chat-input');
@@ -206,6 +214,12 @@ import { VersionManager } from './modules/version.js';
         if (admin) {
           admin.setAdmin(isAdmin);
         }
+        if (settings) {
+          settings.setAdmin(isAdmin);
+          if (isAdmin) {
+            settings.loadAdminStats();
+          }
+        }
         
         // Update user panel
         const userProfile = await profile.get(username);
@@ -253,6 +267,18 @@ import { VersionManager } from './modules/version.js';
         }
       });
       
+      socket.on('serverBroadcast', (data) => {
+        console.log('📢 Server broadcast:', data);
+        if (toast) {
+          toast.show(
+            `<strong>Server Announcement</strong><br>${data.message}`,
+            'warning',
+            '📢 Admin Broadcast',
+            10000
+          );
+        }
+      });
+
       socket.on('onlineUsers', (userList) => {
         console.log('👥 Online users received:', userList);
         if (users) {

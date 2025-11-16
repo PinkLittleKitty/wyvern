@@ -1348,14 +1348,31 @@ io.on('connection', async (socket) => {
 
     // Find the target user's socket
     const targetSocket = Array.from(io.sockets.sockets.values()).find(
-      s => s.user.username === data.targetUsername
+      s => s.user && s.user.username === data.username
     );
 
     if (targetSocket) {
-      console.log(`🔨 Admin ${username} disconnected ${data.targetUsername}`);
+      console.log(`🔨 Admin ${username} disconnected ${data.username}`);
       targetSocket.emit('disconnected', { reason: 'Disconnected by admin' });
       targetSocket.disconnect(true);
     }
+  });
+
+  // Admin: Broadcast message
+  socket.on('broadcastMessage', (data) => {
+    if (!socket.user.isAdmin) {
+      socket.emit('error', 'Only admins can broadcast messages');
+      return;
+    }
+
+    console.log(`📢 Admin ${username} broadcasting: ${data.message}`);
+    
+    // Send to all connected users
+    io.emit('serverBroadcast', {
+      message: data.message,
+      from: username,
+      timestamp: new Date().toISOString()
+    });
   });
 
   socket.on('createChannel', async (data) => {

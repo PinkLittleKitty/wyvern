@@ -5,7 +5,21 @@ export class SettingsManager {
     this.sound = soundManager;
     this.modal = document.getElementById('settingsModal');
     this.voiceManager = null; // Will be set externally
+    this.socket = null;
+    this.isAdmin = false;
     this.init();
+  }
+
+  setSocket(socket) {
+    this.socket = socket;
+  }
+
+  setAdmin(isAdmin) {
+    this.isAdmin = isAdmin;
+    const adminNavItem = document.getElementById('adminNavItem');
+    if (adminNavItem) {
+      adminNavItem.style.display = isAdmin ? 'flex' : 'none';
+    }
   }
 
   setVoiceManager(voiceManager) {
@@ -86,6 +100,7 @@ export class SettingsManager {
     this.initVoiceSettings();
     this.initPrivacySettings();
     this.initAccountSettings();
+    this.initAdminPanel();
   }
 
   open() {
@@ -660,5 +675,167 @@ export class SettingsManager {
         }
       });
     }
+  }
+
+  initAdminPanel() {
+    const refreshBtn = document.getElementById('adminRefreshStats');
+    const broadcastBtn = document.getElementById('adminBroadcastMessage');
+    const resetPasswordBtn = document.getElementById('adminResetPasswordBtn');
+
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => this.loadAdminStats());
+    }
+
+    if (broadcastBtn) {
+      broadcastBtn.addEventListener('click', () => this.broadcastMessage());
+    }
+
+    if (resetPasswordBtn) {
+      resetPasswordBtn.addEventListener('click', () => this.resetUserPassword());
+    }
+  }
+
+  async loadAdminStats() {
+    if (!this.isAdmin || !this.socket) return;
+
+    try {
+      const token = localStorage.getItem('wyvernToken') || sessionStorage.getItem('wyvernToken');
+      
+      // Fetch stats
+      const response = await fetch('/api/admin/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const stats = await response.json();
+        
+        document.getElementById('adminTotalUsers').textContent = stats.totalUsers || 0;
+        document.getElementById('adminOnlineUsers').textContent = stats.onlineUsers || 0;
+        document.getElementById('adminTotalMessages').textContent = stats.totalMessages || 0;
+        document.getElementById('adminTotalChannels').textContent = stats.totalChannels || 0;
+      }
+
+      // Fetch users
+      const usersResponse = await fetch('/api/admin/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (usersResponse.ok) {
+        const data = await usersResponse.json();
+        // Handle both array and object with users property
+        const users = Array.isArray(data) ? data : (data.users || []);
+        this.displayAdminUsers(users);
+      }
+
+    } catch (error) {
+      console.error('Failed to load admin stats:', error);
+    }
+  }
+
+  displayAdminUsers(users) {
+    const userList = document.getElementById('adminUserList');
+    if (!userList) return;
+
+    if (!Array.isArray(users)) {
+      console.error('displayAdminUsers: users is not an array', users);
+      userList.innerHTML = '<div class="admin-loading">Error loading users</div>';
+      return;
+    }
+
+    if (users.length === 0) {
+      userList.innerHTML = '<div class="admin-loading">No users found</div>';
+      return;
+    }
+
+    userList.innerHTML = users.map(user => `
+      <div class="admin-user-item">
+        <div class="admin-user-info">
+          <div class="admin-user-avatar">${user.username.charAt(0).toUpperCase()}</div>
+          <div class="admin-user-details">
+            <div class="admin-user-name">
+              ${this.escapeHtml(user.username)}
+              ${user.isAdmin ? '<span style="color: #fbbf24; margin-left: 6px;">★</span>' : ''}
+            </div>
+            <div class="admin-user-status ${user.online ? 'online' : ''}">
+              <i class="fas fa-circle"></i>
+              ${user.online ? 'Online' : 'Offline'}
+            </div>
+          </div>
+        </div>
+        <div class="admin-user-actions">
+          ${!user.isAdmin ? `
+            <button class="admin-user-action-btn danger" onclick="window.adminKickUser('${this.escapeHtml(user.username)}')">
+              <i class="fas fa-sign-out-alt"></i> Kick
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  broadcastMessage() {
+    const message = prompt('Enter broadcast message:');
+    if (message && message.trim()) {
+      if (this.socket) {
+        this.socket.emit('broadcastMessage', { message: message.trim() });
+        if (window.toastManager) {
+          window.toastManager.show('Broadcast sent!', 'success');
+        }
+      }
+    }
+  }
+
+  async resetUserPassword() {
+    const usernameInput = document.getElementById('adminResetUsername');
+    const passwordInput = document.getElementById('adminNewPassword');
+    const statusDiv = document.getElementById('adminResetStatus');
+
+    const targetUsername = usernameInput?.value.trim();
+    const newPassword = passwordInput?.value;
+
+    if (!targetUsername || !newPassword) {
+      statusDiv.innerHTML = '<div class="password-status error">❌ Please fill in both fields</div>';
+      return;
+    }
+
+    if (newPassword.length < 3) {
+      statusDiv.innerHTML = '<div class="password-status error">❌ Password must be at least 3 characters</div>';
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('wyvernToken') || sessionStorage.getItem('wyvernToken');
+      
+      const response = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username: targetUsername, newPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        statusDiv.innerHTML = '<div class="password-status success">✅ Password reset successfully!</div>';
+        usernameInput.value = '';
+        passwordInput.value = '';
+        if (window.toastManager) {
+          window.toastManager.show(`Password reset for ${targetUsername}`, 'success');
+        }
+      } else {
+        statusDiv.innerHTML = `<div class="password-status error">❌ ${data.error || 'Failed to reset password'}</div>`;
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      statusDiv.innerHTML = '<div class="password-status error">❌ Network error</div>';
+    }
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }

@@ -448,6 +448,10 @@
             <i class="fas fa-user-cog"></i>
             <span>Account</span>
           </div>
+          <div class="settings-nav-item" data-tab="admin" id="adminNavItem" style="display: none;">
+            <i class="fas fa-shield-halved"></i>
+            <span>Admin Panel</span>
+          </div>
         </div>
 
         <div class="settings-content">
@@ -1026,6 +1030,71 @@
                 <input type="password" id="confirmPassword" placeholder="Confirm New Password" class="settings-input" style="margin-bottom: 12px;" />
                 <button class="settings-button" id="changePasswordBtn">Change Password</button>
                 <div id="passwordChangeStatus" style="margin-top: 12px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Tab -->
+          <div class="settings-tab" id="admin-tab">
+            <h4>🛡️ Admin Panel</h4>
+            <p class="settings-description">Server management and moderation tools</p>
+
+            <div class="settings-section">
+              <label class="settings-label">📊 Server Statistics</label>
+              <div class="admin-stats">
+                <div class="admin-stat-card">
+                  <i class="fas fa-users"></i>
+                  <div class="admin-stat-value" id="adminTotalUsers">-</div>
+                  <div class="admin-stat-label">Total Users</div>
+                </div>
+                <div class="admin-stat-card">
+                  <i class="fas fa-user-check"></i>
+                  <div class="admin-stat-value" id="adminOnlineUsers">-</div>
+                  <div class="admin-stat-label">Online Now</div>
+                </div>
+                <div class="admin-stat-card">
+                  <i class="fas fa-comments"></i>
+                  <div class="admin-stat-value" id="adminTotalMessages">-</div>
+                  <div class="admin-stat-label">Total Messages</div>
+                </div>
+                <div class="admin-stat-card">
+                  <i class="fas fa-hashtag"></i>
+                  <div class="admin-stat-value" id="adminTotalChannels">-</div>
+                  <div class="admin-stat-label">Channels</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <label class="settings-label">👥 User Management</label>
+              <p class="settings-hint">View and manage all users</p>
+              <div class="admin-user-list" id="adminUserList">
+                <div class="admin-loading">Loading users...</div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <label class="settings-label">🔐 Reset User Password</label>
+              <p class="settings-hint">Reset a user's password (they will need to set a new one)</p>
+              <div style="max-width: 400px;">
+                <input type="text" id="adminResetUsername" placeholder="Username" class="settings-input" style="margin-bottom: 8px;" />
+                <input type="password" id="adminNewPassword" placeholder="New Password" class="settings-input" style="margin-bottom: 12px;" />
+                <button class="settings-button" id="adminResetPasswordBtn">
+                  <i class="fas fa-key"></i> Reset Password
+                </button>
+                <div id="adminResetStatus" style="margin-top: 12px;"></div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <label class="settings-label">⚙️ Server Actions</label>
+              <div class="admin-actions">
+                <button class="settings-button" id="adminRefreshStats">
+                  <i class="fas fa-sync"></i> Refresh Statistics
+                </button>
+                <button class="settings-button secondary" id="adminBroadcastMessage">
+                  <i class="fas fa-bullhorn"></i> Broadcast Message
+                </button>
               </div>
             </div>
           </div>
