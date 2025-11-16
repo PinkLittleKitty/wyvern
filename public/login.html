@@ -124,17 +124,20 @@
         sessionStorage.setItem("wyvernUsername", username);
         if (data.token) {
           localStorage.setItem("wyvernToken", data.token);
+          sessionStorage.setItem("wyvernToken", data.token);
+          console.log('Token saved:', data.token.substring(0, 20) + '...');
         }
+        // Small delay to ensure storage is written
         setTimeout(() => {
-          window.location.href = "/chat.html";
-        }, 100);
+          window.location.href = "/b/chat.html";
+        }, 200);
       } else {
         errorDiv.textContent = data.error || "Login failed.";
       }
     };
 
     toRegister.onclick = () => {
-      window.location.href = "/register.html";
+      window.location.href = "/b/register.html";
     };
 
     document.getElementById("username").focus();
