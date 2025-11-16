@@ -4523,6 +4523,28 @@ body[data-theme="discord"] {
   --shadow: rgba(0, 0, 0, 0.4);
 }
 
+/* Sai Theme - Soft Lilac Dream */
+body[data-theme="sai"] {
+  --bg: #1a1625;
+  --sidebar: #221c30;
+  --sidebar-dark: #1a1625;
+  --chat-bg: #1f1a2e;
+  --chat-bg-hover: #2a2440;
+  --accent: #c4a7e7;
+  --accent-soft: #b794e0;
+  --accent-dark: #a881d9;
+  --accent-glow: rgba(196, 167, 231, 0.35);
+  --text: #e8dff5;
+  --text-bright: #f5f0ff;
+  --text-muted: #9d8fb8;
+  --hover-bg: #2a2440;
+  --voice-green: #a7c4e7;
+  --voice-red: #e7a7c4;
+  --link-color: #d4b8f0;
+  --border: rgba(196, 167, 231, 0.15);
+  --shadow: rgba(34, 28, 48, 0.6);
+}
+
 /* D4rk Theme - Black/Grey with Red accents */
 body[data-theme="d4rk"] {
   --bg: #0d0d0d;
@@ -5103,6 +5125,20 @@ body[data-theme="tokyo-night"] {
 .discord-preview .theme-preview-bar,
 .discord-preview .theme-preview-message {
   background: #5865f2;
+}
+
+/* Sai Theme Preview */
+.sai-preview {
+  background: #1f1a2e;
+}
+
+.sai-preview .theme-preview-sidebar {
+  background: #221c30;
+}
+
+.sai-preview .theme-preview-bar,
+.sai-preview .theme-preview-message {
+  background: #c4a7e7;
 }
 
 /* D4rk Theme Preview */
@@ -5950,56 +5986,145 @@ body.compact-mode .message-container.grouped .message-avatar {
 /* Custom Theme Builder */
 .custom-theme-builder {
   background: var(--sidebar-dark);
-  padding: 20px;
+  padding: 24px;
+  border-radius: 12px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+}
+
+.custom-theme-preview {
+  display: flex;
+  height: 120px;
   border-radius: 8px;
-  margin-top: 16px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 2px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.custom-theme-base {
-  margin-bottom: 20px;
-}
-
-.custom-theme-base label {
-  display: block;
-  color: var(--text);
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-
-.custom-theme-colors {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.color-picker-group {
+.preview-sidebar {
+  width: 30%;
+  background: var(--sidebar);
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.color-picker-group label {
-  color: var(--text);
-  font-size: 13px;
+.preview-channel {
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
-.color-picker-group input[type="color"] {
-  width: 100%;
-  height: 50px;
+.preview-chat {
+  flex: 1;
+  background: var(--bg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.preview-message {
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.preview-message.accent {
+  background: var(--accent);
+  opacity: 0.3;
+}
+
+.custom-theme-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.color-control {
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.color-control:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+}
+
+.color-control label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.color-control label i {
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.color-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.color-input-group input[type="color"] {
+  width: 60px;
+  height: 40px;
   border: 2px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
-  background: var(--bg);
+  background: transparent;
+  transition: all 0.2s;
 }
 
-.color-picker-group input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 4px;
+.color-input-group input[type="color"]:hover {
+  border-color: var(--accent);
+  transform: scale(1.05);
 }
 
-.color-picker-group input[type="color"]::-webkit-color-swatch {
+.color-input-group input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-input-group input[type="color"]::-webkit-color-swatch {
   border: none;
   border-radius: 4px;
+}
+
+.color-input-group input[type="text"] {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--sidebar-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.color-input-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+}
+
+.custom-theme-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
 .settings-button {

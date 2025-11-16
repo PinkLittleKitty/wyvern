@@ -115,6 +115,7 @@ export class SettingsManager {
   initThemeSettings() {
     const themeOptions = document.querySelectorAll('.theme-option');
     const currentTheme = this.theme.getCurrent();
+    const customThemeBuilder = document.getElementById('customThemeBuilder');
 
     themeOptions.forEach(option => {
       if (option.dataset.theme === currentTheme) {
@@ -126,8 +127,21 @@ export class SettingsManager {
         themeOptions.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
         this.theme.apply(theme);
+        
+        // Show/hide custom theme builder
+        if (customThemeBuilder) {
+          customThemeBuilder.style.display = theme === 'custom' ? 'block' : 'none';
+        }
       });
     });
+    
+    // Show custom theme builder if custom theme is selected
+    if (currentTheme === 'custom' && customThemeBuilder) {
+      customThemeBuilder.style.display = 'block';
+    }
+    
+    // Initialize custom theme builder
+    this.initCustomThemeBuilder();
 
     // Layout selector
     const layoutOptions = document.querySelectorAll('.layout-option');
@@ -554,6 +568,96 @@ export class SettingsManager {
         // Re-enable button
         changePasswordBtn.disabled = false;
         changePasswordBtn.textContent = 'Change Password';
+      });
+    }
+  }
+
+  initCustomThemeBuilder() {
+    const accentPicker = document.getElementById('customAccent');
+    const bgPicker = document.getElementById('customBg');
+    const sidebarPicker = document.getElementById('customSidebar');
+    const textPicker = document.getElementById('customText');
+    
+    const accentHex = document.getElementById('customAccentHex');
+    const bgHex = document.getElementById('customBgHex');
+    const sidebarHex = document.getElementById('customSidebarHex');
+    const textHex = document.getElementById('customTextHex');
+    
+    const preview = document.getElementById('customThemePreview');
+    const applyBtn = document.getElementById('applyCustomTheme');
+    const resetBtn = document.getElementById('resetCustomTheme');
+
+    // Load saved custom theme
+    const savedTheme = JSON.parse(localStorage.getItem('wyvernCustomTheme') || '{}');
+    if (savedTheme.accent) accentPicker.value = accentHex.value = savedTheme.accent;
+    if (savedTheme.bg) bgPicker.value = bgHex.value = savedTheme.bg;
+    if (savedTheme.sidebar) sidebarPicker.value = sidebarHex.value = savedTheme.sidebar;
+    if (savedTheme.text) textPicker.value = textHex.value = savedTheme.text;
+
+    // Sync color picker with hex input
+    const syncPickers = (picker, hex) => {
+      picker.addEventListener('input', () => {
+        hex.value = picker.value;
+        this.updatePreview();
+      });
+      
+      hex.addEventListener('input', () => {
+        if (/^#[0-9A-F]{6}$/i.test(hex.value)) {
+          picker.value = hex.value;
+          this.updatePreview();
+        }
+      });
+    };
+
+    syncPickers(accentPicker, accentHex);
+    syncPickers(bgPicker, bgHex);
+    syncPickers(sidebarPicker, sidebarHex);
+    syncPickers(textPicker, textHex);
+
+    // Update preview
+    this.updatePreview = () => {
+      if (preview) {
+        preview.style.setProperty('--accent', accentPicker.value);
+        preview.style.setProperty('--bg', bgPicker.value);
+        preview.style.setProperty('--sidebar', sidebarPicker.value);
+        preview.style.setProperty('--text', textPicker.value);
+      }
+    };
+
+    this.updatePreview();
+
+    // Apply button
+    if (applyBtn) {
+      applyBtn.addEventListener('click', () => {
+        const customTheme = {
+          accent: accentPicker.value,
+          bg: bgPicker.value,
+          sidebar: sidebarPicker.value,
+          text: textPicker.value
+        };
+
+        localStorage.setItem('wyvernCustomTheme', JSON.stringify(customTheme));
+        this.theme.apply('custom');
+
+        if (window.toastManager) {
+          window.toastManager.show('Custom theme applied!', 'success');
+        }
+      });
+    }
+
+    // Reset button
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        accentPicker.value = accentHex.value = '#8b5cf6';
+        bgPicker.value = bgHex.value = '#0a0a0f';
+        sidebarPicker.value = sidebarHex.value = '#13131a';
+        textPicker.value = textHex.value = '#e4e4e7';
+        
+        this.updatePreview();
+
+        if (window.toastManager) {
+          window.toastManager.show('Theme reset to defaults', 'info');
+        }
       });
     }
   }

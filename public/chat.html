@@ -511,6 +511,19 @@
                   <div class="theme-option-check"><i class="fas fa-check"></i></div>
                 </div>
 
+                <div class="theme-option" data-theme="sai">
+                  <div class="theme-preview sai-preview">
+                    <div class="theme-preview-sidebar"></div>
+                    <div class="theme-preview-content">
+                      <div class="theme-preview-bar"></div>
+                      <div class="theme-preview-message"></div>
+                      <div class="theme-preview-message"></div>
+                    </div>
+                  </div>
+                  <div class="theme-option-label">Sai</div>
+                  <div class="theme-option-check"><i class="fas fa-check"></i></div>
+                </div>
+
                 <div class="theme-option" data-theme="d4rk">
                   <div class="theme-preview d4rk-preview">
                     <div class="theme-preview-sidebar"></div>
@@ -671,42 +684,74 @@
 
             <!-- Custom Theme Builder -->
             <div class="settings-section custom-theme-builder" id="customThemeBuilder" style="display: none;">
-              <label class="settings-label">Custom Theme Builder</label>
-              <p class="settings-hint">Create your own theme by customizing colors</p>
+              <label class="settings-label">🎨 Custom Theme Builder</label>
+              <p class="settings-hint">Create your perfect theme by customizing colors</p>
 
-              <div class="custom-theme-base">
-                <label>Base Theme</label>
-                <select id="customThemeBase" class="settings-select">
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="amoled">AMOLED</option>
-                </select>
-              </div>
-
-              <div class="custom-theme-colors">
-                <div class="color-picker-group">
-                  <label>Accent Color</label>
-                  <input type="color" id="customAccent" value="#8b5cf6" />
+              <div class="custom-theme-preview" id="customThemePreview">
+                <div class="preview-sidebar">
+                  <div class="preview-channel"></div>
+                  <div class="preview-channel"></div>
                 </div>
-
-                <div class="color-picker-group">
-                  <label>Background Color</label>
-                  <input type="color" id="customBg" value="#0a0a0f" />
-                </div>
-
-                <div class="color-picker-group">
-                  <label>Sidebar Color</label>
-                  <input type="color" id="customSidebar" value="#13131a" />
-                </div>
-
-                <div class="color-picker-group">
-                  <label>Text Color</label>
-                  <input type="color" id="customText" value="#e4e4e7" />
+                <div class="preview-chat">
+                  <div class="preview-message"></div>
+                  <div class="preview-message accent"></div>
                 </div>
               </div>
 
-              <button class="settings-button" id="applyCustomTheme">Apply Custom Theme</button>
-              <button class="settings-button secondary" id="resetCustomTheme">Reset to Base</button>
+              <div class="custom-theme-controls">
+                <div class="color-control">
+                  <label>
+                    <i class="fas fa-palette"></i>
+                    <span>Accent Color</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="customAccent" value="#8b5cf6" />
+                    <input type="text" id="customAccentHex" value="#8b5cf6" maxlength="7" />
+                  </div>
+                </div>
+
+                <div class="color-control">
+                  <label>
+                    <i class="fas fa-square"></i>
+                    <span>Background</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="customBg" value="#0a0a0f" />
+                    <input type="text" id="customBgHex" value="#0a0a0f" maxlength="7" />
+                  </div>
+                </div>
+
+                <div class="color-control">
+                  <label>
+                    <i class="fas fa-bars"></i>
+                    <span>Sidebar</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="customSidebar" value="#13131a" />
+                    <input type="text" id="customSidebarHex" value="#13131a" maxlength="7" />
+                  </div>
+                </div>
+
+                <div class="color-control">
+                  <label>
+                    <i class="fas fa-font"></i>
+                    <span>Text Color</span>
+                  </label>
+                  <div class="color-input-group">
+                    <input type="color" id="customText" value="#e4e4e7" />
+                    <input type="text" id="customTextHex" value="#e4e4e7" maxlength="7" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="custom-theme-actions">
+                <button class="settings-button" id="applyCustomTheme">
+                  <i class="fas fa-check"></i> Apply Theme
+                </button>
+                <button class="settings-button secondary" id="resetCustomTheme">
+                  <i class="fas fa-undo"></i> Reset
+                </button>
+              </div>
             </div>
 
             <div class="settings-section">
