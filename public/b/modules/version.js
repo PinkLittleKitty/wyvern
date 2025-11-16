@@ -21,7 +21,8 @@ export class VersionManager {
       if (!this.currentBuild) {
         // First load
         this.currentBuild = data.build;
-        console.log('📦 Version:', data.build);
+        console.log('📦 Build:', data.build);
+        this.updateIndicatorDisplay();
       } else if (data.build !== this.currentBuild) {
         // New version detected!
         this.notifyUpdate(data);
@@ -37,14 +38,27 @@ export class VersionManager {
   createIndicator() {
     this.indicator = document.createElement('div');
     this.indicator.className = 'version-indicator';
-    this.indicator.title = 'Click to refresh';
-    this.indicator.innerHTML = `<i class="fas fa-code-branch"></i> <span>v1.0.0</span>`;
+    this.indicator.title = 'Build number';
+    
+    // Show build number if we have it, otherwise show loading
+    const buildText = this.currentBuild ? `#${this.currentBuild}` : 'Loading...';
+    this.indicator.innerHTML = `<i class="fas fa-code-branch"></i> <span>${buildText}</span>`;
+    
     this.indicator.addEventListener('click', () => {
       if (this.indicator.classList.contains('update-available')) {
         window.location.reload();
       }
     });
     document.body.appendChild(this.indicator);
+  }
+
+  updateIndicatorDisplay() {
+    if (this.indicator && this.currentBuild) {
+      const span = this.indicator.querySelector('span');
+      if (span) {
+        span.textContent = `#${this.currentBuild}`;
+      }
+    }
   }
 
   notifyUpdate(newVersion) {
