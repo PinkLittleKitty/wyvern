@@ -121,14 +121,14 @@
       const data = await res.json();
       if (data.success) {
         sessionStorage.setItem("wyvernUsername", username);
-        window.location.href = "/b/chat.html";
+        window.location.href = "/chat.html";
       } else {
         errorDiv.textContent = data.error || "Registration failed.";
       }
     };
 
     toLogin.onclick = () => {
-      window.location.href = "/b/login.html";
+      window.location.href = "/login.html";
     };
 
     // Autofocus username

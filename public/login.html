@@ -129,7 +129,7 @@
         }
         // Small delay to ensure storage is written
         setTimeout(() => {
-          window.location.href = "/b/chat.html";
+          window.location.href = "/chat.html";
         }, 200);
       } else {
         errorDiv.textContent = data.error || "Login failed.";
@@ -137,7 +137,7 @@
     };
 
     toRegister.onclick = () => {
-      window.location.href = "/b/register.html";
+      window.location.href = "/register.html";
     };
 
     document.getElementById("username").focus();

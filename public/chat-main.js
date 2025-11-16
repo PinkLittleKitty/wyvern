@@ -26,7 +26,7 @@ import { VersionManager } from './modules/version.js';
     let username = sessionStorage.getItem("wyvernUsername");
     if (!username) {
       console.warn('No username found, redirecting to login');
-      window.location.href = "/b/login.html";
+      window.location.href = "/login.html";
       return;
     }
 
@@ -34,7 +34,7 @@ import { VersionManager } from './modules/version.js';
     const token = localStorage.getItem('wyvernToken') || sessionStorage.getItem('wyvernToken');
     if (!token) {
       console.error('No token found in localStorage or sessionStorage');
-      window.location.href = "/b/login.html";
+      window.location.href = "/login.html";
       return;
     }
 
@@ -363,7 +363,7 @@ import { VersionManager } from './modules/version.js';
           await fetch("/auth/logout", { method: "POST" });
           sessionStorage.clear();
           localStorage.removeItem("wyvernToken");
-          window.location.href = "/b/login.html";
+          window.location.href = "/login.html";
         });
       }
       
