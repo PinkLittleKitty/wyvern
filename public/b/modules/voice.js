@@ -736,9 +736,17 @@ export class VoiceManager {
                     // User has camera on and we don't have video yet
                     isScreen = false;
                     console.log(`   ✅ Identified as CAMERA (user state)`);
+                } else if (userState.screenSharing && !hasExistingScreen) {
+                    // User is screen sharing and we don't have screen yet
+                    isScreen = true;
+                    console.log(`   ✅ Identified as SCREEN (user state)`);
+                } else if (!userState.camera && !hasExistingVideo) {
+                    // No camera state and no existing video - likely screen share
+                    // (camera requires explicit enable, screen share is more likely)
+                    isScreen = true;
+                    console.log(`   ✅ Identified as SCREEN (no camera state, default to screen)`);
                 } else {
-                    // Default: if we don't have video yet, assume camera
-                    // If we already have video, assume screen
+                    // Default: if we already have video, this must be screen
                     isScreen = hasExistingVideo;
                     console.log(`   ⚠️ Guessing: ${isScreen ? 'SCREEN' : 'CAMERA'} (has existing video: ${hasExistingVideo})`);
                 }
