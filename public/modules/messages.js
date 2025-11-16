@@ -172,6 +172,16 @@ export class MessageManager {
   async display(data, isHistoryLoad = false) {
     if (!this.container) return;
 
+    // Check for duplicate messages
+    const messageId = data._id || data.id;
+    if (messageId) {
+      const existingMessage = this.container.querySelector(`[data-message-id="${messageId}"]`);
+      if (existingMessage) {
+        console.log('Skipping duplicate message:', messageId);
+        return;
+      }
+    }
+
     const messageEl = await this.createMessageElement(data, true);
     this.container.appendChild(messageEl);
     
@@ -249,6 +259,16 @@ export class MessageManager {
   async displayPrepend(data) {
     // Similar to display() but prepends instead of appends
     if (!this.container) return;
+
+    // Check for duplicate messages
+    const messageId = data._id || data.id;
+    if (messageId) {
+      const existingMessage = this.container.querySelector(`[data-message-id="${messageId}"]`);
+      if (existingMessage) {
+        console.log('Skipping duplicate message (prepend):', messageId);
+        return;
+      }
+    }
 
     const messageEl = await this.createMessageElement(data, false);
     
