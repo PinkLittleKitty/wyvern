@@ -1,11 +1,9 @@
-// Loading Screen Manager
 export class LoadingManager {
   constructor() {
     this.screen = document.getElementById('loadingScreen');
     this.tipsElement = document.getElementById('loadingTips');
     this.tipInterval = null;
     this.timeout = null;
-    
     this.tips = [
       'Explode',
       'Read if cute',
@@ -41,28 +39,23 @@ export class LoadingManager {
       'Welcome to nginx!'
     ];
   }
-
   start() {
     this.showRandomTip();
     this.tipInterval = setInterval(() => this.showRandomTip(), 4000);
-    
     this.timeout = setTimeout(() => {
       console.log('⚠️ Loading timeout - forcing hide');
       this.hide();
     }, 10000);
-    
     if (this.screen) {
       this.screen.addEventListener('click', () => this.hide());
     }
   }
-
   showRandomTip() {
     if (this.tipsElement) {
       const randomTip = this.tips[Math.floor(Math.random() * this.tips.length)];
       this.tipsElement.innerHTML = `<span class="loading-tip">${randomTip}</span>`;
     }
   }
-
   hide() {
     if (this.tipInterval) clearInterval(this.tipInterval);
     if (this.timeout) clearTimeout(this.timeout);

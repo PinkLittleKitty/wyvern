@@ -8,23 +8,20 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const readline = require('readline');
-const multer = require('multer');
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
-
+const bcrypt = require('bcrypt'); 
+require('dotenv').config();
 const { connect, getDb } = require('./database');
 const { router: authRouter, authMiddleware } = require('./auth');
-
+const profileRoutes = require('./routes/profile');
+const uploadRoutes = require('./routes/upload');
+const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/user');
 const app = express();
-
-// Version tracking - increments on file changes
 let currentVersion = {
   version: '1.0.0',
   build: Date.now(),
   timestamp: new Date().toISOString()
 };
-
-// Watch for file changes and increment version
 const watchPaths = ['public', 'server.js', 'database.js'];
 watchPaths.forEach(watchPath => {
   const fullPath = path.join(__dirname, watchPath);
@@ -38,22 +35,19 @@ watchPaths.forEach(watchPath => {
     });
   }
 });
-
 let server;
 let isHttps = false;
-
 function initializeServer() {
   try {
     if (fs.existsSync('key.pem') && fs.existsSync('cert.pem')) {
       const privateKey = fs.readFileSync('key.pem', 'utf8');
       const certificate = fs.readFileSync('cert.pem', 'utf8');
-      const credentials = { 
-        key: privateKey, 
+      const credentials = {
+        key: privateKey,
         cert: certificate,
         secureProtocol: 'TLSv1_2_method',
         honorCipherOrder: true
       };
-      
       server = https.createServer(credentials, app);
       isHttps = true;
       console.log('🔒 HTTPS server enabled with SSL certificates');
@@ -69,12 +63,10 @@ function initializeServer() {
     server = http.createServer(app);
     isHttps = false;
   }
-
-  // Initialize Socket.IO AFTER server is created
   io = new Server(server, {
     cors: {
       origin: [
-        'http://193.149.164.240:4196', 
+        'http://193.149.164.240:4196',
         'https://193.149.164.240:4196',
         'http://localhost:4196',
         'https://localhost:4196',
@@ -90,18 +82,14 @@ function initializeServer() {
     pingInterval: 25000,
     path: '/socket.io/'
   });
-
-  // Add the upgrade handler AFTER server is created
   server.on('upgrade', (request, socket, head) => {
     console.log('WebSocket upgrade request received');
   });
 }
-
 let io;
-
 app.use(cors({
   origin: [
-    'http://193.149.164.240:4196', 
+    'http://193.149.164.240:4196',
     'https://193.149.164.240:4196',
     'http://localhost:4196',
     'https://localhost:4196',
@@ -113,7 +101,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.js')) {
@@ -121,410 +108,61 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   }
 }));
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  }
+app.use((req, res, next) => {
+  req.io = io;
+  next();
 });
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Allow images, videos, and common file types
-    const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|webm|pdf|doc|docx|txt|zip|rar/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'));
-    }
-  }
-});
-
-// Serve uploaded files
-app.use('/uploads', express.static(uploadsDir));
-
-// File upload endpoint
-app.post('/api/upload', authMiddleware, upload.array('files', 10), async (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No files uploaded' });
-    }
-
-    const files = req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      mimetype: file.mimetype,
-      url: `/uploads/${file.filename}`
-    }));
-
-    res.json({ files });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
-// Profile endpoints
-app.get('/api/profile/:username', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const usersCollection = db.collection('users');
-    const user = await usersCollection.findOne({ username: req.params.username });
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json({
-      username: user.username,
-      avatar: user.avatar || null,
-      banner: user.banner || null,
-      bio: user.bio || '',
-      customStatus: user.customStatus || '',
-      profileColor: user.profileColor || '#8b5cf6',
-      createdAt: user.createdAt || new Date()
-    });
-  } catch (error) {
-    console.error('Profile fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch profile' });
-  }
-});
-
-app.post('/api/profile/update', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const usersCollection = db.collection('users');
-    const { bio, customStatus, profileColor, avatar, banner } = req.body;
-    
-    const updateData = {};
-    if (bio !== undefined) updateData.bio = bio;
-    if (customStatus !== undefined) updateData.customStatus = customStatus;
-    if (profileColor !== undefined) updateData.profileColor = profileColor;
-    if (avatar !== undefined) updateData.avatar = avatar;
-    if (banner !== undefined) updateData.banner = banner;
-    
-    await usersCollection.updateOne(
-      { username: req.user.username },
-      { $set: updateData }
-    );
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Profile update error:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-});
-
 app.use('/auth', authRouter);
-
+app.use('/api/profile', profileRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/user', userRoutes);
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 app.get('/api/server-info', (req, res) => {
-  res.json({ 
+  res.json({
     https: isHttps,
     voiceSupported: isHttps,
     uptime: process.uptime(),
     version: require('./package.json').version
   });
 });
-
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });
 });
-
-// Version endpoint
 app.get('/api/version', (req, res) => {
   res.json(currentVersion);
 });
-
-// Beta reload endpoint (admin only)
-app.post('/api/beta/reload', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const user = await db.collection('users').findOne({ username: req.user.username });
-    
-    if (!user || !user.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    console.log(`🔄 Beta reload triggered by admin: ${req.user.username}`);
-    
-    // Notify beta users
-    io.sockets.sockets.forEach((socket) => {
-      if (socket.handshake.headers.referer && socket.handshake.headers.referer.includes('/b/')) {
-        socket.emit('serverRestart', 'Beta version is reloading, please refresh your page');
-      }
-    });
-    
-    // Clear require cache for beta modules
-    Object.keys(require.cache).forEach((key) => {
-      if (key.includes('/b/') || key.includes('\\b\\')) {
-        delete require.cache[key];
-      }
-    });
-    
-    res.json({ 
-      success: true, 
-      message: 'Beta version reloaded successfully',
-      timestamp: new Date().toISOString()
-    });
-    
-  } catch (error) {
-    console.error('Beta reload error:', error);
-    res.status(500).json({ error: 'Failed to reload beta version' });
-  }
-});
-
-// Admin: Reset user password
-app.post('/api/admin/reset-password', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const adminUser = await db.collection('users').findOne({ username: req.user.username });
-    
-    if (!adminUser || !adminUser.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { username } = req.body;
-    
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
-    }
-    
-    const targetUser = await db.collection('users').findOne({ username });
-    
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Generate temporary password (8 characters, alphanumeric)
-    const tempPassword = Math.random().toString(36).slice(2, 10).toUpperCase();
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    
-    await db.collection('users').updateOne(
-      { username },
-      { 
-        $set: { 
-          password: hashedPassword,
-          passwordResetAt: new Date()
-        } 
-      }
-    );
-    
-    console.log(`🔑 Password reset for user "${username}" by admin "${req.user.username}"`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Password reset successfully',
-      tempPassword: tempPassword
-    });
-    
-  } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({ error: 'Failed to reset password' });
-  }
-});
-
-// Admin: Get all users
-app.get('/api/admin/users', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const adminUser = await db.collection('users').findOne({ username: req.user.username });
-    
-    if (!adminUser || !adminUser.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const users = await db.collection('users')
-      .find({}, { projection: { password: 0 } })
-      .sort({ createdAt: -1 })
-      .toArray();
-    
-    res.json({ 
-      success: true, 
-      users: users.map(user => ({
-        username: user.username,
-        isAdmin: user.isAdmin || false,
-        createdAt: user.createdAt || new Date(),
-        passwordResetAt: user.passwordResetAt || null
-      }))
-    });
-    
-  } catch (error) {
-    console.error('Get users error:', error);
-    res.status(500).json({ error: 'Failed to get users' });
-  }
-});
-
-// Admin: Delete user
-app.delete('/api/admin/users/:username', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const adminUser = await db.collection('users').findOne({ username: req.user.username });
-    
-    if (!adminUser || !adminUser.isAdmin) {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const { username } = req.params;
-    
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
-    }
-    
-    // Prevent deleting yourself
-    if (username === req.user.username) {
-      return res.status(400).json({ error: 'Cannot delete your own account' });
-    }
-    
-    const targetUser = await db.collection('users').findOne({ username });
-    
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Prevent deleting other admins
-    if (targetUser.isAdmin) {
-      return res.status(403).json({ error: 'Cannot delete admin users' });
-    }
-    
-    // Delete user from database
-    await db.collection('users').deleteOne({ username });
-    
-    // Disconnect user if they're online
-    io.sockets.sockets.forEach((socket) => {
-      if (socket.user && socket.user.username === username) {
-        socket.emit('accountDeleted', 'Your account has been deleted by an administrator');
-        socket.disconnect(true);
-      }
-    });
-    
-    console.log(`🗑️ User "${username}" deleted by admin "${req.user.username}"`);
-    
-    res.json({ 
-      success: true, 
-      message: 'User deleted successfully'
-    });
-    
-  } catch (error) {
-    console.error('Delete user error:', error);
-    res.status(500).json({ error: 'Failed to delete user' });
-  }
-});
-
-// User: Change password
-app.post('/api/user/change-password', authMiddleware, async (req, res) => {
-  try {
-    const db = getDb();
-    const { currentPassword, newPassword } = req.body;
-    
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current password and new password are required' });
-    }
-    
-    if (newPassword.length < 3) {
-      return res.status(400).json({ error: 'New password must be at least 3 characters long' });
-    }
-    
-    const user = await db.collection('users').findOne({ username: req.user.username });
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Verify current password
-    const validPassword = await bcrypt.compare(currentPassword, user.password);
-    
-    if (!validPassword) {
-      return res.status(400).json({ error: 'Current password is incorrect' });
-    }
-    
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    
-    // Update password
-    await db.collection('users').updateOne(
-      { username: req.user.username },
-      { 
-        $set: { 
-          password: hashedPassword,
-          passwordChangedAt: new Date()
-        } 
-      }
-    );
-    
-    console.log(`🔑 Password changed for user "${req.user.username}"`);
-    
-    res.json({ 
-      success: true, 
-      message: 'Password changed successfully'
-    });
-    
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Failed to change password' });
-  }
-});
-
-// Add this route to serve Socket.IO client
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
 });
-
-
-
 let messagesCollection;
 let usersCollection;
 let channelsCollection;
 let voiceChannelsCollection;
 let directMessagesCollection;
-
 const defaultChannels = [
   { name: 'general', description: 'General discussion', type: 'text' },
   { name: 'memes', description: 'Share your memes here', type: 'text' },
   { name: 'announcements', description: 'Important announcements', type: 'text' },
   { name: 'random', description: 'Random chat', type: 'text' }
 ];
-
 const defaultVoiceChannels = [
   { name: 'Lounge', description: 'General voice chat', type: 'voice' },
   { name: 'Gaming', description: 'Gaming voice chat', type: 'voice' },
   { name: 'Music', description: 'Music and chill', type: 'voice' }
 ];
-
-const voiceRooms = new Map(); // channelName -> Set of socket IDs
-const userVoiceStates = new Map(); // socketId -> { username, muted, deafened, camera, channel }
-
+const voiceRooms = new Map();
+const userVoiceStates = new Map();
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
 function displayBanner() {
   console.log('\n' + '='.repeat(60));
   console.log('🐉 WYVERN CHAT SERVER');
@@ -535,7 +173,6 @@ function displayBanner() {
   console.log(`⏰ Started: ${new Date().toLocaleString()}`);
   console.log('='.repeat(60));
 }
-
 function displayHelp() {
   console.log('\n📋 Available Commands:');
   console.log('┌─────────────────────────────────────────────────────────┐');
@@ -563,24 +200,20 @@ function displayHelp() {
   console.log('│   help                       - Show this help           │');
   console.log('└─────────────────────────────────────────────────────────┘');
 }
-
 function formatUptime(seconds) {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
-  
   if (days > 0) return `${days}d ${hours}h ${minutes}m ${secs}s`;
   if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
   if (minutes > 0) return `${minutes}m ${secs}s`;
   return `${secs}s`;
 }
-
 function handleServerCommands() {
   rl.on('line', async (input) => {
     const [command, ...args] = input.trim().split(' ');
-    
-    switch(command) {
+    switch (command) {
       case 'addadmin':
         if (args.length === 0) {
           console.log('❌ Usage: addadmin <username>');
@@ -601,7 +234,6 @@ function handleServerCommands() {
           console.error('❌ Error adding admin:', err.message);
         }
         break;
-        
       case 'removeadmin':
         if (args.length === 0) {
           console.log('❌ Usage: removeadmin <username>');
@@ -622,7 +254,6 @@ function handleServerCommands() {
           console.error('❌ Error removing admin:', err.message);
         }
         break;
-        
       case 'listadmins':
         try {
           const admins = await usersCollection.find({ isAdmin: true }).toArray();
@@ -638,7 +269,6 @@ function handleServerCommands() {
           console.error('❌ Error listing admins:', err.message);
         }
         break;
-        
       case 'addchannel':
         if (args.length < 2) {
           console.log('❌ Usage: addchannel <text|voice> <name> [description]');
@@ -648,22 +278,18 @@ function handleServerCommands() {
           const type = args[0];
           const name = args[1];
           const description = args.slice(2).join(' ') || 'No description';
-          
           if (type !== 'text' && type !== 'voice') {
             console.log('❌ Type must be "text" or "voice"');
             return;
           }
-          
           const collection = type === 'text' ? channelsCollection : voiceChannelsCollection;
           const existing = await collection.findOne({ name });
           if (existing) {
             console.log(`❌ ${type} channel #${name} already exists`);
             return;
           }
-          
           await collection.insertOne({ name, description, type });
           console.log(`✅ ${type} channel #${name} created`);
-          
           if (type === 'text') {
             io.emit('channelUpdate', await channelsCollection.find().toArray());
           } else {
@@ -673,7 +299,6 @@ function handleServerCommands() {
           console.error('❌ Error adding channel:', err.message);
         }
         break;
-        
       case 'removechannel':
         if (args.length < 2) {
           console.log('❌ Usage: removechannel <text|voice> <name>');
@@ -682,15 +307,12 @@ function handleServerCommands() {
         try {
           const type = args[0];
           const name = args[1];
-          
           if (type === 'text' && name === 'general') {
             console.log('❌ Cannot delete the general channel');
             return;
           }
-          
           const collection = type === 'text' ? channelsCollection : voiceChannelsCollection;
           const result = await collection.deleteOne({ name });
-          
           if (result.deletedCount > 0) {
             if (type === 'text') {
               await messagesCollection.deleteMany({ channel: name });
@@ -719,12 +341,10 @@ function handleServerCommands() {
           console.error('❌ Error removing channel:', err.message);
         }
         break;
-        
       case 'listchannels':
         try {
           const textChannels = await channelsCollection.find().toArray();
           const voiceChannels = await voiceChannelsCollection.find().toArray();
-          
           console.log('\n📺 Text Channels:');
           if (textChannels.length === 0) {
             console.log('   No text channels found');
@@ -733,7 +353,6 @@ function handleServerCommands() {
               console.log(`   ${index + 1}. #${channel.name} - ${channel.description}`);
             });
           }
-          
           console.log('\n🔊 Voice Channels:');
           if (voiceChannels.length === 0) {
             console.log('   No voice channels found');
@@ -747,14 +366,12 @@ function handleServerCommands() {
           console.error('❌ Error listing channels:', err.message);
         }
         break;
-
       case 'status':
         try {
           const connectedUsers = io.sockets.sockets.size;
           const totalVoiceUsers = Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0);
           const totalUsers = await usersCollection.countDocuments();
           const totalMessages = await messagesCollection.countDocuments();
-          
           console.log('\n📊 Server Status:');
           console.log(`   🟢 Status: Running`);
           console.log(`   ⏰ Uptime: ${formatUptime(process.uptime())}`);
@@ -767,8 +384,7 @@ function handleServerCommands() {
           console.error('❌ Error getting status:', err.message);
         }
         break;
-
-            case 'stats':
+      case 'stats':
         try {
           const totalUsers = await usersCollection.countDocuments();
           const totalMessages = await messagesCollection.countDocuments();
@@ -776,18 +392,15 @@ function handleServerCommands() {
           const totalVoiceChannels = await voiceChannelsCollection.countDocuments();
           const connectedUsers = io.sockets.sockets.size;
           const totalVoiceUsers = Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0);
-          
           const messagesByChannel = await messagesCollection.aggregate([
             { $group: { _id: '$channel', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
           ]).toArray();
-          
           const topUsers = await messagesCollection.aggregate([
             { $group: { _id: '$username', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 5 }
           ]).toArray();
-          
           console.log('\n📊 Detailed Server Statistics:');
           console.log('┌─────────────────────────────────────────────────────────┐');
           console.log('│ 📈 GENERAL STATS                                       │');
@@ -821,7 +434,6 @@ function handleServerCommands() {
           console.error('❌ Error getting detailed stats:', err.message);
         }
         break;
-
       case 'users':
         try {
           const connectedSockets = Array.from(io.sockets.sockets.values());
@@ -839,7 +451,6 @@ function handleServerCommands() {
           console.error('❌ Error listing users:', err.message);
         }
         break;
-
       case 'migrate':
         try {
           const result = await messagesCollection.updateMany(
@@ -851,7 +462,6 @@ function handleServerCommands() {
           console.error('❌ Error migrating messages:', err.message);
         }
         break;
-
       case 'countmessages':
         try {
           const totalMessages = await messagesCollection.countDocuments();
@@ -859,7 +469,6 @@ function handleServerCommands() {
             { $group: { _id: '$channel', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
           ]).toArray();
-          
           console.log(`\n💬 Total Messages: ${totalMessages}`);
           console.log('📊 Messages by Channel:');
           messagesByChannel.forEach((channel, index) => {
@@ -869,82 +478,63 @@ function handleServerCommands() {
           console.error('❌ Error counting messages:', err.message);
         }
         break;
-        
       case 'restart':
         console.log('🔄 Initiating server restart...');
         console.log('📢 Notifying all connected users...');
-        
         io.emit('serverRestart', 'Server is restarting, please refresh your page in 10 seconds');
-        
         setTimeout(() => {
           console.log('🔄 Restarting server...');
           console.log('👋 Goodbye!');
-          
           server.close(() => {
             console.log('✅ Server closed gracefully');
             process.exit(0);
           });
-          
           setTimeout(() => {
             console.log('⚠️  Force exit - graceful shutdown timeout');
             process.exit(1);
           }, 5000);
         }, 2000);
         break;
-        
       case 'restart-beta':
         console.log('🔄 Reloading beta version files...');
         console.log('📢 Notifying beta users only...');
-        
-        // Notify only users on beta version
         io.sockets.sockets.forEach((socket) => {
           if (socket.handshake.headers.referer && socket.handshake.headers.referer.includes('/b/')) {
             socket.emit('serverRestart', 'Beta version is reloading, please refresh your page');
           }
         });
-        
-        // Clear require cache for beta modules (if any server-side beta code exists)
         Object.keys(require.cache).forEach((key) => {
           if (key.includes('/b/') || key.includes('\\b\\')) {
             delete require.cache[key];
           }
         });
-        
         console.log('✅ Beta files cache cleared');
         console.log('💡 Beta users should refresh their browsers');
         break;
-        
       case 'stop':
         console.log('🛑 Initiating server shutdown...');
         console.log('📢 Notifying all connected users...');
-        
         io.emit('serverShutdown', 'Server is shutting down');
-        
         setTimeout(() => {
           console.log('🛑 Stopping server...');
           console.log('👋 Goodbye!');
-          
           server.close(() => {
             console.log('✅ Server stopped gracefully');
             process.exit(0);
           });
-          
           setTimeout(() => {
             console.log('⚠️  Force exit - graceful shutdown timeout');
             process.exit(1);
           }, 5000);
         }, 2000);
         break;
-
       case 'clear':
         console.clear();
         displayBanner();
         break;
-
       case 'help':
         displayHelp();
         break;
-        
       default:
         if (command) {
           console.log(`❌ Unknown command: ${command}`);
@@ -953,7 +543,6 @@ function handleServerCommands() {
     }
   });
 }
-
 app.get('/api/channels', async (req, res) => {
   try {
     const channels = await channelsCollection.find().toArray();
@@ -962,759 +551,592 @@ app.get('/api/channels', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch channels' });
   }
 });
-
 function setupSocketIO() {
   console.log('🔌 Setting up Socket.IO handlers...');
-  
   io.use((socket, next) => {
-  const token = socket.handshake.auth.token || socket.request.headers.cookie?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
-
-  console.log('Socket auth attempt:', { hasToken: !!token, socketId: socket.id });
-
-  if (!token) {
-    console.log('No token provided');
-    return next(new Error("Authentication error: No token provided"));
-  }
-
-  try {
-    const payload = jwt.verify(token, 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); // Use your actual JWT secret
-    socket.user = payload;
-    console.log(`Socket authenticated: ${payload.username}`);
-    next();
-  } catch (err) {
-    console.log('Token verification failed:', err.message);
-    next(new Error("Authentication error: Invalid token"));
-  }
-});
-
-// Helper function to get online users
-function getOnlineUsers() {
-  const users = [];
-  io.sockets.sockets.forEach(socket => {
-    users.push({
-      username: socket.user.username,
-      isAdmin: socket.user.isAdmin || false,
-      voiceChannel: socket.voiceChannel || null
-    });
-  });
-  return users;
-}
-
-// Helper function to broadcast online users
-function broadcastOnlineUsers() {
-  const users = getOnlineUsers();
-  io.emit('onlineUsers', users);
-}
-
-io.on('connection', async (socket) => {
-  const username = socket.user.username;
-  console.log(`👤 User connected: ${username}`);
-  
-  const user = await usersCollection.findOne({ username });
-  socket.user.isAdmin = user?.isAdmin || false;
-  
-  socket.emit('userInfo', { username, isAdmin: socket.user.isAdmin });
-  
-  const channels = await channelsCollection.find().toArray();
-  const voiceChannels = await voiceChannelsCollection.find().toArray();
-  socket.emit('channelUpdate', channels);
-  socket.emit('voiceChannelUpdate', voiceChannels);
-
-  // Send current voice states to new connection
-  userVoiceStates.forEach((state, socketId) => {
-    socket.emit('userMuted', { username: state.username, muted: state.muted });
-    socket.emit('userDeafened', { username: state.username, deafened: state.deafened });
-    socket.emit('userCamera', { username: state.username, camera: state.camera });
-    socket.emit('userScreenSharing', { username: state.username, screenSharing: state.screenSharing });
-  });
-
-  // Send online users to the new connection and broadcast update
-  broadcastOnlineUsers();
-
-  socket.on('joinChannel', async (channelName) => {
-    socket.leave(socket.currentChannel);
-    socket.join(channelName);
-    socket.currentChannel = channelName;
-    
+    const token = socket.handshake.auth.token || socket.request.headers.cookie?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    console.log('Socket auth attempt:', { hasToken: !!token, socketId: socket.id });
+    if (!token) {
+      console.log('No token provided');
+      return next(new Error("Authentication error: No token provided"));
+    }
     try {
-      // Load most recent 50 messages
-      const history = await messagesCollection
-        .find({ channel: channelName })
-        .sort({ timestamp: -1 })
-        .limit(50)
-        .toArray();
-      
-      // Reverse to show oldest first (within the batch)
-      history.reverse();
-      
-      socket.emit("chatHistory", history);
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = payload;
+      console.log(`Socket authenticated: ${payload.username}`);
+      next();
     } catch (err) {
-      console.error("❌ Error fetching chat history:", err);
+      console.log('Token verification failed:', err.message);
+      next(new Error("Authentication error: Invalid token"));
     }
   });
-
-  // New endpoint for loading older messages
-  socket.on('loadOlderMessages', async ({ channel, before, limit = 50 }) => {
-    try {
-      const query = { channel };
-      if (before) {
-        query.timestamp = { $lt: new Date(before) };
-      }
-      
-      const messages = await messagesCollection
-        .find(query)
-        .sort({ timestamp: -1 })
-        .limit(limit)
-        .toArray();
-      
-      // Reverse to show oldest first
-      messages.reverse();
-      
-      socket.emit('olderMessages', {
-        messages,
-        hasMore: messages.length === limit
+  function getOnlineUsers() {
+    const users = [];
+    io.sockets.sockets.forEach(socket => {
+      users.push({
+        username: socket.user.username,
+        isAdmin: socket.user.isAdmin || false,
+        voiceChannel: socket.voiceChannel || null
       });
-    } catch (err) {
-      console.error("❌ Error loading older messages:", err);
-      socket.emit('olderMessages', { messages: [], hasMore: false });
-    }
-  });
-
-  socket.on('joinVoiceChannel', (channelName) => {
-    console.log(`🔊 ${username} joining voice channel: ${channelName}`);
-    
-    if (socket.voiceChannel) {
-      socket.leave(`voice-${socket.voiceChannel}`);
-      const oldRoom = voiceRooms.get(socket.voiceChannel);
-      if (oldRoom) {
-        oldRoom.delete(socket.id);
-        if (oldRoom.size === 0) {
-          voiceRooms.delete(socket.voiceChannel);
-        }
-        
-        const oldRoomUsers = Array.from(oldRoom).map(socketId => {
-          const s = io.sockets.sockets.get(socketId);
-          return s ? s.user.username : null;
-        }).filter(Boolean);
-        
-        io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: oldRoomUsers });
-        socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', { 
-          username, 
-          channel: socket.voiceChannel,
-          socketId: socket.id 
-        });
-      }
-    }
-
-    socket.join(`voice-${channelName}`);
-    socket.voiceChannel = channelName;
-    
-    if (!voiceRooms.has(channelName)) {
-      voiceRooms.set(channelName, new Set());
-    }
-    
-    // Get existing users before adding the new one
-    const existingUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
-      const s = io.sockets.sockets.get(socketId);
-      return s ? { socketId, username: s.user.username } : null;
-    }).filter(Boolean);
-    
-    // Add the new user
-    voiceRooms.get(channelName).add(socket.id);
-    
-    // Initialize user voice state
-    userVoiceStates.set(socket.id, {
-      username,
-      muted: false,
-      deafened: false,
-      camera: false,
-      screenSharing: false,
-      channel: channelName
     });
-    
-    // Send existing users to the new joiner so they can establish connections
-    existingUsers.forEach(user => {
-      socket.emit('userJoinedVoice', {
-        username: user.username,
-        channel: channelName,
-        socketId: user.socketId
-      });
-      
-      // Send existing user's voice state to the new joiner
-      const existingState = userVoiceStates.get(user.socketId);
-      if (existingState) {
-        socket.emit('userMuted', { username: user.username, muted: existingState.muted });
-        socket.emit('userDeafened', { username: user.username, deafened: existingState.deafened });
-        socket.emit('userCamera', { username: user.username, camera: existingState.camera });
-        socket.emit('userScreenSharing', { username: user.username, screenSharing: existingState.screenSharing });
-      }
+    return users;
+  }
+  function broadcastOnlineUsers() {
+    const users = getOnlineUsers();
+    io.emit('onlineUsers', users);
+  }
+  io.on('connection', async (socket) => {
+    const username = socket.user.username;
+    console.log(`👤 User connected: ${username}`);
+    const user = await usersCollection.findOne({ username });
+    socket.user.isAdmin = user?.isAdmin || false;
+    socket.emit('userInfo', { username, isAdmin: socket.user.isAdmin });
+    const channels = await channelsCollection.find().toArray();
+    const voiceChannels = await voiceChannelsCollection.find().toArray();
+    socket.emit('channelUpdate', channels);
+    socket.emit('voiceChannelUpdate', voiceChannels);
+    userVoiceStates.forEach((state, socketId) => {
+      socket.emit('userMuted', { username: state.username, muted: state.muted });
+      socket.emit('userDeafened', { username: state.username, deafened: state.deafened });
+      socket.emit('userCamera', { username: state.username, camera: state.camera });
+      socket.emit('userScreenSharing', { username: state.username, screenSharing: state.screenSharing });
     });
-    
-    // Get updated room users list
-    const roomUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
-      const s = io.sockets.sockets.get(socketId);
-      return s ? s.user.username : null;
-    }).filter(Boolean);
-    
-    // Broadcast updated user list to everyone
-    io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
-    
-    // Notify other users in the channel about the new joiner
-    socket.to(`voice-${channelName}`).emit('userJoinedVoice', { 
-      username, 
-      channel: channelName,
-      socketId: socket.id 
-    });
-    
-    console.log(`✅ ${username} joined voice channel: ${channelName}`);
-    
-    // Broadcast updated online users list
     broadcastOnlineUsers();
-  });
-
-  socket.on('leaveVoiceChannel', () => {
-    if (socket.voiceChannel) {
-      console.log(`🔊 ${username} leaving voice channel: ${socket.voiceChannel}`);
-      
-      socket.leave(`voice-${socket.voiceChannel}`);
-      const room = voiceRooms.get(socket.voiceChannel);
-      if (room) {
-        room.delete(socket.id);
-        if (room.size === 0) {
-          voiceRooms.delete(socket.voiceChannel);
+    socket.on('joinChannel', async (channelName) => {
+      socket.leave(socket.currentChannel);
+      socket.join(channelName);
+      socket.currentChannel = channelName;
+      try {
+        const history = await messagesCollection
+          .find({ channel: channelName })
+          .sort({ timestamp: -1 })
+          .limit(50)
+          .toArray();
+        history.reverse();
+        socket.emit("chatHistory", history);
+      } catch (err) {
+        console.error("❌ Error fetching chat history:", err);
+      }
+    });
+    socket.on('loadOlderMessages', async ({ channel, before, limit = 50 }) => {
+      try {
+        const query = { channel };
+        if (before) {
+          query.timestamp = { $lt: new Date(before) };
         }
-        
-        const roomUsers = Array.from(room).map(socketId => {
-          const s = io.sockets.sockets.get(socketId);
-          return s ? s.user.username : null;
-        }).filter(Boolean);
-        
-        io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: roomUsers });
-        socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', { 
-          username, 
-          channel: socket.voiceChannel,
-          socketId: socket.id 
+        const messages = await messagesCollection
+          .find(query)
+          .sort({ timestamp: -1 })
+          .limit(limit)
+          .toArray();
+        messages.reverse();
+        socket.emit('olderMessages', {
+          messages,
+          hasMore: messages.length === limit
+        });
+      } catch (err) {
+        console.error("❌ Error loading older messages:", err);
+        socket.emit('olderMessages', { messages: [], hasMore: false });
+      }
+    });
+    socket.on('joinVoiceChannel', (channelName) => {
+      console.log(`🔊 ${username} joining voice channel: ${channelName}`);
+      if (socket.voiceChannel) {
+        socket.leave(`voice-${socket.voiceChannel}`);
+        const oldRoom = voiceRooms.get(socket.voiceChannel);
+        if (oldRoom) {
+          oldRoom.delete(socket.id);
+          if (oldRoom.size === 0) {
+            voiceRooms.delete(socket.voiceChannel);
+          }
+          const oldRoomUsers = Array.from(oldRoom).map(socketId => {
+            const s = io.sockets.sockets.get(socketId);
+            return s ? s.user.username : null;
+          }).filter(Boolean);
+          io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: oldRoomUsers });
+          socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', {
+            username,
+            channel: socket.voiceChannel,
+            socketId: socket.id
+          });
+        }
+      }
+      socket.join(`voice-${channelName}`);
+      socket.voiceChannel = channelName;
+      if (!voiceRooms.has(channelName)) {
+        voiceRooms.set(channelName, new Set());
+      }
+      const existingUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
+        const s = io.sockets.sockets.get(socketId);
+        return s ? { socketId, username: s.user.username } : null;
+      }).filter(Boolean);
+      voiceRooms.get(channelName).add(socket.id);
+      userVoiceStates.set(socket.id, {
+        username,
+        muted: false,
+        deafened: false,
+        camera: false,
+        screenSharing: false,
+        channel: channelName
+      });
+      existingUsers.forEach(user => {
+        socket.emit('userJoinedVoice', {
+          username: user.username,
+          channel: channelName,
+          socketId: user.socketId
+        });
+        const existingState = userVoiceStates.get(user.socketId);
+        if (existingState) {
+          socket.emit('userMuted', { username: user.username, muted: existingState.muted });
+          socket.emit('userDeafened', { username: user.username, deafened: existingState.deafened });
+          socket.emit('userCamera', { username: user.username, camera: existingState.camera });
+          socket.emit('userScreenSharing', { username: user.username, screenSharing: existingState.screenSharing });
+        }
+      });
+      const roomUsers = Array.from(voiceRooms.get(channelName)).map(socketId => {
+        const s = io.sockets.sockets.get(socketId);
+        return s ? s.user.username : null;
+      }).filter(Boolean);
+      io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
+      socket.to(`voice-${channelName}`).emit('userJoinedVoice', {
+        username,
+        channel: channelName,
+        socketId: socket.id
+      });
+      console.log(`✅ ${username} joined voice channel: ${channelName}`);
+      broadcastOnlineUsers();
+    });
+    socket.on('leaveVoiceChannel', () => {
+      if (socket.voiceChannel) {
+        console.log(`🔊 ${username} leaving voice channel: ${socket.voiceChannel}`);
+        socket.leave(`voice-${socket.voiceChannel}`);
+        const room = voiceRooms.get(socket.voiceChannel);
+        if (room) {
+          room.delete(socket.id);
+          if (room.size === 0) {
+            voiceRooms.delete(socket.voiceChannel);
+          }
+          const roomUsers = Array.from(room).map(socketId => {
+            const s = io.sockets.sockets.get(socketId);
+            return s ? s.user.username : null;
+          }).filter(Boolean);
+          io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: roomUsers });
+          socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', {
+            username,
+            channel: socket.voiceChannel,
+            socketId: socket.id
+          });
+        }
+        console.log(`✅ ${username} left voice channel: ${socket.voiceChannel}`);
+        userVoiceStates.delete(socket.id);
+        socket.voiceChannel = null;
+        broadcastOnlineUsers();
+      }
+    });
+    socket.on('webrtc-offer', (data) => {
+      const targetSocket = io.sockets.sockets.get(data.to);
+      if (targetSocket && socket.voiceChannel) {
+        targetSocket.emit('webrtc-offer', {
+          offer: data.offer,
+          from: socket.id,
+          username: username
         });
       }
-      
-      console.log(`✅ ${username} left voice channel: ${socket.voiceChannel}`);
-      
-      // Clear user voice state
-      userVoiceStates.delete(socket.id);
-      
-      socket.voiceChannel = null;
-      
-      // Broadcast updated online users list
-      broadcastOnlineUsers();
-    }
-  });
-
-  socket.on('webrtc-offer', (data) => {
-    const targetSocket = io.sockets.sockets.get(data.to);
-    if (targetSocket && socket.voiceChannel) {
-      targetSocket.emit('webrtc-offer', {
-        offer: data.offer,
-        from: socket.id,
-        username: username
-      });
-    }
-  });
-
-  socket.on('webrtc-answer', (data) => {
-    const targetSocket = io.sockets.sockets.get(data.to);
-    if (targetSocket && socket.voiceChannel) {
-      targetSocket.emit('webrtc-answer', {
-        answer: data.answer,
-        from: socket.id,
-        username: username
-      });
-    }
-  });
-
-  socket.on('webrtc-ice-candidate', (data) => {
-    const targetSocket = io.sockets.sockets.get(data.to);
-    if (targetSocket && socket.voiceChannel) {
-      targetSocket.emit('webrtc-ice-candidate', {
-        candidate: data.candidate,
-        from: socket.id,
-        username: username
-      });
-    }
-  });
-
-  socket.on("chatMessage", async (msg) => {
-    try {
-      const messageToSave = {
-        username: username,
-        message: msg.message,
-        mentions: msg.mentions || [],
-        attachments: msg.attachments || [],
-        channel: socket.currentChannel || 'general',
-        timestamp: new Date(),
-      };
-      await messagesCollection.insertOne(messageToSave);
-      io.to(socket.currentChannel || 'general').emit("chatMessage", messageToSave);
-      
-      // Log mentions for debugging
-      if (msg.mentions && msg.mentions.length > 0) {
-        console.log(`💬 ${username} mentioned: ${msg.mentions.join(', ')}`);
-      }
-      
-      // Log attachments
-      if (msg.attachments && msg.attachments.length > 0) {
-        console.log(`📎 ${username} sent ${msg.attachments.length} file(s)`);
-      }
-    } catch (err) {
-      console.error("❌ Error saving message:", err);
-    }
-  });
-
-  socket.on('typing', (data) => {
-    // Broadcast typing status to other users in the same channel
-    socket.to(socket.currentChannel || 'general').emit('typing', {
-      username: data.username,
-      isTyping: data.isTyping
     });
-  });
-
-  // Admin: Delete message
-  socket.on('deleteMessage', async (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can delete messages');
-      return;
-    }
-
-    try {
-      const { ObjectId } = require('mongodb');
-      const result = await messagesCollection.deleteOne({ _id: new ObjectId(data.messageId) });
-      
-      if (result.deletedCount > 0) {
-        // Broadcast deletion to all users
-        io.emit('messageDeleted', { messageId: data.messageId });
-        console.log(`🗑️ Admin ${username} deleted message ${data.messageId}`);
+    socket.on('webrtc-answer', (data) => {
+      const targetSocket = io.sockets.sockets.get(data.to);
+      if (targetSocket && socket.voiceChannel) {
+        targetSocket.emit('webrtc-answer', {
+          answer: data.answer,
+          from: socket.id,
+          username: username
+        });
       }
-    } catch (err) {
-      console.error('❌ Error deleting message:', err);
-      socket.emit('error', 'Failed to delete message');
-    }
-  });
-
-  // Admin: Kick user from voice
-  socket.on('kickFromVoice', (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can kick users');
-      return;
-    }
-
-    // Find the target user's socket
-    const targetSocket = Array.from(io.sockets.sockets.values()).find(
-      s => s.user.username === data.targetUsername
-    );
-
-    if (targetSocket && targetSocket.voiceChannel) {
-      const channelName = targetSocket.voiceChannel;
-      
-      // Force leave voice channel
-      targetSocket.leave(`voice-${channelName}`);
-      const room = voiceRooms.get(channelName);
-      if (room) {
-        room.delete(targetSocket.id);
-        if (room.size === 0) {
-          voiceRooms.delete(channelName);
+    });
+    socket.on('webrtc-ice-candidate', (data) => {
+      const targetSocket = io.sockets.sockets.get(data.to);
+      if (targetSocket && socket.voiceChannel) {
+        targetSocket.emit('webrtc-ice-candidate', {
+          candidate: data.candidate,
+          from: socket.id,
+          username: username
+        });
+      }
+    });
+    socket.on("chatMessage", async (msg) => {
+      try {
+        const messageToSave = {
+          username: username,
+          message: msg.message,
+          mentions: msg.mentions || [],
+          attachments: msg.attachments || [],
+          channel: socket.currentChannel || 'general',
+          timestamp: new Date(),
+        };
+        await messagesCollection.insertOne(messageToSave);
+        io.to(socket.currentChannel || 'general').emit("chatMessage", messageToSave);
+        if (msg.mentions && msg.mentions.length > 0) {
+          console.log(`💬 ${username} mentioned: ${msg.mentions.join(', ')}`);
         }
-        
-        const roomUsers = Array.from(room).map(socketId => {
-          const s = io.sockets.sockets.get(socketId);
-          return s ? s.user.username : null;
-        }).filter(Boolean);
-        
-        io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
+        if (msg.attachments && msg.attachments.length > 0) {
+          console.log(`📎 ${username} sent ${msg.attachments.length} file(s)`);
+        }
+      } catch (err) {
+        console.error("❌ Error saving message:", err);
       }
-      
-      targetSocket.voiceChannel = null;
-      targetSocket.emit('kickedFromVoice', { reason: 'Kicked by admin' });
-      
-      console.log(`👢 Admin ${username} kicked ${data.targetUsername} from voice`);
-      broadcastOnlineUsers();
-    }
-  });
-
-  // Admin: Disconnect user
-  socket.on('disconnectUser', (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can disconnect users');
-      return;
-    }
-
-    // Find the target user's socket
-    const targetSocket = Array.from(io.sockets.sockets.values()).find(
-      s => s.user && s.user.username === data.username
-    );
-
-    if (targetSocket) {
-      console.log(`🔨 Admin ${username} disconnected ${data.username}`);
-      targetSocket.emit('disconnected', { reason: 'Disconnected by admin' });
-      targetSocket.disconnect(true);
-    }
-  });
-
-  // Admin: Broadcast message
-  socket.on('broadcastMessage', (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can broadcast messages');
-      return;
-    }
-
-    console.log(`📢 Admin ${username} broadcasting: ${data.message}`);
-    
-    // Send to all connected users
-    io.emit('serverBroadcast', {
-      message: data.message,
-      from: username,
-      timestamp: new Date().toISOString()
     });
-  });
-
-  socket.on('createChannel', async (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can create channels');
-      return;
-    }
-    
-    try {
-      const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
-      const existing = await collection.findOne({ name: data.name });
-      if (existing) {
-        socket.emit('error', 'Channel already exists');
+    socket.on('typing', (data) => {
+      socket.to(socket.currentChannel || 'general').emit('typing', {
+        username: data.username,
+        isTyping: data.isTyping
+      });
+    });
+    socket.on('deleteMessage', async (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can delete messages');
         return;
       }
-      
-      await collection.insertOne({
-        name: data.name,
-        description: data.description || 'No description',
-        type: data.type
-      });
-      
-      if (data.type === 'text') {
-        const channels = await channelsCollection.find().toArray();
-        io.emit('channelUpdate', channels);
-      } else {
-                const voiceChannels = await voiceChannelsCollection.find().toArray();
-        io.emit('voiceChannelUpdate', voiceChannels);
+      try {
+        const { ObjectId } = require('mongodb');
+        const result = await messagesCollection.deleteOne({ _id: new ObjectId(data.messageId) });
+        if (result.deletedCount > 0) {
+          io.emit('messageDeleted', { messageId: data.messageId });
+          console.log(`🗑️ Admin ${username} deleted message ${data.messageId}`);
+        }
+      } catch (err) {
+        console.error('❌ Error deleting message:', err);
+        socket.emit('error', 'Failed to delete message');
       }
-      
-      socket.emit('success', `${data.type} channel #${data.name} created`);
-    } catch (err) {
-      socket.emit('error', 'Failed to create channel');
-    }
-  });
-
-  socket.on('deleteChannel', async (data) => {
-    if (!socket.user.isAdmin) {
-      socket.emit('error', 'Only admins can delete channels');
-      return;
-    }
-    
-    if (data.type === 'text' && data.name === 'general') {
-      socket.emit('error', 'Cannot delete the general channel');
-      return;
-    }
-    
-    try {
-      const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
-      const result = await collection.deleteOne({ name: data.name });
-      
-      if (result.deletedCount > 0) {
+    });
+    socket.on('kickFromVoice', (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can kick users');
+        return;
+      }
+      const targetSocket = Array.from(io.sockets.sockets.values()).find(
+        s => s.user.username === data.targetUsername
+      );
+      if (targetSocket && targetSocket.voiceChannel) {
+        const channelName = targetSocket.voiceChannel;
+        targetSocket.leave(`voice-${channelName}`);
+        const room = voiceRooms.get(channelName);
+        if (room) {
+          room.delete(targetSocket.id);
+          if (room.size === 0) {
+            voiceRooms.delete(channelName);
+          }
+          const roomUsers = Array.from(room).map(socketId => {
+            const s = io.sockets.sockets.get(socketId);
+            return s ? s.user.username : null;
+          }).filter(Boolean);
+          io.emit('voiceChannelUsers', { channel: channelName, users: roomUsers });
+        }
+        targetSocket.voiceChannel = null;
+        targetSocket.emit('kickedFromVoice', { reason: 'Kicked by admin' });
+        console.log(`👢 Admin ${username} kicked ${data.targetUsername} from voice`);
+        broadcastOnlineUsers();
+      }
+    });
+    socket.on('disconnectUser', (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can disconnect users');
+        return;
+      }
+      const targetSocket = Array.from(io.sockets.sockets.values()).find(
+        s => s.user && s.user.username === data.username
+      );
+      if (targetSocket) {
+        console.log(`🔨 Admin ${username} disconnected ${data.username}`);
+        targetSocket.emit('disconnected', { reason: 'Disconnected by admin' });
+        targetSocket.disconnect(true);
+      }
+    });
+    socket.on('broadcastMessage', (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can broadcast messages');
+        return;
+      }
+      console.log(`📢 Admin ${username} broadcasting: ${data.message}`);
+      io.emit('serverBroadcast', {
+        message: data.message,
+        from: username,
+        timestamp: new Date().toISOString()
+      });
+    });
+    socket.on('createChannel', async (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can create channels');
+        return;
+      }
+      try {
+        const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
+        const existing = await collection.findOne({ name: data.name });
+        if (existing) {
+          socket.emit('error', 'Channel already exists');
+          return;
+        }
+        await collection.insertOne({
+          name: data.name,
+          description: data.description || 'No description',
+          type: data.type
+        });
         if (data.type === 'text') {
-          await messagesCollection.deleteMany({ channel: data.name });
           const channels = await channelsCollection.find().toArray();
           io.emit('channelUpdate', channels);
-          io.emit('channelDeleted', data.name);
         } else {
-          if (voiceRooms.has(data.name)) {
-            const room = voiceRooms.get(data.name);
-            room.forEach(socketId => {
-              const s = io.sockets.sockets.get(socketId);
-              if (s) {
-                s.emit('voiceChannelDeleted', data.name);
-                s.leave(`voice-${data.name}`);
-                s.voiceChannel = null;
-              }
-            });
-            voiceRooms.delete(data.name);
-          }
           const voiceChannels = await voiceChannelsCollection.find().toArray();
           io.emit('voiceChannelUpdate', voiceChannels);
-          io.emit('voiceChannelDeleted', data.name);
         }
-        socket.emit('success', `${data.type} channel #${data.name} deleted`);
-      } else {
-        socket.emit('error', 'Channel not found');
+        socket.emit('success', `${data.type} channel #${data.name} created`);
+      } catch (err) {
+        socket.emit('error', 'Failed to create channel');
       }
-    } catch (err) {
-      socket.emit('error', 'Failed to delete channel');
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`👤 User disconnected: ${username}`);
-    
-    if (socket.voiceChannel) {
-      const room = voiceRooms.get(socket.voiceChannel);
-      if (room) {
-        room.delete(socket.id);
-        if (room.size === 0) {
-          voiceRooms.delete(socket.voiceChannel);
+    });
+    socket.on('deleteChannel', async (data) => {
+      if (!socket.user.isAdmin) {
+        socket.emit('error', 'Only admins can delete channels');
+        return;
+      }
+      if (data.type === 'text' && data.name === 'general') {
+        socket.emit('error', 'Cannot delete the general channel');
+        return;
+      }
+      try {
+        const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
+        const result = await collection.deleteOne({ name: data.name });
+        if (result.deletedCount > 0) {
+          if (data.type === 'text') {
+            await messagesCollection.deleteMany({ channel: data.name });
+            const channels = await channelsCollection.find().toArray();
+            io.emit('channelUpdate', channels);
+            io.emit('channelDeleted', data.name);
+          } else {
+            if (voiceRooms.has(data.name)) {
+              const room = voiceRooms.get(data.name);
+              room.forEach(socketId => {
+                const s = io.sockets.sockets.get(socketId);
+                if (s) {
+                  s.emit('voiceChannelDeleted', data.name);
+                  s.leave(`voice-${data.name}`);
+                  s.voiceChannel = null;
+                }
+              });
+              voiceRooms.delete(data.name);
+            }
+            const voiceChannels = await voiceChannelsCollection.find().toArray();
+            io.emit('voiceChannelUpdate', voiceChannels);
+            io.emit('voiceChannelDeleted', data.name);
+          }
+          socket.emit('success', `${data.type} channel #${data.name} deleted`);
+        } else {
+          socket.emit('error', 'Channel not found');
         }
-        
-        const roomUsers = Array.from(room).map(socketId => {
-          const s = io.sockets.sockets.get(socketId);
-          return s ? s.user.username : null;
-        }).filter(Boolean);
-        
-        io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: roomUsers });
-        socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', { 
-          username, 
-          channel: socket.voiceChannel,
-          socketId: socket.id 
+      } catch (err) {
+        socket.emit('error', 'Failed to delete channel');
+      }
+    });
+    socket.on('disconnect', () => {
+      console.log(`👤 User disconnected: ${username}`);
+      if (socket.voiceChannel) {
+        const room = voiceRooms.get(socket.voiceChannel);
+        if (room) {
+          room.delete(socket.id);
+          if (room.size === 0) {
+            voiceRooms.delete(socket.voiceChannel);
+          }
+          const roomUsers = Array.from(room).map(socketId => {
+            const s = io.sockets.sockets.get(socketId);
+            return s ? s.user.username : null;
+          }).filter(Boolean);
+          io.emit('voiceChannelUsers', { channel: socket.voiceChannel, users: roomUsers });
+          socket.to(`voice-${socket.voiceChannel}`).emit('userLeftVoice', {
+            username,
+            channel: socket.voiceChannel,
+            socketId: socket.id
+          });
+        }
+      }
+      broadcastOnlineUsers();
+    });
+    socket.on('userSpeaking', (data) => {
+      if (socket.voiceChannel) {
+        socket.to(`voice-${socket.voiceChannel}`).emit('userSpeaking', {
+          username: username,
+          speaking: data.speaking
         });
       }
-    }
-
-    // Broadcast updated online users list after disconnect
-    broadcastOnlineUsers();
-  });
-
-  socket.on('userSpeaking', (data) => {
-    if (socket.voiceChannel) {
-      socket.to(`voice-${socket.voiceChannel}`).emit('userSpeaking', {
-        username: username,
-        speaking: data.speaking
-      });
-    }
-  });
-
-  socket.on('userMuted', (data) => {
-    // Update stored state
-    const state = userVoiceStates.get(socket.id);
-    if (state) {
-      state.muted = data.muted;
-      userVoiceStates.set(socket.id, state);
-    }
-    
-    // Broadcast to EVERYONE (not just voice channel) so it shows in channel list
-    io.emit('userMuted', {
-      username: username,
-      muted: data.muted
     });
-  });
-
-  socket.on('userDeafened', (data) => {
-    // Update stored state
-    const state = userVoiceStates.get(socket.id);
-    if (state) {
-      state.deafened = data.deafened;
-      userVoiceStates.set(socket.id, state);
-    }
-    
-    // Broadcast to EVERYONE (not just voice channel) so it shows in channel list
-    io.emit('userDeafened', {
-      username: username,
-      deafened: data.deafened
-    });
-  });
-
-  socket.on('userCamera', (data) => {
-    // Update stored state
-    const state = userVoiceStates.get(socket.id);
-    if (state) {
-      state.camera = data.camera;
-      userVoiceStates.set(socket.id, state);
-    }
-    
-    // Broadcast to EVERYONE so camera state is visible
-    io.emit('userCamera', {
-      username: username,
-      camera: data.camera
-    });
-  });
-
-  socket.on('userScreenSharing', (data) => {
-    // Update stored state
-    const state = userVoiceStates.get(socket.id);
-    if (state) {
-      state.screenSharing = data.screenSharing;
-      userVoiceStates.set(socket.id, state);
-    }
-    
-    // Broadcast to EVERYONE so screen sharing state is visible
-    io.emit('userScreenSharing', {
-      username: username,
-      screenSharing: data.screenSharing
-    });
-  });
-
-  // Direct Message handlers
-  socket.on('sendDirectMessage', async (data) => {
-    try {
-      const { recipient, message, attachments } = data;
-      
-      // Create conversation ID (sorted usernames to ensure consistency)
-      const conversationId = [username, recipient].sort().join('_');
-      
-      const dmMessage = {
-        conversationId,
-        sender: username,
-        recipient,
-        message,
-        attachments: attachments || [],
-        timestamp: new Date(),
-        read: false
-      };
-      
-      await directMessagesCollection.insertOne(dmMessage);
-      
-      // Send to recipient if online
-      const recipientSocket = Array.from(io.sockets.sockets.values()).find(
-        s => s.user.username === recipient
-      );
-      
-      if (recipientSocket) {
-        recipientSocket.emit('directMessage', dmMessage);
+    socket.on('userMuted', (data) => {
+      const state = userVoiceStates.get(socket.id);
+      if (state) {
+        state.muted = data.muted;
+        userVoiceStates.set(socket.id, state);
       }
-      
-      // Send back to sender for confirmation
-      socket.emit('directMessage', dmMessage);
-      
-      console.log(`💬 DM from ${username} to ${recipient}`);
-    } catch (err) {
-      console.error('❌ Error sending DM:', err);
-      socket.emit('error', 'Failed to send direct message');
-    }
-  });
-
-  socket.on('getDirectMessages', async (data) => {
-    try {
-      const { recipient } = data;
-      const conversationId = [username, recipient].sort().join('_');
-      
-      const messages = await directMessagesCollection
-        .find({ conversationId })
-        .sort({ timestamp: 1 })
-        .toArray();
-      
-      socket.emit('directMessageHistory', { recipient, messages });
-      
-      // Mark messages as read
-      await directMessagesCollection.updateMany(
-        { conversationId, recipient: username, read: false },
-        { $set: { read: true } }
-      );
-    } catch (err) {
-      console.error('❌ Error fetching DMs:', err);
-      socket.emit('error', 'Failed to fetch direct messages');
-    }
-  });
-
-  socket.on('getConversations', async () => {
-    try {
-      // Get all conversations for this user
-      const conversations = await directMessagesCollection.aggregate([
-        {
-          $match: {
-            $or: [
-              { sender: username },
-              { recipient: username }
-            ]
-          }
-        },
-        {
-          $sort: { timestamp: -1 }
-        },
-        {
-          $group: {
-            _id: '$conversationId',
-            lastMessage: { $first: '$$ROOT' },
-            unreadCount: {
-              $sum: {
-                $cond: [
-                  { $and: [{ $eq: ['$recipient', username] }, { $eq: ['$read', false] }] },
-                  1,
-                  0
-                ]
+      io.emit('userMuted', {
+        username: username,
+        muted: data.muted
+      });
+    });
+    socket.on('userDeafened', (data) => {
+      const state = userVoiceStates.get(socket.id);
+      if (state) {
+        state.deafened = data.deafened;
+        userVoiceStates.set(socket.id, state);
+      }
+      io.emit('userDeafened', {
+        username: username,
+        deafened: data.deafened
+      });
+    });
+    socket.on('userCamera', (data) => {
+      const state = userVoiceStates.get(socket.id);
+      if (state) {
+        state.camera = data.camera;
+        userVoiceStates.set(socket.id, state);
+      }
+      io.emit('userCamera', {
+        username: username,
+        camera: data.camera
+      });
+    });
+    socket.on('userScreenSharing', (data) => {
+      const state = userVoiceStates.get(socket.id);
+      if (state) {
+        state.screenSharing = data.screenSharing;
+        userVoiceStates.set(socket.id, state);
+      }
+      io.emit('userScreenSharing', {
+        username: username,
+        screenSharing: data.screenSharing
+      });
+    });
+    socket.on('sendDirectMessage', async (data) => {
+      try {
+        const { recipient, message, attachments } = data;
+        const conversationId = [username, recipient].sort().join('_');
+        const dmMessage = {
+          conversationId,
+          sender: username,
+          recipient,
+          message,
+          attachments: attachments || [],
+          timestamp: new Date(),
+          read: false
+        };
+        await directMessagesCollection.insertOne(dmMessage);
+        const recipientSocket = Array.from(io.sockets.sockets.values()).find(
+          s => s.user.username === recipient
+        );
+        if (recipientSocket) {
+          recipientSocket.emit('directMessage', dmMessage);
+        }
+        socket.emit('directMessage', dmMessage);
+        console.log(`💬 DM from ${username} to ${recipient}`);
+      } catch (err) {
+        console.error('❌ Error sending DM:', err);
+        socket.emit('error', 'Failed to send direct message');
+      }
+    });
+    socket.on('getDirectMessages', async (data) => {
+      try {
+        const { recipient } = data;
+        const conversationId = [username, recipient].sort().join('_');
+        const messages = await directMessagesCollection
+          .find({ conversationId })
+          .sort({ timestamp: 1 })
+          .toArray();
+        socket.emit('directMessageHistory', { recipient, messages });
+        await directMessagesCollection.updateMany(
+          { conversationId, recipient: username, read: false },
+          { $set: { read: true } }
+        );
+      } catch (err) {
+        console.error('❌ Error fetching DMs:', err);
+        socket.emit('error', 'Failed to fetch direct messages');
+      }
+    });
+    socket.on('getConversations', async () => {
+      try {
+        const conversations = await directMessagesCollection.aggregate([
+          {
+            $match: {
+              $or: [
+                { sender: username },
+                { recipient: username }
+              ]
+            }
+          },
+          {
+            $sort: { timestamp: -1 }
+          },
+          {
+            $group: {
+              _id: '$conversationId',
+              lastMessage: { $first: '$$ROOT' },
+              unreadCount: {
+                $sum: {
+                  $cond: [
+                    { $and: [{ $eq: ['$recipient', username] }, { $eq: ['$read', false] }] },
+                    1,
+                    0
+                  ]
+                }
               }
             }
           }
-        }
-      ]).toArray();
-      
-      socket.emit('conversationsList', conversations);
-    } catch (err) {
-      console.error('❌ Error fetching conversations:', err);
-      socket.emit('error', 'Failed to fetch conversations');
-    }
-  });
-
-  socket.on('markDMAsRead', async (data) => {
-    try {
-      const { recipient } = data;
-      const conversationId = [username, recipient].sort().join('_');
-      
-      await directMessagesCollection.updateMany(
-        { conversationId, recipient: username, read: false },
-        { $set: { read: true } }
-      );
-      
-      // Notify sender that messages were read
-      const senderSocket = Array.from(io.sockets.sockets.values()).find(
-        s => s.user.username === recipient
-      );
-      
-      if (senderSocket) {
-        senderSocket.emit('dmRead', { username });
+        ]).toArray();
+        socket.emit('conversationsList', conversations);
+      } catch (err) {
+        console.error('❌ Error fetching conversations:', err);
+        socket.emit('error', 'Failed to fetch conversations');
       }
-    } catch (err) {
-      console.error('❌ Error marking DMs as read:', err);
-    }
+    });
+    socket.on('markDMAsRead', async (data) => {
+      try {
+        const { recipient } = data;
+        const conversationId = [username, recipient].sort().join('_');
+        await directMessagesCollection.updateMany(
+          { conversationId, recipient: username, read: false },
+          { $set: { read: true } }
+        );
+        const senderSocket = Array.from(io.sockets.sockets.values()).find(
+          s => s.user.username === recipient
+        );
+        if (senderSocket) {
+          senderSocket.emit('dmRead', { username });
+        }
+      } catch (err) {
+        console.error('❌ Error marking DMs as read:', err);
+      }
+    });
   });
-});
 }
-
 const PORT = process.env.PORT || 4196;
-
 async function gracefulShutdown(signal) {
   console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
-  
   io.emit('serverShutdown', 'Server is shutting down');
-  
   setTimeout(() => {
     server.close(() => {
       console.log('✅ Server closed gracefully');
       process.exit(0);
     });
-    
     setTimeout(() => {
       console.log('⚠️  Force exit - graceful shutdown timeout');
       process.exit(1);
     }, 5000);
   }, 1000);
 }
-
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
 process.on('uncaughtException', (err) => {
   console.error('💥 Uncaught Exception:', err);
   gracefulShutdown('UNCAUGHT_EXCEPTION');
 });
-
 process.on('unhandledRejection', (reason, promise) => {
   console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
   gracefulShutdown('UNHANDLED_REJECTION');
 });
-
 initializeServer();
-
 connect().then(async () => {
   const db = getDb();
   messagesCollection = db.collection("messages");
@@ -1722,27 +1144,21 @@ connect().then(async () => {
   channelsCollection = db.collection("channels");
   voiceChannelsCollection = db.collection("voiceChannels");
   directMessagesCollection = db.collection("directMessages");
-  
   const existingChannels = await channelsCollection.countDocuments();
   if (existingChannels === 0) {
     await channelsCollection.insertMany(defaultChannels);
     console.log('✅ Default text channels created');
   }
-  
   const existingVoiceChannels = await voiceChannelsCollection.countDocuments();
   if (existingVoiceChannels === 0) {
     await voiceChannelsCollection.insertMany(defaultVoiceChannels);
     console.log('✅ Default voice channels created');
   }
-  
   server.listen(PORT, () => {
     const protocol = isHttps ? 'https' : 'http';
-    
     displayBanner();
-    
     console.log(`🚀 Server running on ${protocol}://193.149.164.240:${PORT}`);
     console.log(`🌐 Domain: ${protocol}://wyvern.justneki.com`);
-    
     if (isHttps) {
       console.log('🔊 Voice chat: ENABLED');
       console.log('⚠️  You may need to accept the self-signed certificate');
@@ -1750,15 +1166,11 @@ connect().then(async () => {
       console.log('🔊 Voice chat: DISABLED (HTTP only)');
       console.log('💡 Generate SSL certificates to enable voice features');
     }
-    
-    // Setup Socket.IO after server is listening
     setupSocketIO();
     console.log('✅ Socket.IO initialized');
-    
     console.log('\n💡 Type "help" for available commands');
     console.log('📊 Type "status" for server status');
     console.log('👥 Type "users" to see connected users\n');
-    
     handleServerCommands();
   });
 }).catch(err => {

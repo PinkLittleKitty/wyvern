@@ -1,9 +1,7 @@
-// Theme Manager
 export class ThemeManager {
   constructor() {
     this.currentTheme = localStorage.getItem('wyvernTheme') || 'wyvern';
   }
-
   apply(theme) {
     if (theme === 'custom') {
       this.applyCustom();
@@ -15,14 +13,11 @@ export class ThemeManager {
     this.currentTheme = theme;
     localStorage.setItem('wyvernTheme', theme);
   }
-
   applyCustom() {
     const customTheme = JSON.parse(localStorage.getItem('wyvernCustomTheme') || '{}');
     const base = customTheme.base || 'dark';
-    
     const baseTheme = base === 'dark' ? 'wyvern' : base === 'light' ? 'wyvern-light' : 'wyvern-amoled';
     document.body.setAttribute('data-theme', baseTheme);
-    
     if (Object.keys(customTheme).length > 0) {
       let customStyle = document.getElementById('custom-theme-style');
       if (!customStyle) {
@@ -30,12 +25,10 @@ export class ThemeManager {
         customStyle.id = 'custom-theme-style';
         document.head.appendChild(customStyle);
       }
-      
       const accent = customTheme.accent || '#8b5cf6';
       const bg = customTheme.bg || '#0a0a0f';
       const sidebar = customTheme.sidebar || '#13131a';
       const text = customTheme.text || '#e4e4e7';
-      
       customStyle.textContent = `
         body {
           --accent: ${accent} !important;
@@ -52,7 +45,6 @@ export class ThemeManager {
       `;
     }
   }
-
   adjustColor(color, percent) {
     const num = parseInt(color.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
@@ -64,7 +56,6 @@ export class ThemeManager {
       (B < 255 ? B < 1 ? 0 : B : 255))
       .toString(16).slice(1);
   }
-
   getCurrent() {
     return this.currentTheme;
   }

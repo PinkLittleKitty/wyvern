@@ -1,12 +1,8 @@
 const { MongoClient } = require('mongodb');
-
-// Replace with your actual MongoDB connection string from AIO DBH
-const uri = "mongodb://admin:FE5B19LLX1G0K5FH@193.149.164.141:2204/?retryWrites=true&w=majority";
-
+require('dotenv').config();
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
-
 let db;
-
 async function connect() {
   try {
     await client.connect();
@@ -16,10 +12,8 @@ async function connect() {
     console.error("MongoDB connection error:", err);
   }
 }
-
 function getDb() {
   if (!db) throw new Error("Database not connected");
   return db;
 }
-
 module.exports = { connect, getDb };

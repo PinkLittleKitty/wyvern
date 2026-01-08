@@ -98,12 +98,10 @@
     <button id="registerBtn">Register</button>
     <div class="link" id="toLogin">Already have an account? Login</div>
   </div>
-
   <script>
     const registerBtn = document.getElementById("registerBtn");
     const errorDiv = document.getElementById("error");
     const toLogin = document.getElementById("toLogin");
-
     registerBtn.onclick = async () => {
       errorDiv.textContent = "";
       const username = document.getElementById("username").value.trim();
@@ -112,7 +110,6 @@
         errorDiv.textContent = "Please enter username and password.";
         return;
       }
-
       const res = await fetch("/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,12 +123,9 @@
         errorDiv.textContent = data.error || "Registration failed.";
       }
     };
-
     toLogin.onclick = () => {
       window.location.href = "/login.html";
     };
-
-    // Autofocus username
     document.getElementById("username").focus();
   </script>
 </body>

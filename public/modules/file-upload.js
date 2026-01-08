@@ -1,42 +1,34 @@
-// File Upload Manager
 export class FileUploadManager {
   constructor() {
     this.selectedFiles = [];
     this.uploadButton = document.getElementById('upload-button');
     this.fileInput = document.getElementById('file-input');
     this.filePreview = document.getElementById('file-preview');
-    
     this.init();
   }
-
   init() {
     if (this.uploadButton && this.fileInput) {
       this.uploadButton.addEventListener('click', () => this.fileInput.click());
       this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
     }
-
     window.removeFile = (index) => this.remove(index);
   }
-
   handleFileSelect(e) {
     const files = Array.from(e.target.files);
     this.selectedFiles = [...this.selectedFiles, ...files];
     this.updatePreview();
     this.fileInput.value = '';
   }
-
   updatePreview() {
     if (this.selectedFiles.length === 0) {
       this.filePreview.classList.remove('show');
       this.filePreview.innerHTML = '';
       return;
     }
-
     this.filePreview.classList.add('show');
     this.filePreview.innerHTML = this.selectedFiles.map((file, index) => {
       const isImage = file.type.startsWith('image/');
       const fileSize = this.formatSize(file.size);
-      
       if (isImage) {
         const url = URL.createObjectURL(file);
         return `
@@ -69,12 +61,10 @@ export class FileUploadManager {
       }
     }).join('');
   }
-
   remove(index) {
     this.selectedFiles.splice(index, 1);
     this.updatePreview();
   }
-
   formatSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -82,13 +72,10 @@ export class FileUploadManager {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   }
-
   async upload() {
     if (this.selectedFiles.length === 0) return [];
-
     const formData = new FormData();
     this.selectedFiles.forEach(file => formData.append('files', file));
-
     try {
       const token = sessionStorage.getItem('wyvernToken');
       const response = await fetch('/api/upload', {
@@ -96,9 +83,7 @@ export class FileUploadManager {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
-
       if (!response.ok) throw new Error('Upload failed');
-
       const data = await response.json();
       return data.files;
     } catch (error) {
@@ -106,12 +91,10 @@ export class FileUploadManager {
       throw error;
     }
   }
-
   clear() {
     this.selectedFiles = [];
     this.updatePreview();
   }
-
   hasFiles() {
     return this.selectedFiles.length > 0;
   }

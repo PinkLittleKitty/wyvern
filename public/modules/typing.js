@@ -1,4 +1,3 @@
-// Typing Indicator Manager
 export class TypingManager {
   constructor(socket) {
     this.socket = socket;
@@ -7,17 +6,14 @@ export class TypingManager {
     this.isTyping = false;
     this.timeout = null;
   }
-
   start(username) {
     if (!this.isTyping) {
       this.isTyping = true;
       this.socket.emit("typing", { username, isTyping: true });
     }
-    
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => this.stop(username), 3000);
   }
-
   stop(username) {
     if (this.isTyping) {
       this.isTyping = false;
@@ -25,7 +21,6 @@ export class TypingManager {
     }
     clearTimeout(this.timeout);
   }
-
   handleRemoteTyping(data, currentUsername) {
     if (data.isTyping && data.username !== currentUsername) {
       this.typingUsers.add(data.username);
@@ -34,10 +29,8 @@ export class TypingManager {
     }
     this.updateDisplay();
   }
-
   updateDisplay() {
     if (!this.indicator) return;
-
     if (this.typingUsers.size === 0) {
       this.indicator.textContent = "";
       this.indicator.style.display = "none";

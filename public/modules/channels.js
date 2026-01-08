@@ -1,4 +1,3 @@
-// Channel Management
 export class ChannelManager {
   constructor(socket, adminManager = null) {
     this.socket = socket;
@@ -7,19 +6,15 @@ export class ChannelManager {
     this.textChannelsList = document.getElementById('textChannelsList');
     this.voiceChannelsList = document.getElementById('voiceChannelsList');
     this.currentChannelHeader = document.getElementById('currentChannel');
-    
     console.log('📝 ChannelManager initialized');
     console.log('  textChannelsList:', this.textChannelsList ? '✅ Found' : '❌ Not found');
     console.log('  voiceChannelsList:', this.voiceChannelsList ? '✅ Found' : '❌ Not found');
   }
-
   setAdminManager(adminManager) {
     this.admin = adminManager;
   }
-
   updateList(channels, type = 'text') {
     console.log(`📝 ChannelManager.updateList called: ${type}, ${channels.length} channels`);
-    
     const list = type === 'text' ? this.textChannelsList : this.voiceChannelsList;
     if (!list) {
       console.error(`❌ ${type} channel list element not found!`);
@@ -27,12 +22,9 @@ export class ChannelManager {
       console.log('voiceChannelsList:', this.voiceChannelsList);
       return;
     }
-
     console.log(`✅ ${type} channel list found, updating...`);
     list.innerHTML = '';
-
     if (type === 'text') {
-      // Text channels
       channels.forEach(channel => {
         const channelEl = document.createElement('div');
         channelEl.className = 'channel';
@@ -40,36 +32,27 @@ export class ChannelManager {
           channelEl.classList.add('active');
         }
         channelEl.dataset.channel = channel.name;
-        
         channelEl.innerHTML = `
           <div class="channel-name text">${this.escapeHtml(channel.name)}</div>
         `;
-
         channelEl.addEventListener('click', () => {
           this.switchChannel(channel.name);
         });
-
-        // Add delete button if admin
         if (this.admin) {
           this.admin.addDeleteButton(channelEl, channel.name, 'text');
         }
-
         list.appendChild(channelEl);
       });
     } else {
-      // Voice channels
       channels.forEach(channel => {
         const channelEl = document.createElement('div');
         channelEl.className = 'voice-channel-item';
         channelEl.dataset.channel = channel.name;
-        
         const users = channel.users || [];
-        const isConnected = false; // Will be updated by voice module
-        
+        const isConnected = false;
         if (isConnected) {
           channelEl.classList.add('connected');
         }
-
         channelEl.innerHTML = `
           <div class="voice-channel-header">
             <div class="voice-channel-info">
@@ -88,35 +71,26 @@ export class ChannelManager {
             `).join('')}
           </div>
         `;
-
         const headerEl = channelEl.querySelector('.voice-channel-header');
         headerEl.addEventListener('click', () => {
           this.joinVoiceChannel(channel.name);
         });
-
-        // Add delete button if admin
         if (this.admin) {
           this.admin.addDeleteButton(channelEl, channel.name, 'voice');
         }
-
         list.appendChild(channelEl);
         console.log(`  ✅ Added ${type} channel:`, channel.name);
       });
     }
-    
     console.log(`✅ ${type} channel list update complete. Total in DOM:`, list.children.length);
   }
-
   switchChannel(channelName) {
     console.log('Switching to channel:', channelName);
     this.currentChannel = channelName;
     this.socket.emit('joinChannel', channelName);
-    
     if (this.currentChannelHeader) {
       this.currentChannelHeader.textContent = channelName;
     }
-
-    // Update active state for all text channels
     document.querySelectorAll('.channel').forEach(el => {
       if (el.dataset.channel === channelName) {
         el.classList.add('active');
@@ -124,19 +98,15 @@ export class ChannelManager {
         el.classList.remove('active');
       }
     });
-
-    // Update input placeholder
     const input = document.getElementById('chat-input');
     if (input) {
       input.placeholder = `Message #${channelName}`;
       input.disabled = false;
     }
   }
-
   setVoiceManager(voiceManager) {
     this.voice = voiceManager;
   }
-
   joinVoiceChannel(channelName) {
     console.log('Joining voice channel:', channelName);
     if (this.voice) {
@@ -145,11 +115,9 @@ export class ChannelManager {
       console.error('Voice manager not initialized');
     }
   }
-
   getCurrentChannel() {
     return this.currentChannel;
   }
-
   escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

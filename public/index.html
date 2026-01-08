@@ -38,7 +38,9 @@
       margin: 32px auto;
     }
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
@@ -49,7 +51,6 @@
     <div class="spinner"></div>
   </div>
   <script>
-    // Fallback redirect if meta refresh doesn't work
     setTimeout(() => {
       window.location.href = '/login.html';
     }, 100);

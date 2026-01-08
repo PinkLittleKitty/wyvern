@@ -98,12 +98,10 @@
     <button id="loginBtn">Login</button>
     <div class="link" id="toRegister">Don't have an account? Register</div>
   </div>
-
   <script>
     const loginBtn = document.getElementById("loginBtn");
     const errorDiv = document.getElementById("error");
     const toRegister = document.getElementById("toRegister");
-
     loginBtn.onclick = async () => {
       errorDiv.textContent = "";
       const username = document.getElementById("username").value.trim();
@@ -112,7 +110,6 @@
         errorDiv.textContent = "Please enter username and password.";
         return;
       }
-
       const res = await fetch("/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,7 +124,6 @@
           sessionStorage.setItem("wyvernToken", data.token);
           console.log('Token saved:', data.token.substring(0, 20) + '...');
         }
-        // Small delay to ensure storage is written
         setTimeout(() => {
           window.location.href = "/chat.html";
         }, 200);
@@ -135,11 +131,9 @@
         errorDiv.textContent = data.error || "Login failed.";
       }
     };
-
     toRegister.onclick = () => {
       window.location.href = "/register.html";
     };
-
     document.getElementById("username").focus();
   </script>
 </body>
