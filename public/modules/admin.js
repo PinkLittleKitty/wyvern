@@ -5,6 +5,9 @@ export class AdminManager {
     this.isAdmin = false;
     this.channelModal = document.getElementById('channelModal');
     this.deleteModal = document.getElementById('deleteModal');
+    this.channelOptionsModal = document.getElementById('channelOptionsModal');
+    this.currentOptionsChannel = null;
+    this.currentOptionsType = null;
     this.channelToDelete = null;
     this.channelTypeToDelete = null;
     this.init();
@@ -12,6 +15,7 @@ export class AdminManager {
   init() {
     this.setupChannelModal();
     this.setupDeleteModal();
+    this.setupChannelOptionsModal();
     this.setupSocketHandlers();
   }
   setAdmin(isAdmin) {
@@ -70,6 +74,30 @@ export class AdminManager {
       });
     }
   }
+  setupChannelOptionsModal() {
+    const closeBtn = document.getElementById('closeChannelOptions');
+    const deleteBtn = document.getElementById('openDeleteChannelModal');
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeChannelOptionsModal());
+    }
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        this.closeChannelOptionsModal();
+        this.openDeleteModal(this.currentOptionsChannel, this.currentOptionsType);
+      });
+    }
+
+    if (this.channelOptionsModal) {
+      this.channelOptionsModal.addEventListener('click', (e) => {
+        if (e.target === this.channelOptionsModal) {
+          this.closeChannelOptionsModal();
+        }
+      });
+    }
+  }
+
   setupSocketHandlers() {
     this.socket.on('success', (message) => {
       this.toast.show(message, 'success');
@@ -77,6 +105,29 @@ export class AdminManager {
     this.socket.on('error', (message) => {
       this.toast.show(message, 'error');
     });
+  }
+
+  openChannelOptions(channelName, channelType) {
+    if (!this.isAdmin) return;
+    this.currentOptionsChannel = channelName;
+    this.currentOptionsType = channelType;
+
+    const optionsChannelName = document.getElementById('optionsChannelName');
+    if (optionsChannelName) {
+      optionsChannelName.textContent = `#${channelName}`;
+    }
+
+    if (this.channelOptionsModal) {
+      this.channelOptionsModal.classList.add('show');
+    }
+  }
+
+  closeChannelOptionsModal() {
+    if (this.channelOptionsModal) {
+      this.channelOptionsModal.classList.remove('show');
+    }
+    this.currentOptionsChannel = null;
+    this.currentOptionsType = null;
   }
   openChannelModal(type = 'text') {
     if (!this.isAdmin) return;
@@ -153,21 +204,33 @@ export class AdminManager {
   addDeleteButton(channelEl, channelName, channelType) {
     if (!this.isAdmin) return;
     if (channelType === 'text' && channelName === 'general') return;
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-channel-btn';
-    deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-    deleteBtn.title = 'Delete Channel';
-    deleteBtn.addEventListener('click', (e) => {
+    const optionsBtn = document.createElement('button');
+    optionsBtn.className = 'channel-options-btn'; // Updated class for styling
+    optionsBtn.innerHTML = '<i class="fas fa-cog"></i>';
+    optionsBtn.title = 'Channel Options';
+    optionsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.openDeleteModal(channelName, channelType);
+      this.openChannelOptions(channelName, channelType);
     });
-    let actionsContainer = channelEl.querySelector('.channel-actions');
+    let parent = channelEl;
+    if (channelType === 'voice') {
+      const header = channelEl.querySelector('.voice-channel-header');
+      if (header) parent = header;
+    }
+
+    let actionsContainer = parent.querySelector('.channel-actions');
     if (!actionsContainer) {
       actionsContainer = document.createElement('div');
       actionsContainer.className = 'channel-actions';
-      channelEl.appendChild(actionsContainer);
+
+      const userCount = parent.querySelector('.voice-user-count');
+      if (channelType === 'voice' && userCount) {
+        parent.insertBefore(actionsContainer, userCount);
+      } else {
+        parent.appendChild(actionsContainer);
+      }
     }
-    actionsContainer.appendChild(deleteBtn);
+    actionsContainer.appendChild(optionsBtn);
   }
   deleteMessage(messageId, messageEl) {
     if (!this.isAdmin || !messageId) return;
