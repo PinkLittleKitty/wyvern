@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const User = require('../models/User'); // Mongoose Model
+const User = require('../models/User');
 const { authMiddleware } = require('../auth');
 const router = express.Router();
 

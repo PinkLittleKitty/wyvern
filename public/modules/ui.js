@@ -4,6 +4,7 @@ export class UIManager {
     this.initUsersPanelToggle();
     this.initImageLightbox();
     this.initUserPanelClick();
+    this.initEmojiPicker();
   }
   initUserPanelClick() {
     const userPanelInfo = document.querySelector('.user-panel-info');
@@ -157,6 +158,42 @@ export class UIManager {
   requestNotificationPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
+    }
+  }
+
+  initEmojiPicker() {
+    const btn = document.getElementById('emoji-btn');
+    const picker = document.getElementById('emoji-picker');
+    const input = document.getElementById('chat-input');
+
+    const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿", "👹", "👺", "🤡", "💩", "👻", "💀", "☠️", "👽", "👾", "🤖", "🎃", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "👋", "🤚", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "✨", "🔥", "💯", "✅", "❌", "❓", "❗"];
+
+    if (picker) {
+      picker.innerHTML = emojis.map(emoji => `<div class="emoji-item">${emoji}</div>`).join('');
+
+      picker.querySelectorAll('.emoji-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const emoji = item.textContent;
+          if (input) {
+            input.value += emoji;
+            input.focus();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+      });
+    }
+
+    if (btn && picker) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        picker.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!picker.contains(e.target) && !btn.contains(e.target)) {
+          picker.classList.add('hidden');
+        }
+      });
     }
   }
 }

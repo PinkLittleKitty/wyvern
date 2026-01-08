@@ -58,10 +58,10 @@ export class MessageManager {
       : "";
     if (checkGrouping) {
       const lastMessage = this.container.lastElementChild;
-      const shouldGroup = lastMessage && 
-                         lastMessage.dataset.username === data.username &&
-                         data.timestamp && lastMessage.dataset.timestamp &&
-                         (new Date(data.timestamp) - new Date(lastMessage.dataset.timestamp)) < 300000;
+      const shouldGroup = lastMessage &&
+        lastMessage.dataset.username === data.username &&
+        data.timestamp && lastMessage.dataset.timestamp &&
+        (new Date(data.timestamp) - new Date(lastMessage.dataset.timestamp)) < 300000;
       if (shouldGroup) {
         messageEl.classList.add("grouped");
       }
@@ -71,10 +71,17 @@ export class MessageManager {
     const profileColor = this.profile.getColor(profile);
     const isAdmin = data.isAdmin || false;
     const adminBadge = isAdmin ? '<span class="message-admin-badge">Admin</span>' : '';
+    if (data.mentions && data.mentions.length > 0) {
+      data.mentions.forEach(mention => {
+        const regex = new RegExp(`@${mention}\\b`, 'gi');
+        data.message = data.message.replace(regex, `<span class="mention">@${mention}</span>`);
+      });
+    }
+
     let escapedMessage = this.escapeHtml(data.message);
-    escapedMessage = this.highlightMentions(escapedMessage, data.mentions);
+
     const isMentioned = data.mentions && (
-      data.mentions.includes(this.currentUsername) || 
+      data.mentions.includes(this.currentUsername) ||
       data.mentions.includes('everyone')
     );
     if (isMentioned && data.username !== this.currentUsername) {
@@ -223,17 +230,32 @@ export class MessageManager {
   }
   escapeHtml(text) {
     if (!text) return '';
+    try {
+      if (typeof marked !== 'undefined') {
+        const renderer = new marked.Renderer();
+        renderer.link = function (href, title, text) {
+          return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        };
+        marked.setOptions({
+          breaks: true,
+          gfm: true,
+          renderer: renderer
+        });
+        const rawHtml = marked.parse(text);
+        if (typeof DOMPurify !== 'undefined') {
+          return DOMPurify.sanitize(rawHtml, {
+            ADD_ATTR: ['target', 'class'],
+            ADD_TAGS: ['span']
+          });
+        }
+        return rawHtml;
+      }
+    } catch (e) {
+      console.error("Markdown parsing error:", e);
+    }
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML.replace(/\n/g, '<br>');
-  }
-  highlightMentions(text, mentions) {
-    if (!mentions || mentions.length === 0) return text;
-    mentions.forEach(mention => {
-      const regex = new RegExp(`@${mention}\\b`, 'gi');
-      text = text.replace(regex, `<span class="mention">@${mention}</span>`);
-    });
-    return text;
   }
   formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
