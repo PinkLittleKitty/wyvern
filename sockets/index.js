@@ -80,6 +80,20 @@ module.exports = (io) => {
 
         broadcastOnlineUsers();
 
+        voiceRooms.forEach((users, channelName) => {
+            const roomUsers = Array.from(users).map(socketId => {
+                const s = io.sockets.sockets.get(socketId);
+                return s ? s.user.username : null;
+            }).filter(Boolean);
+
+            if (roomUsers.length > 0) {
+                socket.emit('voiceChannelUsers', {
+                    channel: channelName,
+                    users: roomUsers
+                });
+            }
+        });
+
         const voiceData = {
             voiceRooms,
             userVoiceStates,

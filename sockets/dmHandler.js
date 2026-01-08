@@ -1,7 +1,6 @@
 const DirectMessage = require('../models/DirectMessage');
 
 module.exports = (io, socket) => {
-    // Legacy definitions removed
     const username = socket.user.username;
 
     socket.on('sendDirectMessage', async (data) => {
