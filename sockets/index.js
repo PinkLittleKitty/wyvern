@@ -59,6 +59,17 @@ module.exports = (io) => {
         const username = socket.user.username;
         console.log(`👤 User connected: ${username}`);
 
+        const voiceData = {
+            voiceRooms,
+            userVoiceStates,
+            broadcastOnlineUsers
+        };
+
+        chatHandler(io, socket);
+        voiceHandler(io, socket, voiceData);
+        adminHandler(io, socket, voiceData);
+        dmHandler(io, socket);
+
         const user = await User.findOne({ username });
         socket.user.isAdmin = user?.isAdmin || false;
 
@@ -94,16 +105,7 @@ module.exports = (io) => {
             }
         });
 
-        const voiceData = {
-            voiceRooms,
-            userVoiceStates,
-            broadcastOnlineUsers
-        };
 
-        chatHandler(io, socket);
-        voiceHandler(io, socket, voiceData);
-        adminHandler(io, socket, voiceData);
-        dmHandler(io, socket);
 
         socket.on('disconnect', () => {
             console.log(`👤 User disconnected: ${username}`);
