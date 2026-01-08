@@ -1,8 +1,7 @@
-const { getDb } = require('../database');
+const DirectMessage = require('../models/DirectMessage');
 
 module.exports = (io, socket) => {
-    const db = getDb();
-    const directMessagesCollection = db.collection('directMessages');
+    // Legacy definitions removed
     const username = socket.user.username;
 
     socket.on('sendDirectMessage', async (data) => {
@@ -20,7 +19,7 @@ module.exports = (io, socket) => {
                 read: false
             };
 
-            await directMessagesCollection.insertOne(dmMessage);
+            await DirectMessage.create(dmMessage);
 
             const recipientSocket = Array.from(io.sockets.sockets.values()).find(
                 s => s.user.username === recipient
@@ -43,14 +42,12 @@ module.exports = (io, socket) => {
             const { recipient } = data;
             const conversationId = [username, recipient].sort().join('_');
 
-            const messages = await directMessagesCollection
-                .find({ conversationId })
-                .sort({ timestamp: 1 })
-                .toArray();
+            const messages = await DirectMessage.find({ conversationId })
+                .sort({ timestamp: 1 });
 
             socket.emit('directMessageHistory', { recipient, messages });
 
-            await directMessagesCollection.updateMany(
+            await DirectMessage.updateMany(
                 { conversationId, recipient: username, read: false },
                 { $set: { read: true } }
             );
@@ -62,7 +59,7 @@ module.exports = (io, socket) => {
 
     socket.on('getConversations', async () => {
         try {
-            const conversations = await directMessagesCollection.aggregate([
+            const conversations = await DirectMessage.aggregate([
                 {
                     $match: {
                         $or: [
@@ -87,7 +84,7 @@ module.exports = (io, socket) => {
                         }
                     }
                 }
-            ]).toArray();
+            ]);
 
             socket.emit('conversationsList', conversations);
         } catch (err) {
@@ -101,7 +98,7 @@ module.exports = (io, socket) => {
             const { recipient } = data;
             const conversationId = [username, recipient].sort().join('_');
 
-            await directMessagesCollection.updateMany(
+            await DirectMessage.updateMany(
                 { conversationId, recipient: username, read: false },
                 { $set: { read: true } }
             );

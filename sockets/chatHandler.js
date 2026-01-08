@@ -1,8 +1,6 @@
-const { getDb } = require('../database');
+const Message = require('../models/Message');
 
 module.exports = (io, socket) => {
-    const db = getDb();
-    const messagesCollection = db.collection('messages');
     const username = socket.user.username;
 
     socket.on('joinChannel', async (channelName) => {
@@ -11,16 +9,13 @@ module.exports = (io, socket) => {
         socket.currentChannel = channelName;
 
         try {
-            const history = await messagesCollection
-                .find({ channel: channelName })
+            const history = await Message.find({ channel: channelName })
                 .sort({ timestamp: -1 })
-                .limit(50)
-                .toArray();
+                .limit(50);
 
             history.reverse();
 
             socket.emit("chatHistory", history);
-            // Notify about join if needed, or update user list context
         } catch (err) {
             console.error("❌ Error fetching chat history:", err);
         }
@@ -33,11 +28,9 @@ module.exports = (io, socket) => {
                 query.timestamp = { $lt: new Date(before) };
             }
 
-            const messages = await messagesCollection
-                .find(query)
+            const messages = await Message.find(query)
                 .sort({ timestamp: -1 })
-                .limit(limit)
-                .toArray();
+                .limit(limit);
 
             messages.reverse();
 
@@ -61,7 +54,7 @@ module.exports = (io, socket) => {
                 channel: socket.currentChannel || 'general',
                 timestamp: new Date(),
             };
-            await messagesCollection.insertOne(messageToSave);
+            await Message.create(messageToSave);
             io.to(socket.currentChannel || 'general').emit("chatMessage", messageToSave);
 
             if (msg.mentions && msg.mentions.length > 0) {

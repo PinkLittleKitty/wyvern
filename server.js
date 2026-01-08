@@ -97,7 +97,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://www.google-analytics.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "blob:", "https://*"], // Allow external images
+      imgSrc: ["'self'", "data:", "blob:", "https://*"],
       connectSrc: ["'self'", "ws:", "wss:", "https://www.google-analytics.com"],
       mediaSrc: ["'self'", "blob:"],
     },
@@ -166,11 +166,10 @@ app.get('/api/version', (req, res) => {
 app.get('/socket.io/socket.io.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'));
 });
-let messagesCollection;
-let usersCollection;
-let channelsCollection;
-let voiceChannelsCollection;
-let directMessagesCollection;
+
+const User = require('./models/User');
+const Channel = require('./models/Channel');
+const Message = require('./models/Message');
 const defaultChannels = [
   { name: 'general', description: 'General discussion', type: 'text' },
   { name: 'memes', description: 'Share your memes here', type: 'text' },
@@ -244,7 +243,7 @@ function handleServerCommands() {
         }
         try {
           const username = args[0];
-          const result = await usersCollection.updateOne(
+          const result = await User.updateOne(
             { username },
             { $set: { isAdmin: true } }
           );
@@ -264,9 +263,9 @@ function handleServerCommands() {
         }
         try {
           const username = args[0];
-          const result = await usersCollection.updateOne(
+          const result = await User.updateOne(
             { username },
-            { $unset: { isAdmin: "" } }
+            { $set: { isAdmin: false } }
           );
           if (result.matchedCount > 0) {
             console.log(`✅ ${username} is no longer an admin`);
@@ -279,7 +278,7 @@ function handleServerCommands() {
         break;
       case 'listadmins':
         try {
-          const admins = await usersCollection.find({ isAdmin: true }).toArray();
+          const admins = await User.find({ isAdmin: true });
           if (admins.length === 0) {
             console.log('👑 No admins found');
           } else {
@@ -305,19 +304,19 @@ function handleServerCommands() {
             console.log('❌ Type must be "text" or "voice"');
             return;
           }
-          const collection = type === 'text' ? channelsCollection : voiceChannelsCollection;
-          const existing = await collection.findOne({ name });
+
+          const existing = await Channel.findOne({ name });
           if (existing) {
-            console.log(`❌ ${type} channel #${name} already exists`);
+            console.log(`❌ Channel #${name} already exists`);
             return;
           }
-          await collection.insertOne({ name, description, type });
+
+          await Channel.create({ name, description, type });
           console.log(`✅ ${type} channel #${name} created`);
-          if (type === 'text') {
-            io.emit('channelUpdate', await channelsCollection.find().toArray());
-          } else {
-            io.emit('voiceChannelUpdate', await voiceChannelsCollection.find().toArray());
-          }
+
+          const allChannels = await Channel.find({});
+          io.emit('channelUpdate', allChannels.filter(c => c.type === 'text'));
+          io.emit('voiceChannelUpdate', allChannels.filter(c => c.type === 'voice'));
         } catch (err) {
           console.error('❌ Error adding channel:', err.message);
         }
@@ -334,12 +333,13 @@ function handleServerCommands() {
             console.log('❌ Cannot delete the general channel');
             return;
           }
-          const collection = type === 'text' ? channelsCollection : voiceChannelsCollection;
-          const result = await collection.deleteOne({ name });
+
+          const result = await Channel.deleteOne({ name });
           if (result.deletedCount > 0) {
             if (type === 'text') {
-              await messagesCollection.deleteMany({ channel: name });
-              io.emit('channelUpdate', await channelsCollection.find().toArray());
+              await Message.deleteMany({ channel: name });
+              const allChannels = await Channel.find({});
+              io.emit('channelUpdate', allChannels.filter(c => c.type === 'text'));
               io.emit('channelDeleted', name);
             } else {
               const voiceRooms = io.voiceRooms;
@@ -354,12 +354,13 @@ function handleServerCommands() {
                 });
                 voiceRooms.delete(name);
               }
-              io.emit('voiceChannelUpdate', await voiceChannelsCollection.find().toArray());
+              const allChannels = await Channel.find({});
+              io.emit('voiceChannelUpdate', allChannels.filter(c => c.type === 'voice'));
               io.emit('voiceChannelDeleted', name);
             }
-            console.log(`✅ ${type} channel #${name} deleted`);
+            console.log(`✅ Channel #${name} deleted`);
           } else {
-            console.log(`❌ ${type} channel #${name} not found`);
+            console.log(`❌ Channel #${name} not found`);
           }
         } catch (err) {
           console.error('❌ Error removing channel:', err.message);
@@ -367,8 +368,10 @@ function handleServerCommands() {
         break;
       case 'listchannels':
         try {
-          const textChannels = await channelsCollection.find().toArray();
-          const voiceChannels = await voiceChannelsCollection.find().toArray();
+          const channels = await Channel.find({});
+          const textChannels = channels.filter(c => c.type === 'text');
+          const voiceChannels = channels.filter(c => c.type === 'voice');
+
           console.log('\n📺 Text Channels:');
           if (textChannels.length === 0) {
             console.log('   No text channels found');
@@ -396,8 +399,9 @@ function handleServerCommands() {
           const connectedUsers = io.sockets.sockets.size;
           const voiceRooms = io.voiceRooms;
           const totalVoiceUsers = voiceRooms ? Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0) : 0;
-          const totalUsers = await usersCollection.countDocuments();
-          const totalMessages = await messagesCollection.countDocuments();
+          const totalUsers = await User.countDocuments();
+          const totalMessages = await Message.countDocuments();
+
           console.log('\n📊 Server Status:');
           console.log(`   🟢 Status: Running`);
           console.log(`   ⏰ Uptime: ${formatUptime(process.uptime())}`);
@@ -412,22 +416,26 @@ function handleServerCommands() {
         break;
       case 'stats':
         try {
-          const totalUsers = await usersCollection.countDocuments();
-          const totalMessages = await messagesCollection.countDocuments();
-          const totalChannels = await channelsCollection.countDocuments();
-          const totalVoiceChannels = await voiceChannelsCollection.countDocuments();
+          const totalUsers = await User.countDocuments();
+          const totalMessages = await Message.countDocuments();
+          const totalChannels = await Channel.countDocuments({ type: 'text' });
+          const totalVoiceChannels = await Channel.countDocuments({ type: 'voice' });
+
           const connectedUsers = io.sockets.sockets.size;
           const voiceRooms = io.voiceRooms;
           const totalVoiceUsers = voiceRooms ? Array.from(voiceRooms.values()).reduce((sum, room) => sum + room.size, 0) : 0;
-          const messagesByChannel = await messagesCollection.aggregate([
+
+          const messagesByChannel = await Message.aggregate([
             { $group: { _id: '$channel', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
-          ]).toArray();
-          const topUsers = await messagesCollection.aggregate([
+          ]);
+
+          const topUsers = await Message.aggregate([
             { $group: { _id: '$username', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 5 }
-          ]).toArray();
+          ]);
+
           console.log('\n📊 Detailed Server Statistics:');
           console.log('┌─────────────────────────────────────────────────────────┐');
           console.log('│ 📈 GENERAL STATS                                       │');
@@ -480,7 +488,7 @@ function handleServerCommands() {
         break;
       case 'migrate':
         try {
-          const result = await messagesCollection.updateMany(
+          const result = await Message.updateMany(
             { channel: { $exists: false } },
             { $set: { channel: 'general' } }
           );
@@ -491,11 +499,11 @@ function handleServerCommands() {
         break;
       case 'countmessages':
         try {
-          const totalMessages = await messagesCollection.countDocuments();
-          const messagesByChannel = await messagesCollection.aggregate([
+          const totalMessages = await Message.countDocuments();
+          const messagesByChannel = await Message.aggregate([
             { $group: { _id: '$channel', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
-          ]).toArray();
+          ]);
           console.log(`\n💬 Total Messages: ${totalMessages}`);
           console.log('📊 Messages by Channel:');
           messagesByChannel.forEach((channel, index) => {
@@ -572,8 +580,8 @@ function handleServerCommands() {
 }
 app.get('/api/channels', async (req, res) => {
   try {
-    const channels = await channelsCollection.find().toArray();
-    res.json(channels);
+    const channels = await Channel.find({});
+    res.json(channels.filter(c => c.type === 'text'));
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch channels' });
   }
@@ -607,22 +615,14 @@ process.on('unhandledRejection', (reason, promise) => {
   gracefulShutdown('UNHANDLED_REJECTION');
 });
 initializeServer();
+initializeServer();
 connect().then(async () => {
-  const db = getDb();
-  messagesCollection = db.collection("messages");
-  usersCollection = db.collection("users");
-  channelsCollection = db.collection("channels");
-  voiceChannelsCollection = db.collection("voiceChannels");
-  directMessagesCollection = db.collection("directMessages");
-  const existingChannels = await channelsCollection.countDocuments();
+  const existingChannels = await Channel.countDocuments();
   if (existingChannels === 0) {
-    await channelsCollection.insertMany(defaultChannels);
-    console.log('✅ Default text channels created');
-  }
-  const existingVoiceChannels = await voiceChannelsCollection.countDocuments();
-  if (existingVoiceChannels === 0) {
-    await voiceChannelsCollection.insertMany(defaultVoiceChannels);
-    console.log('✅ Default voice channels created');
+    await Channel.insertMany(defaultChannels);
+    await Channel.insertMany(defaultVoiceChannels);
+    console.log('✅ Default channels created');
+  } else {
   }
   server.listen(PORT, () => {
     const protocol = isHttps ? 'https' : 'http';

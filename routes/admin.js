@@ -1,13 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { getDb } = require('../database');
+const User = require('../models/User'); // Mongoose Model
 const { authMiddleware } = require('../auth');
 const router = express.Router();
+
 async function verifyAdmin(username) {
-    const db = getDb();
-    const user = await db.collection('users').findOne({ username });
+    const user = await User.findOne({ username });
     return user && user.isAdmin;
 }
+
 router.post('/beta/reload', authMiddleware, async (req, res) => {
     try {
         const isAdmin = await verifyAdmin(req.user.username);
@@ -35,6 +36,7 @@ router.post('/beta/reload', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Failed to reload beta version' });
     }
 });
+
 router.post('/reset-password', authMiddleware, async (req, res) => {
     try {
         const isAdmin = await verifyAdmin(req.user.username);
@@ -45,19 +47,20 @@ router.post('/reset-password', authMiddleware, async (req, res) => {
         if (!username) {
             return res.status(400).json({ error: 'Username is required' });
         }
-        const db = getDb();
-        const targetUser = await db.collection('users').findOne({ username });
+
+        const targetUser = await User.findOne({ username });
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
         }
+
         const tempPassword = Math.random().toString(36).slice(2, 10).toUpperCase();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
-        await db.collection('users').updateOne(
+
+        await User.updateOne(
             { username },
             {
                 $set: {
                     password: hashedPassword,
-                    passwordResetAt: new Date()
                 }
             }
         );
@@ -78,18 +81,15 @@ router.get('/users', authMiddleware, async (req, res) => {
         if (!isAdmin) {
             return res.status(403).json({ error: 'Admin access required' });
         }
-        const db = getDb();
-        const users = await db.collection('users')
-            .find({}, { projection: { password: 0 } })
-            .sort({ createdAt: -1 })
-            .toArray();
+
+        const users = await User.find({}, '-password').sort({ createdAt: -1 });
+
         res.json({
             success: true,
             users: users.map(user => ({
                 username: user.username,
                 isAdmin: user.isAdmin || false,
                 createdAt: user.createdAt || new Date(),
-                passwordResetAt: user.passwordResetAt || null
             }))
         });
     } catch (error) {
@@ -97,6 +97,7 @@ router.get('/users', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Failed to get users' });
     }
 });
+
 router.delete('/users/:username', authMiddleware, async (req, res) => {
     try {
         const isAdmin = await verifyAdmin(req.user.username);
@@ -110,15 +111,16 @@ router.delete('/users/:username', authMiddleware, async (req, res) => {
         if (username === req.user.username) {
             return res.status(400).json({ error: 'Cannot delete your own account' });
         }
-        const db = getDb();
-        const targetUser = await db.collection('users').findOne({ username });
+
+        const targetUser = await User.findOne({ username });
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
         }
         if (targetUser.isAdmin) {
             return res.status(403).json({ error: 'Cannot delete admin users' });
         }
-        await db.collection('users').deleteOne({ username });
+
+        await User.deleteOne({ username });
         req.io.sockets.sockets.forEach((socket) => {
             if (socket.user && socket.user.username === username) {
                 socket.emit('accountDeleted', 'Your account has been deleted by an administrator');

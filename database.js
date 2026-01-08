@@ -1,19 +1,23 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 require('dotenv').config();
+
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
-let db;
+
 async function connect() {
   try {
-    await client.connect();
-    db = client.db("wyvern");
-    console.log("Connected to MongoDB");
+    await mongoose.connect(uri);
+    console.log("Connected to MongoDB via Mongoose");
   } catch (err) {
     console.error("MongoDB connection error:", err);
+    process.exit(1);
   }
 }
+
 function getDb() {
-  if (!db) throw new Error("Database not connected");
-  return db;
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error("Database not connected");
+  }
+  return mongoose.connection.db;
 }
+
 module.exports = { connect, getDb };

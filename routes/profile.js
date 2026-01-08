@@ -1,18 +1,17 @@
 const express = require('express');
-const { getDb } = require('../database');
+const User = require('../models/User');
 const { authMiddleware } = require('../auth');
 const router = express.Router();
+
 router.get('/:username', authMiddleware, async (req, res) => {
     try {
-        const db = getDb();
-        const usersCollection = db.collection('users');
-        const user = await usersCollection.findOne({ username: req.params.username });
+        const user = await User.findOne({ username: req.params.username });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
         res.json({
             username: user.username,
-            avatar: user.avatar || null,
+            avatar: user.profilePic || null,
             banner: user.banner || null,
             bio: user.bio || '',
             customStatus: user.customStatus || '',
@@ -24,18 +23,19 @@ router.get('/:username', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch profile' });
     }
 });
+
 router.post('/update', authMiddleware, async (req, res) => {
     try {
-        const db = getDb();
-        const usersCollection = db.collection('users');
         const { bio, customStatus, profileColor, avatar, banner } = req.body;
         const updateData = {};
+
         if (bio !== undefined) updateData.bio = bio;
         if (customStatus !== undefined) updateData.customStatus = customStatus;
         if (profileColor !== undefined) updateData.profileColor = profileColor;
-        if (avatar !== undefined) updateData.avatar = avatar;
+        if (avatar !== undefined) updateData.profilePic = avatar;
         if (banner !== undefined) updateData.banner = banner;
-        await usersCollection.updateOne(
+
+        await User.updateOne(
             { username: req.user.username },
             { $set: updateData }
         );

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { getDb } = require('../database');
+const User = require('../models/User');
+const Channel = require('../models/Channel');
 
 const chatHandler = require('./chatHandler');
 const voiceHandler = require('./voiceHandler');
@@ -58,18 +59,15 @@ module.exports = (io) => {
         const username = socket.user.username;
         console.log(`👤 User connected: ${username}`);
 
-        const db = getDb();
-        const usersCollection = db.collection('users');
-        const channelsCollection = db.collection('channels');
-        const voiceChannelsCollection = db.collection('voiceChannels');
-
-        const user = await usersCollection.findOne({ username });
+        const user = await User.findOne({ username });
         socket.user.isAdmin = user?.isAdmin || false;
 
         socket.emit('userInfo', { username, isAdmin: socket.user.isAdmin });
 
-        const channels = await channelsCollection.find().toArray();
-        const voiceChannels = await voiceChannelsCollection.find().toArray();
+        const allChannels = await Channel.find({});
+        const channels = allChannels.filter(c => c.type === 'text');
+        const voiceChannels = allChannels.filter(c => c.type === 'voice');
+
         socket.emit('channelUpdate', channels);
         socket.emit('voiceChannelUpdate', voiceChannels);
 

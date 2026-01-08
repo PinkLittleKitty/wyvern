@@ -1,5 +1,3 @@
-const { getDb } = require('../database');
-
 module.exports = (io, socket, voiceData) => {
     const { voiceRooms, userVoiceStates, broadcastOnlineUsers } = voiceData;
     const username = socket.user.username;

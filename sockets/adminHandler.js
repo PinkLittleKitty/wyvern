@@ -1,11 +1,7 @@
-const { getDb } = require('../database');
-const { ObjectId } = require('mongodb');
+const Message = require('../models/Message');
+const Channel = require('../models/Channel');
 
 module.exports = (io, socket, voiceData) => {
-    const db = getDb();
-    const messagesCollection = db.collection('messages');
-    const channelsCollection = db.collection('channels');
-    const voiceChannelsCollection = db.collection('voiceChannels');
 
     const { voiceRooms, broadcastOnlineUsers } = voiceData;
     const username = socket.user.username;
@@ -22,7 +18,7 @@ module.exports = (io, socket, voiceData) => {
         if (!verifyAdmin()) return;
 
         try {
-            const result = await messagesCollection.deleteOne({ _id: new ObjectId(data.messageId) });
+            const result = await Message.deleteOne({ _id: data.messageId });
 
             if (result.deletedCount > 0) {
                 io.emit('messageDeleted', { messageId: data.messageId });
@@ -98,24 +94,25 @@ module.exports = (io, socket, voiceData) => {
         if (!verifyAdmin()) return;
 
         try {
-            const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
-            const existing = await collection.findOne({ name: data.name });
+            const existing = await Channel.findOne({ name: data.name });
             if (existing) {
                 socket.emit('error', 'Channel already exists');
                 return;
             }
 
-            await collection.insertOne({
+            await Channel.create({
                 name: data.name,
                 description: data.description || 'No description',
                 type: data.type
             });
 
+            const allChannels = await Channel.find({});
+            const channels = allChannels.filter(c => c.type === 'text');
+            const voiceChannels = allChannels.filter(c => c.type === 'voice');
+
             if (data.type === 'text') {
-                const channels = await channelsCollection.find().toArray();
                 io.emit('channelUpdate', channels);
             } else {
-                const voiceChannels = await voiceChannelsCollection.find().toArray();
                 io.emit('voiceChannelUpdate', voiceChannels);
             }
 
@@ -134,13 +131,13 @@ module.exports = (io, socket, voiceData) => {
         }
 
         try {
-            const collection = data.type === 'text' ? channelsCollection : voiceChannelsCollection;
-            const result = await collection.deleteOne({ name: data.name });
+            const result = await Channel.deleteOne({ name: data.name });
 
             if (result.deletedCount > 0) {
                 if (data.type === 'text') {
-                    await messagesCollection.deleteMany({ channel: data.name });
-                    const channels = await channelsCollection.find().toArray();
+                    await Message.deleteMany({ channel: data.name });
+
+                    const channels = await Channel.find({ type: 'text' });
                     io.emit('channelUpdate', channels);
                     io.emit('channelDeleted', data.name);
                 } else {
@@ -156,7 +153,8 @@ module.exports = (io, socket, voiceData) => {
                         });
                         voiceRooms.delete(data.name);
                     }
-                    const voiceChannels = await voiceChannelsCollection.find().toArray();
+
+                    const voiceChannels = await Channel.find({ type: 'voice' });
                     io.emit('voiceChannelUpdate', voiceChannels);
                     io.emit('voiceChannelDeleted', data.name);
                 }
