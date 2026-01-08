@@ -9,6 +9,8 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const readline = require('readline');
 const bcrypt = require('bcrypt');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { connect, getDb } = require('./database');
 const { router: authRouter, authMiddleware } = require('./auth');
@@ -87,6 +89,28 @@ function initializeServer() {
   });
 }
 let io;
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", "ws:", "wss:"],
+      mediaSrc: ["'self'", "blob:"],
+    },
+  },
+}));
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many login attempts from this IP, please try again after 15 minutes'
+});
+
+app.use('/auth', authLimiter);
+
 app.use(cors({
   origin: [
     'http://193.149.164.240:4196',
