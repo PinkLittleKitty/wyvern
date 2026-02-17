@@ -7,11 +7,13 @@ const directMessageSchema = new mongoose.Schema({
         index: true
     },
     sender: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     recipient: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     message: {

@@ -38,7 +38,7 @@ router.post("/register", async (req, res) => {
     });
     await newUser.save();
 
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ username, userId: newUser._id }, JWT_SECRET, { expiresIn: '24h' });
     res.cookie('token', token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
@@ -66,7 +66,7 @@ router.post("/login", async (req, res) => {
     if (!valid)
       return res.status(400).json({ error: "Invalid username or password." });
 
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ username, userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
     res.cookie('token', token, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
